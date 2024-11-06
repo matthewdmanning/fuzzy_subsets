@@ -236,10 +236,9 @@ def undersampler(feature_df, labels, feature_name, feature_dir):
             svc_params = {'kernel': ['poly', 'rbf', 'sigmoid']}
             gbc_params = {'n_estimators': [50, 250, 1000]}
             model_tup = (
-                ('logistic-cv', logistic_cv, []),
-                ('random-forest', RandomForestClassifier, ParameterGrid(forest_params)),
-                ('svm', SVC, ParameterGrid(svc_params)),
-                ('gradboost', GradientBoostingClassifier, ParameterGrid(gbc_params)))
+            ('logistic-cv', logistic_cv, []), ('random-forest', RandomForestClassifier, ParameterGrid(forest_params)),
+            ('svm', SVC, ParameterGrid(svc_params)),
+            ('gradboost', GradientBoostingClassifier, ParameterGrid(gbc_params)))
             for model_name, model, hypers in model_tup:
                 if 'logistic' not in model_name:
                     search_party = GridSearchCV(model(), hypers, n_jobs=-2, cv=3).fit(X=rus_dev_X, y=rus_dev_y)

@@ -1,12 +1,13 @@
+import cachetools
+import numpy as np
 import pandas as pd
-from sklearn.utils import compute_sample_weight
-
+from sklearn.utils import compute_sample_weight, compute_class_weight
 from data_handling import data_tools
 
 
 def get_sample_info(inchi_keys, source=None, labels=None, drop_dupes=False):
     # Returns QSAR-ready SMILES and INCHI strings for list of INCHI keys.
-    prop_list = ["SMILES_QSAR", "INCHI"]
+    prop_list = ['SMILES_QSAR', 'INCHI']
     meta_loaded = data_tools.load_metadata()
     if source is not None:
         if type(source) is not str:
@@ -21,7 +22,7 @@ def get_sample_info(inchi_keys, source=None, labels=None, drop_dupes=False):
         info = metadata.loc[inchi_keys]
     except:
         info = metadata[inchi_keys]
-        print("Except worked!")
+        print('Except worked!')
     return info
 
 
@@ -42,30 +43,22 @@ def get_dmso_source_label_df(inchi_keys=None, include_only=None, exclude=None):
                 continue
         else:
             idx = v[0].index
-        source, label = k.split("_")
+        source, label = k.split('_')
         data_df = pd.DataFrame(index=idx)
-        data_df["Source"] = source
-        data_df["Solubility"] = label
+        data_df['Source'] = source
+        data_df['Solubility'] = label
         data_dfs.append(data_df)
     return pd.concat(data_dfs)
 
 
-def weight_dmso_samples(
-    inchi_idx, by, group_by=None, include_only=None, exclude=None, class_wt="balanced"
-):
+def weight_dmso_samples(inchi_idx, by, group_by=None, include_only=None, exclude=None, class_wt='balanced'):
     # Returns sample weights based on solubility and data source.
-    meta_df = get_dmso_source_label_df(
-        inchi_idx, include_only=include_only, exclude=exclude
-    )
-    if group_by.lower() == "solubility" or (by.lower() == "source" and group_by):
-        by_source = [
-            meta_df[meta_df["Solubility" == u]] for u in meta_df["Source"].unique()
-        ]
+    meta_df = get_dmso_source_label_df(inchi_idx, include_only=include_only, exclude=exclude)
+    if group_by.lower() == "solubility" or (by.lower() == 'source' and group_by):
+        by_source = [meta_df[meta_df["Solubility" == u]] for u in meta_df["Source"].unique()]
         weights = pd.concat([compute_sample_weight(class_wt, s) for s in by_source])
-    elif group_by.lower() == "source" or (by.lower() == "solubility" and group_by):
-        by_source = [
-            meta_df[meta_df["Source" == u]] for u in meta_df["Source"].unique()
-        ]
+    elif group_by.lower() == "source" or (by.lower() == 'solubility' and group_by):
+        by_source = [meta_df[meta_df["Source" == u]] for u in meta_df["Source"].unique()]
         weights = pd.concat([compute_sample_weight(class_wt, s) for s in by_source])
     elif by.lower() == "source":
         weights = compute_sample_weight(class_wt, meta_df["Source"])
@@ -84,7 +77,7 @@ def get_confusion_samples(true_predict_tuple, labels=(1, 0)):
                 false_list = [get_confusion_samples(a) for a in true_predict_tuple]
                 return false_list
             else:
-                print("Something is very wrong")
+                print('Something is very wrong')
                 print(tup)
                 raise RuntimeError
     else:

@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+from statsmodels.tools import validation
 
 
 def _ser_is_discrete(input_array, unique_thresh=5):

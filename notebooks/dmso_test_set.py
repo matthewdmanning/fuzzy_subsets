@@ -1,7 +1,6 @@
 import numpy as np
 import pandas as pd
-from data_handling.data_tools import load_training_data, load_metadata, get_interpretable_features, data_by_groups, \
-    get_all_data
+from data_handling.data_tools import load_training_data, load_metadata, get_interpretable_features, data_by_groups, get_all_data
 from data_handling.data_cleaning import check_inchi_only, clean_and_check
 
 
@@ -23,8 +22,7 @@ def get_training_data(epa_sol=True, interpret=True):
         meta_keys = ['epa_sol', 'epa_in', 'en_in']
     else:
         meta_keys = ['epa_sol', 'epa_in', 'en_in', 'en_sol']
-    full_groups_dict = dict(
-        [(k, pd.Series(data=k, index=v[2].index, name=k)) for k, v in meta.items() if k in meta_keys])
+    full_groups_dict = dict([(k, pd.Series(data=k, index=v[2].index, name=k)) for k, v in meta.items() if k in meta_keys])
     meta_y = pd.concat(full_groups_dict.values())
     print(interp_y.index.difference(meta_y.index))
     train_y = interp_y[interp_y.index.intersection(meta_y.index)]

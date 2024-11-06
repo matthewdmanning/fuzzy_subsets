@@ -1,13 +1,12 @@
 import copy
 import pprint
-
 import numpy as np
 import pandas as pd
 import scipy
 import sklearn.utils
-from sklearn.linear_model import LassoCV, LinearRegression
+from sklearn.linear_model import LinearRegression, LassoCV
+from sklearn.model_selection import StratifiedKFold
 from sklearn.preprocessing import RobustScaler
-
 from feature_selection.importance import logger
 from utils.features import compute_gram
 

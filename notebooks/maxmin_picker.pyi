@@ -27,11 +27,11 @@ sys.path.insert(0, '{}data_handling'.format(project_dir))
 sys.path.insert(0, project_dir)
 
 FP_MAPPER = col_mapper = dict(zip((
-    'info', 'name', 'version', 'options', 'type', 'radius', 'bits', 'chemicals', 'smiles',
-    'inchi', 'inchiKey', 'descriptors'), (
-    'FP_SOFTWARE', 'FP_NAME', 'FP_VERSION', 'FP_OPTIONS', 'FP_TYPE', 'FP_RADIUS',
-    'FP_BITS', 'FP_COMPOUNDS', 'FP_SMILES', 'FP_INCHI', 'FP_INCHI_KEY',
-    'FP_DESCRIPTORS')))
+                                  'info', 'name', 'version', 'options', 'type', 'radius', 'bits', 'chemicals', 'smiles',
+                                  'inchi', 'inchiKey', 'descriptors'), (
+                                  'FP_SOFTWARE', 'FP_NAME', 'FP_VERSION', 'FP_OPTIONS', 'FP_TYPE', 'FP_RADIUS',
+                                  'FP_BITS', 'FP_COMPOUNDS', 'FP_SMILES', 'FP_INCHI', 'FP_INCHI_KEY',
+                                  'FP_DESCRIPTORS')))
 
 FP_MULTIINDEX = pd.MultiIndex.from_tuples(
     [('FP_SOFTWARE', 'FP_NAME', 'FP_VERSION'), ('FP_OPTIONS', 'FP_TYPE', 'FP_RADIUS', 'FP_BITS'),

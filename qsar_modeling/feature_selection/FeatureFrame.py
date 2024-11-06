@@ -5,8 +5,8 @@ import cachetools
 import numpy as np
 import pandas as pd
 
+from constants import paths, names, run_params, selector_params
 import distributions
-from constants import names, paths, run_params, selector_params
 from features import set_cov_matrix
 
 
@@ -41,7 +41,7 @@ class FeatureFrame:
     def feat_frame(self):
         return self._feat_frame
 
-    """    
+    '''    
     @property
     def original(self):
         return self._original
@@ -49,7 +49,7 @@ class FeatureFrame:
     @property
     def options(self):
         return self._options
-    """
+    '''
 
     def fit(self):
         self._set_feat_vars(self.feat_frame)
@@ -64,28 +64,24 @@ class FeatureFrame:
 
     @property
     def feat_vars(self):
-        return self._feat_vars
+        return (self._feat_vars)
 
     @property
     def stats(self):
-        stats_dict = {"mean", "var", "std", "range", "median", "skew", ""}
-        self._stats[""]
+        stats_dict = {'mean', 'var', 'std', 'range', 'median', 'skew', ''}
+        self._stats['']
         return self._feat_vars
 
     @feat_vars.setter
     def feat_vars(self, value):
         self._feat_vars = value
 
-    def _set_feat_vars(
-        self, df, skipna=True, numeric_only=False, weighted="balanced", *args, **kwargs
-    ):
-        self._feat_vars = np.var(df.astype(np.float64), ddof=1.0, axis=0)
-        self._zero_vars = self._feat_vars[self._feat_vars == 0.0].index
-        self._nonzero_vars = self._feat_vars[self._feat_vars > 0.0].index
-        self._logger.info("Zero variance features: {}".format(self._zero_vars.size))
-        self._logger.info(
-            "Non-zero variance features: {}".format(self._nonzero_vars.size)
-        )
+    def _set_feat_vars(self, df, skipna=True, numeric_only=False, weighted='balanced', *args, **kwargs):
+        self._feat_vars = np.var(df.astype(np.float64), ddof=1., axis=0)
+        self._zero_vars = self._feat_vars[self._feat_vars == 0.].index
+        self._nonzero_vars = self._feat_vars[self._feat_vars > 0.].index
+        self._logger.info('Zero variance features: {}'.format(self._zero_vars.size))
+        self._logger.info('Non-zero variance features: {}'.format(self._nonzero_vars.size))
 
     @property
     def desc_groups(self):
@@ -124,8 +120,8 @@ class FeatureFrame:
                 nonneg_cols.append(col)
         self.nonneg = pd.Index(nonneg_cols)
         self.neg = pd.Index(neg_cols)
-        self._logger.info("Nonnegative features: {}".format(self.nonneg.size))
-        self._logger.info("Features with negative values: {}".format(self.neg.size))
+        self._logger.info('Nonnegative features: {}'.format(self.nonneg.size))
+        self._logger.info('Features with negative values: {}'.format(self.neg.size))
 
     @cachetools.cached(cache={})
     def _set_sparse_dense(self, all_freq=True, ignore_nan=False):
@@ -143,8 +139,8 @@ class FeatureFrame:
                 freq_dict[col] = ser
             sermax = ser.max(skipna=ignore_nan)
             # print('Feature freq max: {}'.format(sermax))
-            logging.debug("Feature maximum: {}".format(sermax))
-            if freq_cut < sermax < 1.0:
+            logging.debug('Feature maximum: {}'.format(sermax))
+            if freq_cut < sermax < 1.:
                 sparse_list.append(col)
             elif freq_cut >= sermax:
                 dense_list.append(col)
@@ -152,16 +148,14 @@ class FeatureFrame:
                 zero_list.append(col)
         self._sparse = pd.Index(sparse_list)
         self._dense = pd.Index(dense_list)
-        self._logger.info("Sparse features: {}".format(self.sparse.size))
-        self._logger.info("Dense features: {}".format(self.dense.size))
+        self._logger.info('Sparse features: {}'.format(self.sparse.size))
+        self._logger.info('Dense features: {}'.format(self.dense.size))
         if not run_params.debug:
             if len(self.sparse) < self.selector_params.min_sparse:
-                self._logger.warning(
-                    "Too few sparse features: \n{}".format(self.sparse)
-                )
+                self._logger.warning('Too few sparse features: \n{}'.format(self.sparse))
                 raise ValueError
             if len(self.dense) < self.selector_params.min_dense:
-                self._logger.warning("Too few dense features: \n{}".format(self.dense))
+                self._logger.warning('Too few dense features: \n{}'.format(self.dense))
                 raise ValueError
 
     # TODO: Change to also check for whole-ness and amount of continuity.
@@ -169,34 +163,19 @@ class FeatureFrame:
         # remainder = self.feat_frame.copy().round(0).subtract(self.feat_frame).astype(float)
         # self._logger.info(remainder.max(axis='rows').sort_values(ascending=False)[:5])
         # self._logger.info(remainder.max(axis='rows').sort_values(ascending=True)[:5])
-        count_cols = pd.Index(
-            [
-                x
-                for x in self.feat_frame.columns
-                if ("count" in x.lower() or "number" in x.lower())
-                and "measure" not in x.lower()
-            ]
-        )
+        count_cols = pd.Index([x for x in self.feat_frame.columns if
+                               ('count' in x.lower() or 'number' in x.lower()) and 'measure' not in x.lower()])
         non_counts = self.feat_frame.columns.difference(count_cols)
-        uniques = self.feat_frame[non_counts].nunique(axis="columns")
-        self._logger.info(
-            'Columns containing "count" or "number": \n{}'.format(count_cols.size)
-        )
+        uniques = self.feat_frame[non_counts].nunique(axis='columns')
+        self._logger.info('Columns containing "count" or "number": \n{}'.format(count_cols.size))
         self._discrete = distributions.is_discrete(self.feat_frame)
         # self.discrete = uniques[uniques < (self.selector_params.discrete_thresh * self.feat_frame[non_counts].shape[1])].index.union(count_cols)
         # self.discrete = remainder.columns[((remainder <= self.selector_params.tol_discrete) | (remainder >= (1 - self.selector_params.tol_discrete))).astype(int).sum() == 0]
         self.cont = self.feat_frame.columns.difference(self.discrete)
-        self._logger.info("Discrete features: {}".format(self.discrete.size))
-        self._logger.info("Continuous features: {}".format(self.cont.size))
-        if (
-            self.discrete.size < self.selector_params.min_discrete
-            or self.cont.size < self.selector_params.min_continuous
-        ):
-            self._logger.error(
-                "Too few features for tol_sparse: {}.".format(
-                    self.selector_params.tol_discrete
-                )
-            )
+        self._logger.info('Discrete features: {}'.format(self.discrete.size))
+        self._logger.info('Continuous features: {}'.format(self.cont.size))
+        if self.discrete.size < self.selector_params.min_discrete or self.cont.size < self.selector_params.min_continuous:
+            self._logger.error('Too few features for tol_sparse: {}.'.format(self.selector_params.tol_discrete))
             raise AttributeError
 
     @property
@@ -206,32 +185,19 @@ class FeatureFrame:
     # TODO: Use aweights to find balanced convariance matrix.
     # TODO: Add corelation matrix property.
     def _set_cov_mat(self, val):
-        if (
-            self.cov_mat is not None
-            and type(self.cov_mat) is pd.DataFrame
-            and not self.cov_mat.empty
-        ):
-            self._logger.warning("Covariance matrix has already been calculated.")
+        if self.cov_mat is not None and type(self.cov_mat) is pd.DataFrame and not self.cov_mat.empty:
+            self._logger.warning('Covariance matrix has already been calculated.')
         else:
-            if type(val) is pd.DataFrame and val.shape == (
-                self.dense.size,
-                self.dense.size,
-            ):
+            if type(val) is pd.DataFrame and val.shape == (self.dense.size, self.dense.size):
                 self._cov_mat = val
             elif type(val) is pd.DataFrame and val.shape == (
-                self.feat_frame.columns.size,
-                self.feat_frame.columns.size,
-            ):
+                    self.feat_frame.columns.size, self.feat_frame.columns.size):
                 self._cov_mat = val
             else:
                 self._logger.warning(
-                    "Covariance matrix is not a DataFrame or is not the correst size. Recalculating..."
-                )
-                self._cov_mat = set_cov_matrix(
-                    self.feat_frame[self.dense],
-                    corr_method=self.selector_params.cov_method,
-                    sample_wts=self.options.sample_wts,
-                )
+                    'Covariance matrix is not a DataFrame or is not the correst size. Recalculating...')
+                self._cov_mat = set_cov_matrix(self.feat_frame[self.dense], corr_method=self.selector_params.cov_method,
+                                               sample_wts=self.options.sample_wts)
 
     @property
     def zero_vars(self):
@@ -258,15 +224,11 @@ class FeatureFrame:
         if type(self._cov_pairs) is list and len(self._cov_pairs) > 0:
             return self._cov_pairs
         if type(self._cov_mat) is not pd.DataFrame:
-            cov_mat = pd.DataFrame(
-                self._cov_mat,
-                index=self._original.columns,
-                columns=self._original.columns,
-            )
+            cov_mat = pd.DataFrame(self._cov_mat, index=self._original.columns, columns=self._original.columns)
         else:
             cov_mat = self._cov_mat
         cov_mat = cov_mat.loc[self._nonzero_vars, self._nonzero_vars]
-        """        diag = np.diag(v=cov_mat)
+        '''        diag = np.diag(v=cov_mat)
                 if np.count_nonzero(diag) < diag.size:
                     print('Zero variance found in diagonal!!!')
                     print(np.where(diag == 0), flush=True)
@@ -277,35 +239,26 @@ class FeatureFrame:
         if mat_max <= 1:
             print('Normalization worked!!! The max is {}'.format(mat_max))
             exit()
-        """
+        '''
         # corr_dict = cov_mat.to_dict(orient='series')
         same_list, close_list = list(), list()
-        for index_ind, col_ind in itertools.combinations(
-            list(range(cov_mat.columns.size)), r=2
-        ):
+        for index_ind, col_ind in itertools.combinations(list(range(cov_mat.columns.size)), r=2):
             val = cov_mat.iloc[index_ind, col_ind]
             ind, col = cov_mat.columns[index_ind], cov_mat.columns[col_ind]
             # self._logger(ind, col, val, flush=True)
             if not np.isscalar(val):
-                self._logger.warning(
-                    "CoV element is not a scalar value: {:.60s}".format(val)
-                )
-            if np.abs(val) == 1.0:
+                self._logger.warning('CoV element is not a scalar value: {:.60s}'.format(val))
+            if np.abs(val) == 1.:
                 same_list.append((col, ind))
                 self._logger.warning(
-                    "Perfectly correlated feature pair with R of {0:.4f}:\n{1:.30s}\n{2:.30s} ".format(
-                        val, ind, col
-                    )
-                )
+                    'Perfectly correlated feature pair with R of {0:.4f}:\n{1:.30s}\n{2:.30s} '.format(val, ind, col))
             elif np.abs(val) > self.selector_params.cov_thresh:
                 # self._logger.info('Highly correlated features with an R of {.25s}\n{.25s}\n{}'.format(val, ind, col))
                 close_list.append([(ind, col), val])
         close_list.sort(key=lambda x: x[1], reverse=True)
-        self._logger.info("Highly correlated features:")
+        self._logger.info('Highly correlated features:')
         for feats, corr in close_list:
-            self._logger.info(
-                "{0:.4f}: {1:.35s} and {2:.35s}".format(corr, feats[0], feats[1])
-            )
+            self._logger.info('{0:.4f}: {1:.35s} and {2:.35s}'.format(corr, feats[0], feats[1]))
         self._cov_pairs = close_list
         return self._cov_pairs
 
@@ -315,7 +268,7 @@ class FeatureFrame:
         for col, ser in self._original.items():
             yield col, ser.value_counts(normalize=True, dropna=ignore_nan)
 
-    """
+    '''
     @functools.singledispatch
     def format_options(self, arg):
         self._options = arg
@@ -327,4 +280,4 @@ class FeatureFrame:
                 # self._logger.error('Required option {} not found.'.format(o))
                 raise KeyError
         self._options = arg
-    """
+    '''

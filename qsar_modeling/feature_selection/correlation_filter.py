@@ -1,13 +1,11 @@
 from functools import partial
-
 import numpy as np
 import pandas as pd
-
 from utils import math_tools
 
 
 def findCorrelation(
-    corr, cutoff=0.9, n_drop=None, exact=True, norm_fn=partial(np.linalg.norm, ord=2)
+        corr, cutoff=0.9, n_drop=None, exact=True, norm_fn=partial(np.linalg.norm, ord=2)
 ):
     """
     This function is the Python implementation of the R function

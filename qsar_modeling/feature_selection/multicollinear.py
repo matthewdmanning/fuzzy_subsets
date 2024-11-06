@@ -1,19 +1,17 @@
-from collections import defaultdict
-
-import matplotlib.pyplot as plt
 import numpy as np
+import matplotlib.pyplot as plt
 import pandas as pd
 from scipy.cluster import hierarchy
 from scipy.spatial.distance import squareform
+from scipy.stats import spearmanr
+from collections import defaultdict
 
 
 # This function uses the Spearman rank correlation to construct a hierarchical clustering of features in a dataset, calculated using the distance matrix.
 # graph_hierarchy plots the results of the dendrogram.
 
 
-def spearman_rank_multicollinear(
-    feature_df, labels=None, corr=None, nan_policy="propagate", cluster_feats=False
-):
+def spearman_rank_multicollinear(feature_df, labels=None, corr=None, nan_policy='propagate', cluster_feats=False):
     def graph_hierarchy():
         fig2, ax2 = plt.subplots(figsize=(60, 40), dpi=1600)
         ax1.imshow(corr[dendro["leaves"], :][:, dendro["leaves"]])
@@ -25,36 +23,30 @@ def spearman_rank_multicollinear(
 
     fig1, ax1 = plt.subplots(1, 1, figsize=(60, 40), dpi=1600)
 
-    if nan_policy == "raise":
+    if nan_policy == 'raise':
         assert feature_df.isna().count().count() == 0
     if corr is None:
         print(feature_df.var().shape)
         print(feature_df.var(axis=1).shape)
         print(feature_df.std(numeric_only=True) > 1e-3)
-        feature_df = feature_df[
-            feature_df.columns[feature_df.std(numeric_only=True) > 1e-2]
-        ]
+        feature_df = feature_df[feature_df.columns[feature_df.std(numeric_only=True) > 1e-2]]
         print(feature_df.shape)
-        corr = feature_df.corr(method="spearman").to_numpy()
+        corr = feature_df.corr(method='spearman').to_numpy()
     else:
         corr = corr.to_numpy()
     # Ensure the correlation matrix is symmetric
-    corr = (corr + corr.T) / 2.0
-    np.fill_diagonal(corr, 1.0)
+    corr = (corr + corr.T) / 2.
+    np.fill_diagonal(corr, 1.)
     print(np.sum(corr - corr.T))
     # We convert the correlation matrix to a distance matrix before performing
     # hierarchical clustering using Ward's linkage.
-    distance_matrix = 1.0 - np.abs(corr)
-    distance_matrix = (distance_matrix + distance_matrix.T) / 2.0
+    distance_matrix = 1. - np.abs(corr)
+    distance_matrix = (distance_matrix + distance_matrix.T) / 2.
     print(np.sum(distance_matrix - distance_matrix.T))
     np.fill_diagonal(corr, 0)
     dist_linkage = hierarchy.ward(squareform(distance_matrix))
     dendro = hierarchy.dendrogram(
-        dist_linkage,
-        labels=feature_df.columns.to_list(),
-        ax=ax1,
-        leaf_rotation=90,
-        leaf_font_size=8,
+        dist_linkage, labels=feature_df.columns.to_list(), ax=ax1, leaf_rotation=90, leaf_font_size=8
     )
     dendro_idx = np.arange(0, len(dendro["ivl"]))
 

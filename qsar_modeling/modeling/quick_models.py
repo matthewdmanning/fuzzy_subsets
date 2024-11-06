@@ -3,6 +3,8 @@ from imblearn.ensemble import BalancedRandomForestClassifier
 from sklearn.linear_model import LogisticRegressionCV
 from sklearn.metrics import make_scorer, matthews_corrcoef
 
+import utils.cv_tools
+
 
 def get_predictions(model, train_data, train_labels, test_data, sample_wts=None, **model_params):
     if model_params:

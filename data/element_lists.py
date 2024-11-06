@@ -23,8 +23,6 @@ GROUP_ONES = list(['Li', 'Na', 'K', 'Rb', 'Cs', 'Fr'])
 GROUP_TWOS = list(['Be', 'Mg', 'Ca', 'Sr', 'Ba', 'Ra'])
 ALLOWED = [*NONMETALS, *HALOGENS, *NONMETALS_LOWER, 'H']
 DISALLOWED = list([e for e in ALL_ELEMENTS if e not in ALLOWED])
-QSAR_COLUMNS = {'id':              'FOREIGN_KEY', 'cid': 'CID', 'sid': 'SID', 'casrn': 'CASRN', 'name': 'NAME',
-                'smiles':          'SMILES_QSAR',
+QSAR_COLUMNS = {'id': 'FOREIGN_KEY', 'cid': 'CID', 'sid': 'SID', 'casrn': 'CASRN', 'name': 'NAME', 'smiles': 'SMILES_QSAR',
                 'canonicalSmiles': 'SMILES_CANONICAL', 'inchi': 'INCHI', 'inchiKey': 'INCHI_KEY', 'mol': 'MOL'}
-DESC_COLUMNS = ['DESCRIPTOR_SET', 'VERSION_NUMBER', 'PLACEONE', 'PLACETWO', 'SMILES_QSAR', 'INCHI', 'INCHI_KEY',
-                'DESCRIPTORS']
+DESC_COLUMNS = ['DESCRIPTOR_SET', 'VERSION_NUMBER', 'PLACEONE', 'PLACETWO', 'SMILES_QSAR', 'INCHI', 'INCHI_KEY', 'DESCRIPTORS']

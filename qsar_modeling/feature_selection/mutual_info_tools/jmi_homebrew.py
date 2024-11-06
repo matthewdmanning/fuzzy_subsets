@@ -3,13 +3,11 @@ import itertools
 import logging
 import pprint
 from functools import partial
-
 import numpy as np
 import pandas as pd
 from imblearn.under_sampling import RandomUnderSampler
 from sklearn.feature_selection import mutual_info_classif, mutual_info_regression
 from sklearn.utils import compute_class_weight
-
 import qsar_modeling.utils.distributions
 
 np.set_printoptions(formatter={"float": "{: 0.4f}".format})
@@ -18,13 +16,13 @@ logger = logging.getLogger(__name__)
 
 
 def estimate_cardinality(
-    feature_ser,
-    labels,
-    mss_list="auto",
-    criterion="entropy",
-    thresh=0.85,
-    n_trees=100,
-    iter_max=100,
+        feature_ser,
+        labels,
+        mss_list="auto",
+        criterion="entropy",
+        thresh=0.85,
+        n_trees=100,
+        iter_max=100,
 ):
     from sklearn.ensemble import ExtraTreesClassifier
 
@@ -63,7 +61,7 @@ def estimate_cardinality(
 
 
 def balanced_filter_univar(
-    feature_df, labels, partial_func, cv=30, sampling_strategy="auto", n_jobs=-1
+        feature_df, labels, partial_func, cv=30, sampling_strategy="auto", n_jobs=-1
 ):
     filter_list = list()
     for _ in list(range(cv)):
@@ -80,14 +78,14 @@ def balanced_filter_univar(
 
 
 def rus_wrapper(
-    func,
-    feature_df,
-    labels,
-    cv=5,
-    sampling_strategy="auto",
-    random_state=0,
-    *args,
-    **kwargs
+        func,
+        feature_df,
+        labels,
+        cv=5,
+        sampling_strategy="auto",
+        random_state=0,
+        *args,
+        **kwargs
 ):
     rus_list = list()
     for _ in list(range(cv)):
@@ -99,13 +97,13 @@ def rus_wrapper(
 
 
 def balanced_mi_y(
-    feature_df,
-    labels,
-    cv=30,
-    n_neighbors=7,
-    estimator="classifier",
-    sampling_strategy="auto",
-    n_jobs=-1,
+        feature_df,
+        labels,
+        cv=30,
+        n_neighbors=7,
+        estimator="classifier",
+        sampling_strategy="auto",
+        n_jobs=-1,
 ):
     # Yields k-fold randomly undersampled MI of shape (n_features, cv)
     if estimator == "classifier":
@@ -127,9 +125,7 @@ def balanced_mi_y(
     )
 
 
-def mi_mixed_types(
-    feature_df, disc_dict=None, normalize_by_self=False, discrete_kws=None, **mi_kws
-):
+def mi_mixed_types(feature_df, disc_dict=None, normalize_by_self=False, discrete_kws=None, **mi_kws):
     mi_df = pd.DataFrame(
         data=np.zeros(shape=(feature_df.shape[1], feature_df.shape[1])),
         index=feature_df.columns,
@@ -148,9 +144,7 @@ def mi_mixed_types(
         unique_pairs_dual[1].tolist(),
     )
     for i, r in enumerate(mi_df.index):
-        mi_df.iloc[i, i:] = mutual_info_regression(
-            feature_df.iloc[:, i:], feature_df.iloc[:, i], **mi_kws
-        )
+        mi_df.iloc[i, i:] = mutual_info_regression(feature_df.iloc[:, i:], feature_df.iloc[:, i], **mi_kws)
     """
     for i, j in zip(tril_ind_i, tril_ind_j):
         if i in cont_ind:
@@ -218,12 +212,8 @@ def mi_mixed_types(
     if normalize_by_self:
         print("This method produces MI values that are greater than 1.")
         raise NotImplementedError
-        mi_df.divide(
-            np.sqrt(mi_df.iloc[np.diag_indices_from(mi_df.to_numpy())]), axis=0
-        )
-        mi_df.divide(
-            np.sqrt(mi_df.iloc[np.diag_indices_from(mi_df.to_numpy())]), axis=1
-        )
+        mi_df.divide(np.sqrt(mi_df.iloc[np.diag_indices_from(mi_df.to_numpy())]), axis=0)
+        mi_df.divide(np.sqrt(mi_df.iloc[np.diag_indices_from(mi_df.to_numpy())]), axis=1)
     return mi_df
 
 
@@ -255,12 +245,12 @@ def condition_by_label(feature_df, labels, disc_dict=None):
 
 
 def bivariate_conditional(
-    feature_df,
-    labels,
-    x_y_mi=None,
-    conditional_dfs=None,
-    disc_dict=None,
-    lower_triangle=True,
+        feature_df,
+        labels,
+        x_y_mi=None,
+        conditional_dfs=None,
+        disc_dict=None,
+        lower_triangle=True,
 ):
     bivariate_measure = pd.DataFrame(
         np.zeros(shape=(feature_df.shape[1], feature_df.shape[1])),
@@ -278,9 +268,9 @@ def bivariate_conditional(
     for i, j in itertools.combinations(list(range(feature_df.shape[1])), r=2):
         print(i, j)
         biv_measure = (
-            x_y_mi.iloc[i]
-            + x_y_mi.iloc[j]
-            - 2 * (conditional_dfs[0].iloc[i, j] - conditional_dfs[1].iloc[i, j])
+                x_y_mi.iloc[i]
+                + x_y_mi.iloc[j]
+                - 2 * (conditional_dfs[0].iloc[i, j] - conditional_dfs[1].iloc[i, j])
         )
         print(x_y_mi.iloc[i])
         print(x_y_mi.iloc[j])
