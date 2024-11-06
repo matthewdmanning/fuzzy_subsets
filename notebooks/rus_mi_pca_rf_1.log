@@ -1,0 +1,876 @@
+Zero variance features: 213
+Non-zero variance features: 1231
+Sparse features: 79
+Dense features: 1152
+Columns containing "count" or "number": 
+288
+Discrete features: 288
+Continuous features: 1156
+Nonnegative features: 1160
+Features with negative values: 284
+('information', 'eigen', 'spectral', 'barysz', 'randic')
+
+Mutual Info Based Feature Selection
+Mutual Info Based Feature Selection
+Molecular path count of order 9             0.0926
+Total path count (up to order 10)           0.0879
+Molecular path count of order 8             0.0868
+Molecular path count of order 7             0.0860
+Molecular path count of order 10            0.0858
+Molecular path count of order 6             0.0854
+Molecular path count of order 5             0.0839
+Molecular walk count of order 7 (ln(1+x)    0.0811
+Molecular path count of order 4             0.0802
+Molecular walk count of order 6 (ln(1+x)    0.0761
+dtype: float64
+Incremental PCA from MI output of top 100 features:
+PCA Results
+array([7.09913412e+05, 4.30424869e+04, 1.60614669e+04, 1.46995822e+03,
+       3.04316347e+02, 7.76761187e+01, 4.31091102e+01, 2.61975847e+01,
+       2.21648114e+01, 1.73507406e+01, 1.02081107e+01, 7.72835838e+00,
+       6.62490266e+00, 4.23170518e+00, 3.86937839e+00, 3.38751201e+00,
+       2.91378376e+00, 2.11613079e+00, 1.93065752e+00, 1.73754717e+00,
+       1.37448341e+00, 9.65991011e-01, 8.65852851e-01, 7.55582707e-01,
+       6.31313029e-01, 5.59557495e-01, 4.59382316e-01, 4.24861785e-01,
+       3.60008114e-01, 3.47258824e-01])
+array([9.20731435e-01, 5.58245133e-02, 2.08311284e-02, 1.90648143e-03,
+       3.94687044e-04, 1.00743053e-04, 5.59109212e-05, 3.39772983e-05,
+       2.87469405e-05, 2.25032688e-05, 1.32395420e-05, 1.00233949e-05,
+       8.59225368e-06, 5.48836508e-06, 5.01844063e-06, 4.39347777e-06,
+       3.77906975e-06, 2.74454335e-06, 2.50399139e-06, 2.25353441e-06,
+       1.78265414e-06, 1.25285461e-06, 1.12297912e-06, 9.79962821e-07,
+       8.18789645e-07, 7.25725372e-07, 5.95801870e-07, 5.51030019e-07,
+       4.66917206e-07, 4.50381849e-07])
+Final features selected for model training:
+['Molecular path count of order 9',
+ 'Total path count (up to order 10)',
+ 'Molecular path count of order 8',
+ 'Molecular path count of order 7',
+ 'Molecular path count of order 10',
+ 'Molecular path count of order 6',
+ 'Molecular path count of order 5',
+ 'Molecular walk count of order 7 (ln(1+x)',
+ 'Molecular path count of order 4',
+ 'Molecular walk count of order 6 (ln(1+x)',
+ 'Molecular path count of order 3',
+ 'Molecular walk count of order 5 (ln(1+x)',
+ 'Number of rings (includes counts from fused rings)',
+ 'Conventional bond order ID number of order 6 (ln(1+x)',
+ 'Conventional bond order ID number of order 10 (ln(1+x)',
+ 'Total self-return walk count (up to order 10) (ln(1+x))',
+ 'Molecular walk count of order 10 (ln(1+x)',
+ 'Molecular walk count of order 9 (ln(1+x)',
+ 'Molecular walk count of order 8 (ln(1+x)',
+ 'Conventional bond order ID number of order 3 (ln(1+x)',
+ 'A measure of electronegative atom countii',
+ 'Molecular walk count of order 3 (ln(1+x)',
+ 'Self-returning walk count of order 6 (ln(1+x)',
+ 'Self-returning walk count of order 10 (ln(1+x)',
+ 'Molecular walk count of order 4 (ln(1+x)',
+ 'Conventional bond order ID number of order 9 (ln(1+x)',
+ 'Number of rings',
+ 'Number of rings containing heteroatoms (N, O, P, S, or halogens)',
+ 'Conventional bond order ID number of order 5 (ln(1+x)',
+ 'Conventional bond order ID number of order 4 (ln(1+x)',
+ 'Conventional bond order ID number of order 7 (ln(1+x)',
+ 'Self-returning walk count of order 8 (ln(1+x)',
+ 'Self-returning walk count of order 4 (ln(1+x)',
+ 'Number of bonds (excluding bonds with hydrogen)',
+ 'Conventional bond order ID number of order 8 (ln(1+x)',
+ 'Molecular path count of order 2',
+ 'Weiner polarity number',
+ 'A measure of electronegative atom count of the molecule relative to '
+ 'molecular size',
+ 'A measure of electronegative atom count of the molecule',
+ 'Molecular walk count of order 2 (ln(1+x)',
+ 'Conventional bond order ID number of order 2 (ln(1+x)',
+ 'Self-returning walk count of order 2 (ln(1+x)',
+ 'Logarithmic Randic-like eigenvector-based index from Barysz matrix / '
+ 'weighted by atomic number',
+ 'Conventional bond order ID number of order 1 (ln(1+x)',
+ 'Molecular ID / number of atoms',
+ 'Total walk count (up to order 10)',
+ 'Number of fused rings',
+ 'Number of heavy atoms (i.e. not hydrogen)',
+ 'Weiner path number',
+ 'Number of 6-membered rings containing heteroatoms (N, O, P, S, or halogens)',
+ 'Number of carbon atoms',
+ 'Number of 6-membered rings',
+ 'Number of 6-membered rings (includes counts from fused rings) containing '
+ 'heteroatoms (N, O, P, S, or halogens)',
+ 'Spectral absolute deviation from Barysz matrix / weighted by atomic number',
+ 'Number of 6-membered rings (includes counts from fused rings)',
+ 'Graph energy from Barysz matrix / weighted by atomic number',
+ 'Estrada-like index from Barysz matrix / weighted by atomic number (ln(1+x))',
+ 'Leading eigenvalue from Barysz matrix / weighted by atomic number',
+ 'Randic-like eigenvector-based index from Barysz matrix / weighted by atomic '
+ 'number',
+ 'Spectral diameter from Barysz matrix / weighted by atomic number',
+ 'Number of atoms',
+ 'A measure of electronegative atom counti',
+ 'Spectral moment of order 1 from Barysz matrix / weighted by atomic number',
+ 'Total number of bonds (including bonds to hydrogens)',
+ 'Number of 9-membered rings (includes counts from fused rings)',
+ 'Number of atoms in the largest pi system',
+ 'Number of single bonds (including bonds with hydrogen)',
+ 'Number of 9-membered fused rings containing heteroatoms (N, O, P, S, or '
+ 'halogens)',
+ "Number of hydrogen bond donors (using Lipinski's definition: Any OH or NH. "
+ 'Each available hydrogen atom is counted as one hydrogen bond donor)',
+ 'Count of E-State descriptors of strength for potential Hydrogen Bonds of '
+ 'path length 2',
+ 'Number of 9-membered rings (includes counts from fused rings) containing '
+ 'heteroatoms (N, O, P, S, or halogens)',
+ 'Count of atom-type E-State: =C<',
+ 'Number of hydrogen bond donors (using CDK HBondDonorCountDescriptor '
+ 'algorithm)',
+ 'A measure of count of hydrogen bond acceptor atoms and/or polar surface area',
+ 'Count of atom-type E-State: >N-',
+ 'Count of E-States for (strong) Hydrogen Bond donors',
+ 'Number of basic groups. The list of basic groups is defined by this SMARTS '
+ '"[$([NH2]-[CX4])]", "[$([NH](-[CX4])-[CX4])]", '
+ '"[$(N(-[CX4])(-[CX4])-[CX4])]", "[$([*;+;!$(*~[*;-])])]", "[$(N=C-N)]", and '
+ '"[$(N-C=N)]" originally presented in JOELib',
+ 'A measure of electronegative atom countiiii',
+ 'Number of 10-membered fused rings containing heteroatoms (N, O, P, S, or '
+ 'halogens)',
+ 'A measure of electronegative atom countiii',
+ 'Number of 10-membered rings (includes counts from fused rings) containing '
+ 'heteroatoms (N, O, P, S, or halogens)',
+ 'Number of hydrogen bond acceptors (using CDK HBondAcceptorCountDescriptor '
+ 'algorithm)',
+ 'Total number of bonds that have bond order greater than one (aromatic bonds '
+ 'have bond order 1.5).',
+ 'Count of E-States for weak Hydrogen Bond acceptors',
+ 'Self-returning walk count of order 9 (ln(1+x)',
+ 'Maximum positive intrinsic state di€fference in the molecule (related to the '
+ 'electrophilicity of the molecule). Using deltaV = (Zv-maxBondedHydrogens) '
+ '/(atomicNumber-Zv-1). Gramatica, P., Corradi, M., and Consonni, V. (2000). '
+ 'Modelling and prediction of soil sorption coefficients of non-ionic organic '
+ 'pesticides by molecular descriptors. Chemosphere 41, 763-777.',
+ 'Spectral mean absolute deviation from Barysz matrix / weighted by atomic '
+ 'number',
+ 'Count of atom-type E-State: =N-',
+ 'Normalized Randic-like eigenvector-based index from Barysz matrix / weighted '
+ 'by atomic number',
+ 'Count of atom-type E-State: :C:-',
+ "Number of hydrogen bond acceptors (using Lipinski's definition: any "
+ 'nitrogen; any oxygen)',
+ 'Number of 10-membered rings (includes counts from fused rings)',
+ 'Number of 10-membered fused rings',
+ 'Maximum negative intrinsic state di€fference in the molecule (related to the '
+ 'nucleophilicity of the molecule). Using deltaV = (Zv-maxBondedHydrogens) '
+ '/(atomicNumber-Zv-1). Gramatica, P., Corradi, M., and Consonni, V. (2000). '
+ 'Modelling and prediction of soil sorption coefficients of non-ionic organic '
+ 'pesticides by molecular descriptors. Chemosphere 41, 763-777.',
+ 'Average molecular weight (Molecular weight / Total number of atoms)',
+ 'Number of aromatic atoms',
+ 'Count of atom-type E-State: -NH-',
+ 'Number of >12-membered fused rings containing heteroatoms (N, O, P, S, or '
+ 'halogens)',
+ 'Number of hydrogen bond acceptors (any oxygen; any nitrogen where the formal '
+ 'charge of the nitrogen is non-positive (i.e. formal charge <= 0) except a '
+ 'non-aromatic nitrogen that is adjacent to an oxygen and aromatic ring, or an '
+ 'aromatic nitrogen with a hydrogen atom in a ring, or an aromatic nitrogen '
+ 'with 3 neighouring atoms in a ring, or a nitrogen with total bond order >=4, '
+ 'or a nitrogen in an amide bond; any fluorine)',
+ 'Self-returning walk count of order 7 (ln(1+x)']
+
+Mutual Info Based Feature Selection
+Mutual Info Based Feature Selection
+Molecular path count of order 9                       0.0954
+Total path count (up to order 10)                     0.0919
+Molecular path count of order 6                       0.0919
+Molecular path count of order 7                       0.0914
+Molecular path count of order 8                       0.0907
+Molecular path count of order 10                      0.0903
+Molecular path count of order 5                       0.0884
+Molecular path count of order 4                       0.0854
+Number of rings (includes counts from fused rings)    0.0835
+Molecular walk count of order 9 (ln(1+x)              0.0811
+dtype: float64
+Incremental PCA from MI output of top 100 features:
+PCA Results
+array([6.07543685e+11, 2.08286270e+08, 6.73903655e+05, 2.89718214e+04,
+       1.11792712e+03, 1.97905568e+02, 6.45574778e+01, 5.06740329e+01,
+       4.46869370e+01, 2.85996255e+01, 1.61675559e+01, 1.36330393e+01,
+       8.94858307e+00, 8.15450902e+00, 7.24504234e+00, 4.94330619e+00,
+       3.44131223e+00, 2.84861508e+00, 2.67562973e+00, 2.56087003e+00,
+       2.38935155e+00, 1.83095224e+00, 1.45186202e+00, 9.25974912e-01,
+       8.92344140e-01, 8.10942435e-01, 7.34506766e-01, 5.87546407e-01,
+       4.81044019e-01, 4.05479190e-01])
+array([9.99656125e-01, 3.42715513e-04, 1.10884523e-06, 4.76704136e-08,
+       1.83944418e-09, 3.25635041e-10, 1.06223272e-10, 8.33793662e-11,
+       7.35281618e-11, 4.70580002e-11, 2.66021961e-11, 2.24318869e-11,
+       1.47240538e-11, 1.34174794e-11, 1.19210373e-11, 8.13374650e-12,
+       5.66235636e-12, 4.68712881e-12, 4.40249767e-12, 4.21367134e-12,
+       3.93145377e-12, 3.01266011e-12, 2.38890272e-12, 1.52360483e-12,
+       1.46826855e-12, 1.33432968e-12, 1.20856196e-12, 9.66752481e-13,
+       7.91512796e-13, 6.67177960e-13])
+Final features selected for model training:
+['Molecular path count of order 9',
+ 'Total path count (up to order 10)',
+ 'Molecular path count of order 6',
+ 'Molecular path count of order 7',
+ 'Molecular path count of order 8',
+ 'Molecular path count of order 10',
+ 'Molecular path count of order 5',
+ 'Molecular path count of order 4',
+ 'Number of rings (includes counts from fused rings)',
+ 'Molecular walk count of order 9 (ln(1+x)',
+ 'Molecular path count of order 3',
+ 'Self-returning walk count of order 10 (ln(1+x)',
+ 'Molecular walk count of order 7 (ln(1+x)',
+ 'Conventional bond order ID number of order 3 (ln(1+x)',
+ 'Total self-return walk count (up to order 10) (ln(1+x))',
+ 'Molecular walk count of order 6 (ln(1+x)',
+ 'Conventional bond order ID number of order 6 (ln(1+x)',
+ 'Molecular walk count of order 8 (ln(1+x)',
+ 'Molecular walk count of order 10 (ln(1+x)',
+ 'A measure of electronegative atom countii',
+ 'Self-returning walk count of order 8 (ln(1+x)',
+ 'Molecular walk count of order 5 (ln(1+x)',
+ 'Molecular walk count of order 4 (ln(1+x)',
+ 'Conventional bond order ID number of order 4 (ln(1+x)',
+ 'Molecular walk count of order 3 (ln(1+x)',
+ 'Conventional bond order ID number of order 9 (ln(1+x)',
+ 'Conventional bond order ID number of order 10 (ln(1+x)',
+ 'Number of rings',
+ 'Conventional bond order ID number of order 7 (ln(1+x)',
+ 'Conventional bond order ID number of order 8 (ln(1+x)',
+ 'Self-returning walk count of order 4 (ln(1+x)',
+ 'Self-returning walk count of order 6 (ln(1+x)',
+ 'Molecular path count of order 2',
+ 'Weiner polarity number',
+ 'Conventional bond order ID number of order 5 (ln(1+x)',
+ 'Conventional bond order ID number of order 2 (ln(1+x)',
+ 'Number of rings containing heteroatoms (N, O, P, S, or halogens)',
+ 'Molecular walk count of order 2 (ln(1+x)',
+ 'Total walk count (up to order 10)',
+ 'Number of bonds (excluding bonds with hydrogen)',
+ 'Conventional bond order ID number of order 1 (ln(1+x)',
+ 'A measure of electronegative atom count of the molecule',
+ 'A measure of electronegative atom count of the molecule relative to '
+ 'molecular size',
+ 'Molecular ID / number of atoms',
+ 'Self-returning walk count of order 2 (ln(1+x)',
+ 'Number of fused rings',
+ 'Logarithmic Randic-like eigenvector-based index from Barysz matrix / '
+ 'weighted by atomic number',
+ 'Number of heavy atoms (i.e. not hydrogen)',
+ 'Number of carbon atoms',
+ 'Number of 6-membered rings containing heteroatoms (N, O, P, S, or halogens)',
+ 'Weiner path number',
+ 'Graph energy from Barysz matrix / weighted by atomic number',
+ 'Number of 6-membered rings (includes counts from fused rings) containing '
+ 'heteroatoms (N, O, P, S, or halogens)',
+ 'Spectral absolute deviation from Barysz matrix / weighted by atomic number',
+ 'Number of 6-membered rings',
+ 'Randic-like eigenvector-based index from Barysz matrix / weighted by atomic '
+ 'number',
+ 'Estrada-like index from Barysz matrix / weighted by atomic number (ln(1+x))',
+ 'Leading eigenvalue from Barysz matrix / weighted by atomic number',
+ 'Spectral diameter from Barysz matrix / weighted by atomic number',
+ 'Number of 6-membered rings (includes counts from fused rings)',
+ "Number of hydrogen bond donors (using Lipinski's definition: Any OH or NH. "
+ 'Each available hydrogen atom is counted as one hydrogen bond donor)',
+ 'Number of 9-membered rings (includes counts from fused rings)',
+ 'Total number of bonds (including bonds to hydrogens)',
+ 'Number of atoms',
+ 'Number of 9-membered fused rings containing heteroatoms (N, O, P, S, or '
+ 'halogens)',
+ 'Spectral moment of order 1 from Barysz matrix / weighted by atomic number',
+ 'Number of single bonds (including bonds with hydrogen)',
+ 'Total number of bonds that have bond order greater than one (aromatic bonds '
+ 'have bond order 1.5).',
+ 'Number of hydrogen bond donors (using CDK HBondDonorCountDescriptor '
+ 'algorithm)',
+ 'Number of atoms in the largest pi system',
+ 'Self-returning walk count of order 9 (ln(1+x)',
+ 'Number of basic groups. The list of basic groups is defined by this SMARTS '
+ '"[$([NH2]-[CX4])]", "[$([NH](-[CX4])-[CX4])]", '
+ '"[$(N(-[CX4])(-[CX4])-[CX4])]", "[$([*;+;!$(*~[*;-])])]", "[$(N=C-N)]", and '
+ '"[$(N-C=N)]" originally presented in JOELib',
+ 'Count of atom-type E-State: >N-',
+ 'Number of 10-membered rings (includes counts from fused rings) containing '
+ 'heteroatoms (N, O, P, S, or halogens)',
+ 'Maximum positive intrinsic state di€fference in the molecule (related to the '
+ 'electrophilicity of the molecule). Using deltaV = (Zv-maxBondedHydrogens) '
+ '/(atomicNumber-Zv-1). Gramatica, P., Corradi, M., and Consonni, V. (2000). '
+ 'Modelling and prediction of soil sorption coefficients of non-ionic organic '
+ 'pesticides by molecular descriptors. Chemosphere 41, 763-777.',
+ 'Count of E-States for (strong) Hydrogen Bond donors',
+ 'Number of 9-membered rings (includes counts from fused rings) containing '
+ 'heteroatoms (N, O, P, S, or halogens)',
+ "Number of hydrogen bond acceptors (using Lipinski's definition: any "
+ 'nitrogen; any oxygen)',
+ 'Count of atom-type E-State: =C<',
+ 'Number of hydrogen bond acceptors (using CDK HBondAcceptorCountDescriptor '
+ 'algorithm)',
+ 'Count of E-State descriptors of strength for potential Hydrogen Bonds of '
+ 'path length 2',
+ 'A measure of electronegative atom counti',
+ 'Ratio of total conventional bond order (up to order 10) with total path '
+ 'count (up to order 10)',
+ 'Number of 10-membered rings (includes counts from fused rings)',
+ 'Number of 10-membered fused rings',
+ 'Count of E-States for weak Hydrogen Bond acceptors',
+ 'Spectral mean absolute deviation from Barysz matrix / weighted by atomic '
+ 'number',
+ 'Count of atom-type E-State: :C:-',
+ 'Normalized Randic-like eigenvector-based index from Barysz matrix / weighted '
+ 'by atomic number',
+ 'A measure of electronegative atom countiiii',
+ 'A measure of count of hydrogen bond acceptor atoms and/or polar surface area',
+ 'Number of 9-membered fused rings',
+ 'Count of atom-type E-State: =N-',
+ 'Number of 10-membered fused rings containing heteroatoms (N, O, P, S, or '
+ 'halogens)',
+ 'Number of atoms in the largest chain',
+ 'Maximum negative intrinsic state di€fference in the molecule (related to the '
+ 'nucleophilicity of the molecule). Using deltaV = (Zv-maxBondedHydrogens) '
+ '/(atomicNumber-Zv-1). Gramatica, P., Corradi, M., and Consonni, V. (2000). '
+ 'Modelling and prediction of soil sorption coefficients of non-ionic organic '
+ 'pesticides by molecular descriptors. Chemosphere 41, 763-777.',
+ 'Number of >12-membered fused rings containing heteroatoms (N, O, P, S, or '
+ 'halogens)',
+ 'Number of hydrogen bond acceptors (any oxygen; any nitrogen where the formal '
+ 'charge of the nitrogen is non-positive (i.e. formal charge <= 0) except a '
+ 'non-aromatic nitrogen that is adjacent to an oxygen and aromatic ring, or an '
+ 'aromatic nitrogen with a hydrogen atom in a ring, or an aromatic nitrogen '
+ 'with 3 neighouring atoms in a ring, or a nitrogen with total bond order >=4, '
+ 'or a nitrogen in an amide bond; any fluorine)',
+ 'Total number of single bonds (excluding bonds to hydrogens and aromatic '
+ 'bonds)',
+ 'Number of nitrogen atoms']
+
+Mutual Info Based Feature Selection
+Mutual Info Based Feature Selection
+Molecular path count of order 9                       0.0947
+Molecular path count of order 10                      0.0891
+Number of rings (includes counts from fused rings)    0.0888
+Molecular path count of order 7                       0.0870
+Total path count (up to order 10)                     0.0866
+Molecular path count of order 6                       0.0866
+Molecular path count of order 5                       0.0857
+Molecular path count of order 8                       0.0830
+Molecular path count of order 4                       0.0809
+Molecular path count of order 3                       0.0795
+dtype: float64
+Incremental PCA from MI output of top 100 features:
+PCA Results
+array([6.07543685e+11, 2.08286270e+08, 6.73905274e+05, 2.89721239e+04,
+       1.11580843e+03, 1.97629460e+02, 6.57585770e+01, 5.18361466e+01,
+       4.64223874e+01, 2.84910203e+01, 1.64202053e+01, 1.39680724e+01,
+       8.95675831e+00, 8.26600169e+00, 7.24366730e+00, 4.69671875e+00,
+       3.40100084e+00, 2.85340679e+00, 2.81370321e+00, 2.63603563e+00,
+       2.33490510e+00, 2.00546804e+00, 1.41746945e+00, 9.99922823e-01,
+       8.17707092e-01, 7.52691249e-01, 7.21791836e-01, 6.04282011e-01,
+       5.08499282e-01, 4.20189526e-01])
+array([9.99656125e-01, 3.42715514e-04, 1.10884789e-06, 4.76709113e-08,
+       1.83595807e-09, 3.25180732e-10, 1.08199568e-10, 8.52915153e-11,
+       7.63836826e-11, 4.68793004e-11, 2.70179070e-11, 2.29831525e-11,
+       1.47375054e-11, 1.36009302e-11, 1.19187748e-11, 7.72800999e-12,
+       5.59602776e-12, 4.69501314e-12, 4.62968461e-12, 4.33734928e-12,
+       3.84186725e-12, 3.29980948e-12, 2.33231298e-12, 1.64527918e-12,
+       1.34546029e-12, 1.23848282e-12, 1.18764074e-12, 9.94289347e-13,
+       8.36687855e-13, 6.91382437e-13])
+Final features selected for model training:
+['Molecular path count of order 9',
+ 'Molecular path count of order 10',
+ 'Number of rings (includes counts from fused rings)',
+ 'Molecular path count of order 7',
+ 'Total path count (up to order 10)',
+ 'Molecular path count of order 6',
+ 'Molecular path count of order 5',
+ 'Molecular path count of order 8',
+ 'Molecular path count of order 4',
+ 'Molecular path count of order 3',
+ 'Conventional bond order ID number of order 3 (ln(1+x)',
+ 'Molecular walk count of order 7 (ln(1+x)',
+ 'Total self-return walk count (up to order 10) (ln(1+x))',
+ 'Molecular walk count of order 9 (ln(1+x)',
+ 'Conventional bond order ID number of order 6 (ln(1+x)',
+ 'Molecular walk count of order 6 (ln(1+x)',
+ 'Conventional bond order ID number of order 9 (ln(1+x)',
+ 'A measure of electronegative atom countii',
+ 'Self-returning walk count of order 8 (ln(1+x)',
+ 'Molecular walk count of order 10 (ln(1+x)',
+ 'Conventional bond order ID number of order 4 (ln(1+x)',
+ 'Molecular walk count of order 8 (ln(1+x)',
+ 'Self-returning walk count of order 10 (ln(1+x)',
+ 'Molecular walk count of order 5 (ln(1+x)',
+ 'Self-returning walk count of order 6 (ln(1+x)',
+ 'Number of rings',
+ 'Conventional bond order ID number of order 8 (ln(1+x)',
+ 'Conventional bond order ID number of order 7 (ln(1+x)',
+ 'Molecular walk count of order 3 (ln(1+x)',
+ 'Molecular walk count of order 4 (ln(1+x)',
+ 'Number of rings containing heteroatoms (N, O, P, S, or halogens)',
+ 'Self-returning walk count of order 4 (ln(1+x)',
+ 'Conventional bond order ID number of order 10 (ln(1+x)',
+ 'Conventional bond order ID number of order 5 (ln(1+x)',
+ 'Molecular path count of order 2',
+ 'Conventional bond order ID number of order 2 (ln(1+x)',
+ 'Molecular walk count of order 2 (ln(1+x)',
+ 'Weiner polarity number',
+ 'Number of bonds (excluding bonds with hydrogen)',
+ 'Conventional bond order ID number of order 1 (ln(1+x)',
+ 'A measure of electronegative atom count of the molecule relative to '
+ 'molecular size',
+ 'A measure of electronegative atom count of the molecule',
+ 'Molecular ID / number of atoms',
+ 'Number of fused rings',
+ 'Total walk count (up to order 10)',
+ 'Self-returning walk count of order 2 (ln(1+x)',
+ 'Logarithmic Randic-like eigenvector-based index from Barysz matrix / '
+ 'weighted by atomic number',
+ 'Number of heavy atoms (i.e. not hydrogen)',
+ 'Number of carbon atoms',
+ 'Number of 6-membered rings containing heteroatoms (N, O, P, S, or halogens)',
+ 'Weiner path number',
+ 'Number of 6-membered rings (includes counts from fused rings) containing '
+ 'heteroatoms (N, O, P, S, or halogens)',
+ 'Spectral absolute deviation from Barysz matrix / weighted by atomic number',
+ 'Graph energy from Barysz matrix / weighted by atomic number',
+ 'Number of 6-membered rings (includes counts from fused rings)',
+ 'Spectral moment of order 1 from Barysz matrix / weighted by atomic number',
+ 'Randic-like eigenvector-based index from Barysz matrix / weighted by atomic '
+ 'number',
+ 'Estrada-like index from Barysz matrix / weighted by atomic number (ln(1+x))',
+ 'Leading eigenvalue from Barysz matrix / weighted by atomic number',
+ 'Number of 6-membered rings',
+ 'Spectral diameter from Barysz matrix / weighted by atomic number',
+ 'Number of 9-membered rings (includes counts from fused rings)',
+ 'Self-returning walk count of order 9 (ln(1+x)',
+ 'Total number of bonds (including bonds to hydrogens)',
+ 'Number of 9-membered fused rings containing heteroatoms (N, O, P, S, or '
+ 'halogens)',
+ 'Number of atoms in the largest pi system',
+ 'Number of hydrogen bond donors (using CDK HBondDonorCountDescriptor '
+ 'algorithm)',
+ 'Total number of bonds that have bond order greater than one (aromatic bonds '
+ 'have bond order 1.5).',
+ 'Count of E-State descriptors of strength for potential Hydrogen Bonds of '
+ 'path length 2',
+ 'Count of E-States for (strong) Hydrogen Bond donors',
+ 'Number of basic groups. The list of basic groups is defined by this SMARTS '
+ '"[$([NH2]-[CX4])]", "[$([NH](-[CX4])-[CX4])]", '
+ '"[$(N(-[CX4])(-[CX4])-[CX4])]", "[$([*;+;!$(*~[*;-])])]", "[$(N=C-N)]", and '
+ '"[$(N-C=N)]" originally presented in JOELib',
+ 'Number of single bonds (including bonds with hydrogen)',
+ 'Number of 10-membered fused rings',
+ 'Number of 9-membered rings (includes counts from fused rings) containing '
+ 'heteroatoms (N, O, P, S, or halogens)',
+ "Number of hydrogen bond donors (using Lipinski's definition: Any OH or NH. "
+ 'Each available hydrogen atom is counted as one hydrogen bond donor)',
+ 'Number of 10-membered rings (includes counts from fused rings) containing '
+ 'heteroatoms (N, O, P, S, or halogens)',
+ 'A measure of electronegative atom counti',
+ 'Number of atoms',
+ 'Count of atom-type E-State: >N-',
+ 'Maximum positive intrinsic state di€fference in the molecule (related to the '
+ 'electrophilicity of the molecule). Using deltaV = (Zv-maxBondedHydrogens) '
+ '/(atomicNumber-Zv-1). Gramatica, P., Corradi, M., and Consonni, V. (2000). '
+ 'Modelling and prediction of soil sorption coefficients of non-ionic organic '
+ 'pesticides by molecular descriptors. Chemosphere 41, 763-777.',
+ 'Count of atom-type E-State: :C:-',
+ "Number of hydrogen bond acceptors (using Lipinski's definition: any "
+ 'nitrogen; any oxygen)',
+ 'A measure of electronegative atom countiiii',
+ 'Normalized Randic-like eigenvector-based index from Barysz matrix / weighted '
+ 'by atomic number',
+ 'Number of hydrogen bond acceptors (using CDK HBondAcceptorCountDescriptor '
+ 'algorithm)',
+ 'Number of 9-membered fused rings',
+ 'Spectral mean absolute deviation from Barysz matrix / weighted by atomic '
+ 'number',
+ 'Maximum negative intrinsic state di€fference in the molecule (related to the '
+ 'nucleophilicity of the molecule). Using deltaV = (Zv-maxBondedHydrogens) '
+ '/(atomicNumber-Zv-1). Gramatica, P., Corradi, M., and Consonni, V. (2000). '
+ 'Modelling and prediction of soil sorption coefficients of non-ionic organic '
+ 'pesticides by molecular descriptors. Chemosphere 41, 763-777.',
+ 'Number of 10-membered fused rings containing heteroatoms (N, O, P, S, or '
+ 'halogens)',
+ 'Count of atom-type E-State: =N-',
+ 'Count of atom-type E-State: =C<',
+ 'Number of hydrogen bond acceptors (any oxygen; any nitrogen where the formal '
+ 'charge of the nitrogen is non-positive (i.e. formal charge <= 0) except a '
+ 'non-aromatic nitrogen that is adjacent to an oxygen and aromatic ring, or an '
+ 'aromatic nitrogen with a hydrogen atom in a ring, or an aromatic nitrogen '
+ 'with 3 neighouring atoms in a ring, or a nitrogen with total bond order >=4, '
+ 'or a nitrogen in an amide bond; any fluorine)',
+ 'A measure of count of hydrogen bond acceptor atoms and/or polar surface area',
+ 'Average molecular weight (Molecular weight / Total number of atoms)',
+ 'Count of E-States for weak Hydrogen Bond acceptors',
+ 'A measure of electronegative atom countiii',
+ 'Number of aromatic atoms',
+ 'Number of atoms in the largest chain',
+ 'Ratio of total conventional bond order (up to order 10) with total path '
+ 'count (up to order 10)',
+ 'Number of 5-membered rings containing heteroatoms (N, O, P, S, or halogens)']
+
+Mutual Info Based Feature Selection
+Mutual Info Based Feature Selection
+Molecular path count of order 10            0.0940
+Total path count (up to order 10)           0.0926
+Molecular path count of order 7             0.0906
+Molecular path count of order 9             0.0888
+Molecular path count of order 4             0.0875
+Molecular path count of order 8             0.0875
+Molecular path count of order 6             0.0873
+Molecular path count of order 5             0.0852
+Molecular path count of order 3             0.0815
+Molecular walk count of order 7 (ln(1+x)    0.0793
+dtype: float64
+Incremental PCA from MI output of top 100 features:
+PCA Results
+array([6.07543685e+11, 2.08286270e+08, 6.73903680e+05, 2.89718455e+04,
+       1.11794043e+03, 1.97942174e+02, 6.45642999e+01, 5.06783422e+01,
+       4.47059356e+01, 2.86474199e+01, 1.61860740e+01, 1.37086779e+01,
+       8.94907931e+00, 8.17481052e+00, 7.25443153e+00, 5.03232645e+00,
+       3.72735351e+00, 2.84868691e+00, 2.69939017e+00, 2.57894723e+00,
+       2.39658549e+00, 1.86417528e+00, 1.47018474e+00, 1.03054101e+00,
+       9.17982110e-01, 8.38160176e-01, 7.73090295e-01, 6.20165562e-01,
+       5.09774995e-01, 4.63068991e-01])
+array([9.99656125e-01, 3.42715513e-04, 1.10884527e-06, 4.76704532e-08,
+       1.83946608e-09, 3.25695273e-10, 1.06234497e-10, 8.33864569e-11,
+       7.35594222e-11, 4.71366414e-11, 2.66326659e-11, 2.25563431e-11,
+       1.47248703e-11, 1.34508836e-11, 1.19364864e-11, 8.28022097e-12,
+       6.13301044e-12, 4.68724701e-12, 4.44159323e-12, 4.24341568e-12,
+       3.94335655e-12, 3.06732551e-12, 2.41905104e-12, 1.69565854e-12,
+       1.51045342e-12, 1.37911392e-12, 1.27204754e-12, 1.02042424e-12,
+       8.38786920e-13, 7.61936573e-13])
+Final features selected for model training:
+['Molecular path count of order 10',
+ 'Total path count (up to order 10)',
+ 'Molecular path count of order 7',
+ 'Molecular path count of order 9',
+ 'Molecular path count of order 4',
+ 'Molecular path count of order 8',
+ 'Molecular path count of order 6',
+ 'Molecular path count of order 5',
+ 'Molecular path count of order 3',
+ 'Molecular walk count of order 7 (ln(1+x)',
+ 'Conventional bond order ID number of order 3 (ln(1+x)',
+ 'Molecular walk count of order 6 (ln(1+x)',
+ 'Molecular walk count of order 5 (ln(1+x)',
+ 'Molecular walk count of order 9 (ln(1+x)',
+ 'Molecular walk count of order 10 (ln(1+x)',
+ 'Number of rings (includes counts from fused rings)',
+ 'Molecular walk count of order 8 (ln(1+x)',
+ 'Total self-return walk count (up to order 10) (ln(1+x))',
+ 'Self-returning walk count of order 10 (ln(1+x)',
+ 'Self-returning walk count of order 8 (ln(1+x)',
+ 'Molecular walk count of order 4 (ln(1+x)',
+ 'Conventional bond order ID number of order 2 (ln(1+x)',
+ 'Conventional bond order ID number of order 6 (ln(1+x)',
+ 'A measure of electronegative atom countii',
+ 'Molecular walk count of order 3 (ln(1+x)',
+ 'Conventional bond order ID number of order 7 (ln(1+x)',
+ 'Self-returning walk count of order 6 (ln(1+x)',
+ 'Conventional bond order ID number of order 8 (ln(1+x)',
+ 'Self-returning walk count of order 4 (ln(1+x)',
+ 'Number of rings',
+ 'Conventional bond order ID number of order 4 (ln(1+x)',
+ 'Weiner polarity number',
+ 'Conventional bond order ID number of order 10 (ln(1+x)',
+ 'Total walk count (up to order 10)',
+ 'Molecular walk count of order 2 (ln(1+x)',
+ 'Conventional bond order ID number of order 9 (ln(1+x)',
+ 'Number of bonds (excluding bonds with hydrogen)',
+ 'Conventional bond order ID number of order 5 (ln(1+x)',
+ 'Molecular path count of order 2',
+ 'A measure of electronegative atom count of the molecule relative to '
+ 'molecular size',
+ 'Self-returning walk count of order 2 (ln(1+x)',
+ 'Number of rings containing heteroatoms (N, O, P, S, or halogens)',
+ 'Conventional bond order ID number of order 1 (ln(1+x)',
+ 'A measure of electronegative atom count of the molecule',
+ 'Number of heavy atoms (i.e. not hydrogen)',
+ 'Logarithmic Randic-like eigenvector-based index from Barysz matrix / '
+ 'weighted by atomic number',
+ 'Number of fused rings',
+ 'Molecular ID / number of atoms',
+ 'Weiner path number',
+ 'Number of 6-membered rings containing heteroatoms (N, O, P, S, or halogens)',
+ 'Number of carbon atoms',
+ 'Number of 6-membered rings (includes counts from fused rings) containing '
+ 'heteroatoms (N, O, P, S, or halogens)',
+ 'Graph energy from Barysz matrix / weighted by atomic number',
+ 'Spectral absolute deviation from Barysz matrix / weighted by atomic number',
+ 'Total number of bonds (including bonds to hydrogens)',
+ 'Number of 6-membered rings',
+ 'Number of 6-membered rings (includes counts from fused rings)',
+ 'Randic-like eigenvector-based index from Barysz matrix / weighted by atomic '
+ 'number',
+ 'Estrada-like index from Barysz matrix / weighted by atomic number (ln(1+x))',
+ 'Leading eigenvalue from Barysz matrix / weighted by atomic number',
+ 'Number of single bonds (including bonds with hydrogen)',
+ 'Spectral moment of order 1 from Barysz matrix / weighted by atomic number',
+ 'Spectral diameter from Barysz matrix / weighted by atomic number',
+ "Number of hydrogen bond donors (using Lipinski's definition: Any OH or NH. "
+ 'Each available hydrogen atom is counted as one hydrogen bond donor)',
+ 'A measure of electronegative atom counti',
+ 'Number of 9-membered fused rings containing heteroatoms (N, O, P, S, or '
+ 'halogens)',
+ 'Self-returning walk count of order 9 (ln(1+x)',
+ 'Count of E-State descriptors of strength for potential Hydrogen Bonds of '
+ 'path length 2',
+ 'Number of atoms in the largest pi system',
+ 'Number of hydrogen bond donors (using CDK HBondDonorCountDescriptor '
+ 'algorithm)',
+ 'Number of atoms',
+ 'Number of basic groups. The list of basic groups is defined by this SMARTS '
+ '"[$([NH2]-[CX4])]", "[$([NH](-[CX4])-[CX4])]", '
+ '"[$(N(-[CX4])(-[CX4])-[CX4])]", "[$([*;+;!$(*~[*;-])])]", "[$(N=C-N)]", and '
+ '"[$(N-C=N)]" originally presented in JOELib',
+ 'Number of 9-membered rings (includes counts from fused rings)',
+ 'Total number of bonds that have bond order greater than one (aromatic bonds '
+ 'have bond order 1.5).',
+ 'Number of hydrogen bond acceptors (any oxygen; any nitrogen where the formal '
+ 'charge of the nitrogen is non-positive (i.e. formal charge <= 0) except a '
+ 'non-aromatic nitrogen that is adjacent to an oxygen and aromatic ring, or an '
+ 'aromatic nitrogen with a hydrogen atom in a ring, or an aromatic nitrogen '
+ 'with 3 neighouring atoms in a ring, or a nitrogen with total bond order >=4, '
+ 'or a nitrogen in an amide bond; any fluorine)',
+ 'Number of 10-membered fused rings',
+ 'Count of atom-type E-State: >N-',
+ 'A measure of electronegative atom countiiii',
+ 'Count of atom-type E-State: =C<',
+ 'Count of E-States for (strong) Hydrogen Bond donors',
+ 'Count of atom-type E-State: =N-',
+ 'Number of 10-membered rings (includes counts from fused rings) containing '
+ 'heteroatoms (N, O, P, S, or halogens)',
+ 'Number of 9-membered rings (includes counts from fused rings) containing '
+ 'heteroatoms (N, O, P, S, or halogens)',
+ "Number of hydrogen bond acceptors (using Lipinski's definition: any "
+ 'nitrogen; any oxygen)',
+ 'Normalized Randic-like eigenvector-based index from Barysz matrix / weighted '
+ 'by atomic number',
+ 'Number of 10-membered fused rings containing heteroatoms (N, O, P, S, or '
+ 'halogens)',
+ 'Number of atoms in the largest chain',
+ 'Maximum positive intrinsic state di€fference in the molecule (related to the '
+ 'electrophilicity of the molecule). Using deltaV = (Zv-maxBondedHydrogens) '
+ '/(atomicNumber-Zv-1). Gramatica, P., Corradi, M., and Consonni, V. (2000). '
+ 'Modelling and prediction of soil sorption coefficients of non-ionic organic '
+ 'pesticides by molecular descriptors. Chemosphere 41, 763-777.',
+ 'Number of hydrogen bond acceptors (using CDK HBondAcceptorCountDescriptor '
+ 'algorithm)',
+ 'Number of 9-membered fused rings',
+ 'Ratio of total conventional bond order (up to order 10) with total path '
+ 'count (up to order 10)',
+ 'Total number of single bonds (excluding bonds to hydrogens and aromatic '
+ 'bonds)',
+ 'A measure of electronegative atom countiii',
+ 'Maximum negative intrinsic state di€fference in the molecule (related to the '
+ 'nucleophilicity of the molecule). Using deltaV = (Zv-maxBondedHydrogens) '
+ '/(atomicNumber-Zv-1). Gramatica, P., Corradi, M., and Consonni, V. (2000). '
+ 'Modelling and prediction of soil sorption coefficients of non-ionic organic '
+ 'pesticides by molecular descriptors. Chemosphere 41, 763-777.',
+ 'Count of atom-type E-State: :C:-',
+ 'Count of E-State descriptors of strength for potential Hydrogen Bonds of '
+ 'path length 5',
+ 'Number of 10-membered rings (includes counts from fused rings)',
+ 'Number of nitrogen atoms',
+ 'Count of E-States for weak Hydrogen Bond acceptors',
+ 'Spectral mean absolute deviation from Barysz matrix / weighted by atomic '
+ 'number']
+
+Mutual Info Based Feature Selection
+Mutual Info Based Feature Selection
+Total path count (up to order 10)            0.0936
+Molecular path count of order 9              0.0886
+Molecular path count of order 10             0.0881
+Molecular path count of order 8              0.0872
+Molecular path count of order 7              0.0862
+Molecular path count of order 6              0.0844
+Molecular path count of order 5              0.0789
+Molecular path count of order 4              0.0782
+Molecular path count of order 3              0.0777
+Molecular walk count of order 10 (ln(1+x)    0.0769
+dtype: float64
+Incremental PCA from MI output of top 100 features:
+PCA Results
+array([6.07543685e+11, 2.08286270e+08, 6.73919817e+05, 2.89823448e+04,
+       1.11338496e+03, 3.78441322e+02, 1.54441718e+02, 5.06821194e+01,
+       4.50946523e+01, 2.94284389e+01, 1.68897325e+01, 1.53361364e+01,
+       8.98927487e+00, 8.48620010e+00, 7.35742299e+00, 5.54234660e+00,
+       4.11950367e+00, 3.31382185e+00, 2.76440262e+00, 2.57382065e+00,
+       2.26137296e+00, 2.04494606e+00, 1.63123659e+00, 1.28756002e+00,
+       8.50947438e-01, 7.57306212e-01, 6.61961374e-01, 5.12836850e-01,
+       4.80383081e-01, 4.30046606e-01])
+array([9.99656125e-01, 3.42715513e-04, 1.10887182e-06, 4.76877289e-08,
+       1.83197048e-09, 6.22689684e-10, 2.54119354e-10, 8.33926718e-11,
+       7.41990190e-11, 4.84217348e-11, 2.77904701e-11, 2.52341734e-11,
+       1.47910083e-11, 1.39632460e-11, 1.21059492e-11, 9.11941128e-12,
+       6.77825674e-12, 5.45258290e-12, 4.54856512e-12, 4.23498037e-12,
+       3.72087701e-12, 3.36476685e-12, 2.68404674e-12, 2.11855920e-12,
+       1.40015416e-12, 1.24607631e-12, 1.08919533e-12, 8.43824914e-13,
+       7.90425283e-13, 7.07601337e-13])
+Final features selected for model training:
+['Total path count (up to order 10)',
+ 'Molecular path count of order 9',
+ 'Molecular path count of order 10',
+ 'Molecular path count of order 8',
+ 'Molecular path count of order 7',
+ 'Molecular path count of order 6',
+ 'Molecular path count of order 5',
+ 'Molecular path count of order 4',
+ 'Molecular path count of order 3',
+ 'Molecular walk count of order 10 (ln(1+x)',
+ 'Conventional bond order ID number of order 3 (ln(1+x)',
+ 'Total self-return walk count (up to order 10) (ln(1+x))',
+ 'Molecular walk count of order 9 (ln(1+x)',
+ 'Conventional bond order ID number of order 6 (ln(1+x)',
+ 'Number of rings (includes counts from fused rings)',
+ 'Molecular walk count of order 7 (ln(1+x)',
+ 'A measure of electronegative atom countii',
+ 'Molecular walk count of order 8 (ln(1+x)',
+ 'Number of rings',
+ 'Self-returning walk count of order 10 (ln(1+x)',
+ 'Molecular walk count of order 6 (ln(1+x)',
+ 'Molecular walk count of order 4 (ln(1+x)',
+ 'Conventional bond order ID number of order 9 (ln(1+x)',
+ 'Conventional bond order ID number of order 4 (ln(1+x)',
+ 'Conventional bond order ID number of order 7 (ln(1+x)',
+ 'Molecular walk count of order 5 (ln(1+x)',
+ 'Conventional bond order ID number of order 2 (ln(1+x)',
+ 'Self-returning walk count of order 8 (ln(1+x)',
+ 'Self-returning walk count of order 6 (ln(1+x)',
+ 'Number of rings containing heteroatoms (N, O, P, S, or halogens)',
+ 'Molecular walk count of order 3 (ln(1+x)',
+ 'Conventional bond order ID number of order 8 (ln(1+x)',
+ 'Conventional bond order ID number of order 10 (ln(1+x)',
+ 'Self-returning walk count of order 4 (ln(1+x)',
+ 'Conventional bond order ID number of order 5 (ln(1+x)',
+ 'Number of bonds (excluding bonds with hydrogen)',
+ 'A measure of electronegative atom count of the molecule relative to '
+ 'molecular size',
+ 'Molecular path count of order 2',
+ 'Conventional bond order ID number of order 1 (ln(1+x)',
+ 'Total walk count (up to order 10)',
+ 'Weiner polarity number',
+ 'Molecular ID / number of atoms',
+ 'Molecular walk count of order 2 (ln(1+x)',
+ 'Self-returning walk count of order 2 (ln(1+x)',
+ 'A measure of electronegative atom count of the molecule',
+ 'Number of heavy atoms (i.e. not hydrogen)',
+ 'Number of fused rings',
+ 'Logarithmic Randic-like eigenvector-based index from Barysz matrix / '
+ 'weighted by atomic number',
+ 'Number of carbon atoms',
+ 'Weiner path number',
+ 'Number of 6-membered rings containing heteroatoms (N, O, P, S, or halogens)',
+ 'Number of 6-membered rings (includes counts from fused rings) containing '
+ 'heteroatoms (N, O, P, S, or halogens)',
+ 'Estrada-like index from Barysz matrix / weighted by atomic number (ln(1+x))',
+ 'Number of 6-membered rings',
+ 'Leading eigenvalue from Barysz matrix / weighted by atomic number',
+ 'Graph energy from Barysz matrix / weighted by atomic number',
+ 'Randic-like eigenvector-based index from Barysz matrix / weighted by atomic '
+ 'number',
+ 'Number of 6-membered rings (includes counts from fused rings)',
+ 'Spectral absolute deviation from Barysz matrix / weighted by atomic number',
+ 'Number of 9-membered fused rings containing heteroatoms (N, O, P, S, or '
+ 'halogens)',
+ 'Spectral diameter from Barysz matrix / weighted by atomic number',
+ 'Total number of bonds (including bonds to hydrogens)',
+ 'A measure of electronegative atom counti',
+ 'Number of 9-membered rings (includes counts from fused rings) containing '
+ 'heteroatoms (N, O, P, S, or halogens)',
+ "Number of hydrogen bond donors (using Lipinski's definition: Any OH or NH. "
+ 'Each available hydrogen atom is counted as one hydrogen bond donor)',
+ 'Total number of bonds that have bond order greater than one (aromatic bonds '
+ 'have bond order 1.5).',
+ 'Number of 9-membered rings (includes counts from fused rings)',
+ 'Number of atoms',
+ 'Maximum positive intrinsic state di€fference in the molecule (related to the '
+ 'electrophilicity of the molecule). Using deltaV = (Zv-maxBondedHydrogens) '
+ '/(atomicNumber-Zv-1). Gramatica, P., Corradi, M., and Consonni, V. (2000). '
+ 'Modelling and prediction of soil sorption coefficients of non-ionic organic '
+ 'pesticides by molecular descriptors. Chemosphere 41, 763-777.',
+ 'Self-returning walk count of order 9 (ln(1+x)',
+ 'Number of single bonds (including bonds with hydrogen)',
+ 'Number of atoms in the largest pi system',
+ 'Count of E-State descriptors of strength for potential Hydrogen Bonds of '
+ 'path length 2',
+ 'Maximum negative intrinsic state di€fference in the molecule (related to the '
+ 'nucleophilicity of the molecule). Using deltaV = (Zv-maxBondedHydrogens) '
+ '/(atomicNumber-Zv-1). Gramatica, P., Corradi, M., and Consonni, V. (2000). '
+ 'Modelling and prediction of soil sorption coefficients of non-ionic organic '
+ 'pesticides by molecular descriptors. Chemosphere 41, 763-777.',
+ 'Spectral moment of order 1 from Barysz matrix / weighted by atomic number',
+ 'Count of E-States for (strong) Hydrogen Bond donors',
+ 'Count of atom-type E-State: =N-',
+ 'Number of hydrogen bond acceptors (using CDK HBondAcceptorCountDescriptor '
+ 'algorithm)',
+ 'Number of hydrogen bond donors (using CDK HBondDonorCountDescriptor '
+ 'algorithm)',
+ 'Spectral mean absolute deviation from Barysz matrix / weighted by atomic '
+ 'number',
+ 'Normalized Randic-like eigenvector-based index from Barysz matrix / weighted '
+ 'by atomic number',
+ 'Number of 10-membered rings (includes counts from fused rings) containing '
+ 'heteroatoms (N, O, P, S, or halogens)',
+ 'Number of basic groups. The list of basic groups is defined by this SMARTS '
+ '"[$([NH2]-[CX4])]", "[$([NH](-[CX4])-[CX4])]", '
+ '"[$(N(-[CX4])(-[CX4])-[CX4])]", "[$([*;+;!$(*~[*;-])])]", "[$(N=C-N)]", and '
+ '"[$(N-C=N)]" originally presented in JOELib',
+ 'A measure of count of hydrogen bond acceptor atoms and/or polar surface area',
+ 'Count of atom-type E-State: =C<',
+ 'Number of hydrogen bond acceptors (any oxygen; any nitrogen where the formal '
+ 'charge of the nitrogen is non-positive (i.e. formal charge <= 0) except a '
+ 'non-aromatic nitrogen that is adjacent to an oxygen and aromatic ring, or an '
+ 'aromatic nitrogen with a hydrogen atom in a ring, or an aromatic nitrogen '
+ 'with 3 neighouring atoms in a ring, or a nitrogen with total bond order >=4, '
+ 'or a nitrogen in an amide bond; any fluorine)',
+ 'Number of 9-membered fused rings',
+ 'Number of 10-membered fused rings containing heteroatoms (N, O, P, S, or '
+ 'halogens)',
+ 'Number of atoms in the largest chain',
+ 'Average molecular weight (Molecular weight / Total number of atoms)',
+ 'A measure of electronegative atom countiii',
+ 'Count of E-States for weak Hydrogen Bond acceptors',
+ 'A measure of electronegative atom countiiii',
+ 'Sum of all atoms intrinsic state differences (measure of total charge '
+ 'transfer in the molecule). Using deltaV = (Zv-maxBondedHydrogens) '
+ '/(atomicNumber-Zv-1). Gramatica, P., Corradi, M., and Consonni, V. (2000). '
+ 'Modelling and prediction of soil sorption coefficients of non-ionic organic '
+ 'pesticides by molecular descriptors. Chemosphere 41, 763-777.',
+ "Number of hydrogen bond acceptors (using Lipinski's definition: any "
+ 'nitrogen; any oxygen)',
+ 'A measure of electronegative atom count',
+ 'Ratio of total conventional bond order (up to order 10) with total path '
+ 'count (up to order 10)',
+ 'Count of atom-type E-State: >N-',
+ 'Count of atom-type H E-State: -NH-',
+ 'Number of >12-membered fused rings containing heteroatoms (N, O, P, S, or '
+ 'halogens)']
+Training Balanced Random Forest with 1000 trees
+Matthews Correlation Coefficient (Dev): 0.20719600912617123:
+Matthews Correlation Coefficient (Eval): 0.204444527334323:
+Balanced Accuracy (Dev): 0.6979382797606345:
+Balanced Accuracy (Eval): 0.695733781796364:
+Training Balanced Random Forest with 1000 trees
+Matthews Correlation Coefficient (Dev): 0.21190368327050785:
+Matthews Correlation Coefficient (Eval): 0.19719340625769338:
+Balanced Accuracy (Dev): 0.7038490023756474:
+Balanced Accuracy (Eval): 0.6888523640992379:
+Training Balanced Random Forest with 1000 trees
+Matthews Correlation Coefficient (Dev): 0.2106815614885731:
+Matthews Correlation Coefficient (Eval): 0.2046432571964318:
+Balanced Accuracy (Dev): 0.7020996354753846:
+Balanced Accuracy (Eval): 0.6964533262911083:
+Training Balanced Random Forest with 1000 trees
+Matthews Correlation Coefficient (Dev): 0.2106948002472731:
+Matthews Correlation Coefficient (Eval): 0.18981686272363305:
+Balanced Accuracy (Dev): 0.7039609766148984:
+Balanced Accuracy (Eval): 0.6843825033120925:
+Training Balanced Random Forest with 1000 trees
+Matthews Correlation Coefficient (Dev): 0.21149815619704931:
+Matthews Correlation Coefficient (Eval): 0.21503193308040494:
+Balanced Accuracy (Dev): 0.7018148830353463:
+Balanced Accuracy (Eval): 0.7049783975297295:
+Training Logistic Regression with l2 penalty and C of 16

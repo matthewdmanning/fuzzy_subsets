@@ -1,0 +1,4072 @@
+Index: test/test_cleaner.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/test/test_cleaner.py b/test/test_cleaner.py
+new file mode 100644
+--- /dev/null	(date 1713191572640)
++++ b/test/test_cleaner.py	(date 1713191572640)
+@@ -0,0 +1,57 @@
++from unittest import TestCase
++
++import matplotlib.pyplot as plt
++import numpy as np
++import pandas as pd
++import matplotlib.pyplot as plot
++
++class Test(TestCase):
++    def test_clean_descriptors(self):
++        self.fail()
++
++
++# {prted from Vine method here (https://stats.stackexchange.com/questions/2746/how-to-efficiently-generate-random
++# -positive-semidefinite-correlation-matrices)
++def rand_cov(factordim, betaparam):
++    print(factordim)
++    P = np.zeros(shape=[factordim, factordim])  # storing partial correlations
++    S = np.eye(factordim)
++    # beta_sampler = yield np.random.Generator.beta(betaparam, betaparam)
++    for k in range(1, factordim - 1):
++        for i in range(k + 1, factordim):
++            P[k, 1] = (np.random.beta(a=betaparam, b=betaparam) - 0.5) * 2  # Linearly shifting to [-1,1]
++            p = P[k, i]
++            for l in range(k - 1, 1, -1):
++                p = p * np.sqrt((1 - P[l, i] ** 2) * (1 - P[l, k] ** 2)) + P[l, i] * P[l, k]
++            S[k, i] = p
++            S[i, k] = p
++    return S
++
++print(np.random.beta(1., 1.))
++dsize = [1000, 50]
++factor_array = np.random.multivariate_normal(mean=np.random.random(dsize[1]), cov=rand_cov(dsize[1], betaparam=1.), size=dsize)
++print(factor_array.shape)
++factorframe = pd.DataFrame(factor_array, columns=['f_{}'.format(x) for x in range(dsize[1])])
++plt.plot(factorframe)
++plt.show()
++
++'''
++function S = vineBeta(d, betaparam)
++    for k = 1:d-1
++        for i = k+1:d
++            P(k,i) = betarnd(betaparam,betaparam); %// sampling from beta
++            P(k,i) = (P(k,i)-0.5)*2;     %// linearly shifting to [-1, 1]
++            p = P(k,i);
++            for l = (k-1):-1:1 %// converting partial correlation to raw correlation
++                p = p * sqrt((1-P(l,i)^2)*(1-P(l,k)^2)) + P(l,i)*P(l,k);
++            end
++            S(k,i) = p;
++            S(i,k) = p;
++        end
++    end
++
++    %// permuting the variables to make the distribution permutation-invariant
++    permutation = randperm(d);
++    S = S(permutation, permutation);
++end
++'''
+Index: .gitignore
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/.gitignore b/.gitignore
+new file mode 100644
+--- /dev/null	(date 1714057319258)
++++ b/.gitignore	(date 1714057319258)
+@@ -0,0 +1,36 @@
++/quant_qsar_padel.pkl
++/padel_emol_version.smi
++/unlabelled_partial_filtered.pkl
++/quant_padel_qsar_500_2.pkl
++/quant_padel_qsar_500_1.pkl
++/throwaway_selenium.py
++/quant_padel_redo.pkl
++/unlabelled_inorganics.pkl
++/quant_padel_zero_variance.pkl
++/quant_qsar.pkl
++/all_soluble_compounds.pkl
++/dmso_model_dev/debug_output.txt
++/dmso_model_dev/dmso_data/sol_f_score_all.npy
++/dmso_model_dev/dmso_debug.log
++/dmso_model_dev/dmso_data/fail_or_not_qsar/
++/dmso_model_dev/dmso_data/filtered_padel_dfs/
++/dmso_model_dev/dmso_data/unfiltered_padel_data/
++/dmso_model_dev/combined_f_score_all.npy
++/dmso_model_dev/dmso_data/quant.pkl
++/dmso_model_dev/dmso_data/insol_f_score_all.npy
++/dmso_model_dev/scrap_heap/
++/dmso_model_dev/dmso_data/smiles_files/
++/all_soluble_compounds.pkl
++/dmso_debug.log
++/enamine_aligned_padel_labels.pkl
++/quant_padel_qsar_500_1.pkl
++/quant_padel_qsar_500_2.pkl
++/quant_padel_redo.pkl
++/quant_padel_zero_variance.pkl
++/quant_qsar.pkl
++/quant_qsar_padel.pkl
++/unlabelled_inorganics.pkl
++/unlabelled_partial_filtered.pkl
++/dmso_model_dev/enamine_data/
++/dmso_model_dev/dmso_debug.log
++/dmso_model_dev/cluster_scratch.py
+Index: .idea/csv-editor.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<project version=\"4\">\r\n  <component name=\"CsvFileAttributes\">\r\n    <option name=\"attributeMap\">\r\n      <map>\r\n        <entry key=\"C:\\Users\\mmanning\\PycharmProjects\\data\\dmso_solubility\\CPDAT_test\\Chemical List CPDAT-2024-02-12.csv\">\r\n          <value>\r\n            <Attribute>\r\n              <option name=\"separator\" value=\",\" />\r\n            </Attribute>\r\n          </value>\r\n        </entry>\r\n        <entry key=\"C:\\Users\\mmanning\\PycharmProjects\\data\\dmso_solubility\\CPDAT_test\\Chemical List CPDAT-2024-02-12_0.csv\">\r\n          <value>\r\n            <Attribute>\r\n              <option name=\"separator\" value=\",\" />\r\n            </Attribute>\r\n          </value>\r\n        </entry>\r\n        <entry key=\"C:\\Users\\mmanning\\PycharmProjects\\data\\dmso_solubility\\CPDAT_test\\Chemical List CPDAT-2024-02-12_failed.csv\">\r\n          <value>\r\n            <Attribute>\r\n              <option name=\"separator\" value=\",\" />\r\n            </Attribute>\r\n          </value>\r\n        </entry>\r\n        <entry key=\"C:\\Users\\mmanning\\PycharmProjects\\data\\dmso_solubility\\CPDAT_test\\cluster_abs_scaled\\CPDAT_centroids.csv\">\r\n          <value>\r\n            <Attribute>\r\n              <option name=\"separator\" value=\"|\" />\r\n            </Attribute>\r\n          </value>\r\n        </entry>\r\n        <entry key=\"C:\\Users\\mmanning\\PycharmProjects\\data\\dmso_solubility\\CPDAT_test\\cluster_abs_scaled\\CPDAT_probabilities.csv\">\r\n          <value>\r\n            <Attribute>\r\n              <option name=\"separator\" value=\"#1e#\" />\r\n            </Attribute>\r\n          </value>\r\n        </entry>\r\n        <entry key=\"C:\\Users\\mmanning\\PycharmProjects\\data\\dmso_solubility\\CPDAT_test\\cluster_abs_scaled\\tox_insoluble_centroids.csv\">\r\n          <value>\r\n            <Attribute>\r\n              <option name=\"separator\" value=\"#1e#\" />\r\n            </Attribute>\r\n          </value>\r\n        </entry>\r\n        <entry key=\"C:\\Users\\mmanning\\PycharmProjects\\data\\dmso_solubility\\CPDAT_test\\cluster_abs_scaled\\tox_insoluble_probabilities.csv\">\r\n          <value>\r\n            <Attribute>\r\n              <option name=\"separator\" value=\"#1e#\" />\r\n            </Attribute>\r\n          </value>\r\n        </entry>\r\n        <entry key=\"C:\\Users\\mmanning\\PycharmProjects\\data\\dmso_solubility\\CPDAT_test\\cluster_test\\tox_insoluble_centroids.csv\">\r\n          <value>\r\n            <Attribute>\r\n              <option name=\"separator\" value=\"&#9;\" />\r\n            </Attribute>\r\n          </value>\r\n        </entry>\r\n        <entry key=\"C:\\Users\\mmanning\\PycharmProjects\\data\\dmso_solubility\\CPDAT_test\\cluster_test\\tox_insoluble_probabilities.csv\">\r\n          <value>\r\n            <Attribute>\r\n              <option name=\"separator\" value=\"&#9;\" />\r\n            </Attribute>\r\n          </value>\r\n        </entry>\r\n        <entry key=\"C:\\Users\\mmanning\\PycharmProjects\\data\\dmso_solubility\\Chemical List LCSSPUBCHEM-2024-02-12.csv\">\r\n          <value>\r\n            <Attribute>\r\n              <option name=\"separator\" value=\",\" />\r\n            </Attribute>\r\n          </value>\r\n        </entry>\r\n        <entry key=\"C:\\Users\\mmanning\\PycharmProjects\\data\\dmso_solubility\\insoluble_pfas.csv\">\r\n          <value>\r\n            <Attribute>\r\n              <option name=\"separator\" value=\",\" />\r\n            </Attribute>\r\n          </value>\r\n        </entry>\r\n        <entry key=\"C:\\Users\\mmanning\\PycharmProjects\\data\\dmso_solubility\\insoluble_pfas_failed.csv\">\r\n          <value>\r\n            <Attribute>\r\n              <option name=\"separator\" value=\",\" />\r\n            </Attribute>\r\n          </value>\r\n        </entry>\r\n        <entry key=\"C:\\Users\\mmanning\\PycharmProjects\\data\\dmso_solubility\\soluble_pfas.csv\">\r\n          <value>\r\n            <Attribute>\r\n              <option name=\"separator\" value=\",\" />\r\n            </Attribute>\r\n          </value>\r\n        </entry>\r\n        <entry key=\"C:\\Users\\mmanning\\PycharmProjects\\data\\dmso_solubility\\soluble_pfas_failed.csv\">\r\n          <value>\r\n            <Attribute>\r\n              <option name=\"separator\" value=\":\" />\r\n            </Attribute>\r\n          </value>\r\n        </entry>\r\n        <entry key=\"C:\\Users\\mmanning\\PycharmProjects\\data\\dmso_solubility\\tox_insoluble_all_factors.csv\">\r\n          <value>\r\n            <Attribute>\r\n              <option name=\"separator\" value=\",\" />\r\n            </Attribute>\r\n          </value>\r\n        </entry>\r\n        <entry key=\"C:\\Users\\mmanning\\PycharmProjects\\data\\dmso_solubility\\tox_insoluble_all_null.csv\">\r\n          <value>\r\n            <Attribute>\r\n              <option name=\"separator\" value=\",\" />\r\n            </Attribute>\r\n          </value>\r\n        </entry>\r\n        <entry key=\"C:\\Users\\mmanning\\PycharmProjects\\data\\dmso_solubility\\tox_insoluble_inorg.csv\">\r\n          <value>\r\n            <Attribute>\r\n              <option name=\"separator\" value=\",\" />\r\n            </Attribute>\r\n          </value>\r\n        </entry>\r\n        <entry key=\"C:\\Users\\mmanning\\PycharmProjects\\data\\dmso_solubility\\tox_insoluble_salt.csv\">\r\n          <value>\r\n            <Attribute>\r\n              <option name=\"separator\" value=\",\" />\r\n            </Attribute>\r\n          </value>\r\n        </entry>\r\n        <entry key=\"C:\\Users\\mmanning\\PycharmProjects\\data\\padel\\padel_emol_version_10k_13933.csv\">\r\n          <value>\r\n            <Attribute>\r\n              <option name=\"separator\" value=\",\" />\r\n            </Attribute>\r\n          </value>\r\n        </entry>\r\n        <entry key=\"C:\\Users\\mmanning\\PycharmProjects\\data\\padel\\padel_emol_version_10k_27655.csv\">\r\n          <value>\r\n            <Attribute>\r\n              <option name=\"separator\" value=\",\" />\r\n            </Attribute>\r\n          </value>\r\n        </entry>\r\n        <entry key=\"C:\\Users\\mmanning\\PycharmProjects\\data\\padel_descriptor_names.csv\">\r\n          <value>\r\n            <Attribute>\r\n              <option name=\"separator\" value=\",\" />\r\n            </Attribute>\r\n          </value>\r\n        </entry>\r\n      </map>\r\n    </option>\r\n  </component>\r\n</project>
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/.idea/csv-editor.xml b/.idea/csv-editor.xml
+--- a/.idea/csv-editor.xml	(revision 74d9d575b42835dcd5708b8a4be1591bd018e9ee)
++++ b/.idea/csv-editor.xml	(date 1722718904858)
+@@ -3,147 +3,3907 @@
+   <component name="CsvFileAttributes">
+     <option name="attributeMap">
+       <map>
+-        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\CPDAT_test\Chemical List CPDAT-2024-02-12.csv">
++        <entry key="C:\Users\mmanning\AppData\Roaming\JetBrains\PyCharmCE2023.3\scratches\scratch.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\commercial_data\eMolecules\padel\padel_emol_version_10k_13933.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\commercial_data\eMolecules\padel\padel_emol_version_10k_27655.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\commercial_data\eMolecules\padel\padel_emol_version_1k_18.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\commercial_data\life_chemicals\stdizer-2024-04-09T20_30_02.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\enamine_data\all_qsar_fails.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\enamine_data\chemcart\ready_1.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\enamine_data\dashboard_and_enamine_padel_desc_nans.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\enamine_data\dashboard_and_enamine_padel_smiles_nans.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\enamine_data\qsar_code_200.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\enamine_data\qsared\non_qsar_originals.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\enamine_data\qsared\non_qsar_originals1.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\enamine_data\qsared\non_qsar_originals10.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\enamine_data\qsared\non_qsar_originals11.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\enamine_data\qsared\non_qsar_originals12.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\enamine_data\qsared\non_qsar_originals13.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\enamine_data\qsared\non_qsar_originals14.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\enamine_data\qsared\non_qsar_originals15.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\enamine_data\qsared\non_qsar_originals16.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\enamine_data\qsared\non_qsar_originals17.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\enamine_data\qsared\non_qsar_originals2.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\enamine_data\qsared\non_qsar_originals3.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\enamine_data\qsared\non_qsar_originals4.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\enamine_data\qsared\non_qsar_originals5.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\enamine_data\qsared\non_qsar_originals6.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\enamine_data\qsared\non_qsar_originals7.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\enamine_data\qsared\non_qsar_originals8.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\enamine_data\qsared\non_qsar_originals9.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\enamine_data\qsared\smiles\failed_qsar_enamine.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\enamine_data\rescrape\isomeric_smiles_ochem_dmso.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\enamine_data\rescrape\rescrape1.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\enamine_data\rescrape\rescrape2.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\enamine_data\rescrape\rescrape3.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\enamine_data\rescrape\rescrape5.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\epa_internal\CPDAT_descriptor\Chemical List CPDAT-2024-02-12.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\epa_internal\CPDAT_descriptor\Chemical List CPDAT-2024-02-12_failed.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\epa_internal\Chemical List CHEMINV_dmsoinsolubles-2024-02-29.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\epa_internal\Chemical List CHEMINV_stability-2024-02-29.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\epa_internal\Chemical List EPAPFASINSOL-2024-02-29.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\epa_internal\Chemical List EPAPFASINV-2024-02-29 - Soluble at 5mM.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\epa_internal\Chemical List EPAPFASINV-2024-02-29.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\epa_internal\Chemical List TOX21SL-2024-02-29.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\epa_internal\FDA-UNII-List0421-2024-02-28.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\epa_internal\soluble_pfas_failed.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value=":" />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\epa_internal\tox_insoluble_all_factors.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\epa_internal\tox_insoluble_all_null.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\final_datasets\COMBINED_SH_ERRORS.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\final_datasets\ENAMINE_OCHEM_INSOLUBLE_5mM.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\final_datasets\ENAMINE_OCHEM_SOLUBLE_5mM.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\final_datasets\EPA_DASHBOARD_INSOLUBLE_5mM.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\final_datasets\EPA_DASHBOARD_SOLUBLE_5mM.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++              <option name="escapeCharacter" value="\" />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\final_datasets\OVERLAPS.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\final_datasets\circ_fingerprints\EPA_ENAMINE_MAXMIN_TEST_IND.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\final_datasets\original_source_downloads\ENAMINE_OCHEM_ORIGINAL.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\final_datasets\padel\padel_desc_groups.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\final_datasets\padel\salty.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\final_datasets\padel\valid_nans.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\final_datasets\qsar\INTERMETALLICS_QSAR_ENAMINE_OCHEM_INSOLUBLE_5mM.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\final_datasets\qsar\INTERMETALLICS_QSAR_EPA_DASHBOARD_INSOLUBLE_5mM.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\final_datasets\qsar\INTERMETALLICS_QSAR_EPA_DASHBOARD_SOLUBLE_5mM.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\final_datasets\qsar\QSAR_ENAMINE_EPA_SOLUBLE_OVERLAP.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\final_datasets\qsar\QSAR_ENAMINE_OCHEM_INSOLUBLE_5mM.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\final_datasets\qsar\QSAR_ENAMINE_OCHEM_INSOLUBLE_5mM_duplicated.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\final_datasets\qsar\QSAR_ENAMINE_OCHEM_SOLUBLE_5mM.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\final_datasets\qsar\QSAR_ENAMINE_OCHEM_SOLUBLE_5mM_duplicated.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\final_datasets\qsar\QSAR_EPA_DASHBOARD_INSOLUBLE_5mM.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\final_datasets\qsar\QSAR_EPA_DASHBOARD_INSOLUBLE_5mM_duplicated.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\final_datasets\qsar\QSAR_EPA_DASHBOARD_SOLUBLE_5mM.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\final_datasets\qsar\QSAR_EPA_DASHBOARD_SOLUBLE_5mM_duplicated.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\final_datasets\qsar\SALTS_QSAR_ENAMINE_OCHEM_INSOLUBLE_5mM.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\final_datasets\qsar\SALTS_QSAR_EPA_DASHBOARD_INSOLUBLE_5mM.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\final_datasets\qsar\SALTS_QSAR_EPA_DASHBOARD_SOLUBLE_5mM.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\final_datasets\stats\vif.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_1.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_10.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_100.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_101.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_102.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_103.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_104.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_105.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_108.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_11.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_110.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_111.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_112.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_114.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_115.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_116.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_118.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_119.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_12.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_120.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_121.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_126.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_129.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_130.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_132.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_133.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_134.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_135.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_136.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_137.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_138.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_139.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_141.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_143.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_144.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_145.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_147.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_148.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_149.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_150.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_151.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_153.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_154.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_156.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_157.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_159.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_16.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_160.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_162.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_168.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_169.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_17.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_170.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_172.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_174.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_175.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_177.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_19.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_2.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_20.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_21.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_23.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_24.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_26.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_28.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_30.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_31.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_32.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_33.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_37.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_38.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_39.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_41.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_43.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_44.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_45.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_46.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_47.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_51.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_55.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_56.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_57.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_6.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_61.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_62.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_64.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_66.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_67.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_68.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_69.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_72.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_73.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_74.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_76.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_77.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_8.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_80.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_83.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_85.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_87.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_88.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_89.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_9.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_90.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_91.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_92.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_94.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_Failed_std-2024-02-12_96.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_1.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_10.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_100.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_101.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_102.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_103.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_104.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_105.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_106.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_107.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_108.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_109.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_11.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_110.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_111.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_112.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_113.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_114.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_115.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_116.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_117.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_118.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_119.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_12.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_120.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_121.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_122.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_123.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_124.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_125.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_126.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_127.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_128.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_129.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_13.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_130.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_131.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_132.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_133.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_134.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_135.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_136.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_137.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_138.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_139.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_14.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_140.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_141.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_142.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_143.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_144.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_145.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_146.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_147.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_148.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_149.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_15.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_150.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_151.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_152.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_153.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_154.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_155.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_156.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_157.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_158.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_159.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_16.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_160.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_161.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_162.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_163.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_164.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_165.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_166.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_167.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_168.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_169.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_17.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_170.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_171.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_172.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_173.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_174.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_175.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_176.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_177.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_178.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_18.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_19.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_2.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_20.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_21.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_22.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_23.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_24.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_25.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_26.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_27.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_28.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_29.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_3.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_30.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_31.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_32.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_33.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_34.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_35.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_36.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_37.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_38.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_39.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_4.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_40.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_41.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_42.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_43.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_44.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_45.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_46.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_47.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_48.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_49.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_5.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_50.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_51.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_52.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_53.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_54.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_55.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_56.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_57.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_58.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_59.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_6.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_60.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_61.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_62.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_63.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_64.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_65.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_66.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_67.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_68.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_69.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_7.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_70.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_71.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_72.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_73.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_74.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_75.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_76.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_77.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_78.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_79.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_8.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_80.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_81.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_82.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_83.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_84.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_85.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_86.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_87.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_88.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_89.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_9.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_90.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_91.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_92.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_93.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_94.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_95.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_96.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_97.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_98.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_QSAR_Ready-2024-02-12_99.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_1.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_10.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_100.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_101.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_102.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_103.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_104.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_105.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_106.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_107.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_108.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_109.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_11.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_110.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_111.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_112.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_113.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_114.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_115.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_116.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_117.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_118.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_119.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_12.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_120.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_121.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_122.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_123.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_124.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_125.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_126.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_127.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_128.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_129.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_13.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_130.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_131.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_132.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_133.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_134.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_135.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_136.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_137.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_138.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_139.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_14.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_140.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_141.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_142.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_143.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_144.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_145.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_146.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_147.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_148.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_149.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_15.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_150.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_151.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_152.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_153.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_154.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_155.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_156.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_157.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_158.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_159.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_16.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_160.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_161.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_162.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_163.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_164.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_165.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_166.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_167.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_168.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_169.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_17.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_170.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_171.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_172.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_173.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_174.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_175.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_176.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_177.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_178.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_18.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_19.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_2.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_20.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_21.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_22.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_23.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_24.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_25.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_26.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_27.csv">
+           <value>
+             <Attribute>
+               <option name="separator" value="," />
+             </Attribute>
+           </value>
+         </entry>
+-        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\CPDAT_test\Chemical List CPDAT-2024-02-12_0.csv">
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_28.csv">
+           <value>
+             <Attribute>
+               <option name="separator" value="," />
+             </Attribute>
+           </value>
+         </entry>
+-        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\CPDAT_test\Chemical List CPDAT-2024-02-12_failed.csv">
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_29.csv">
+           <value>
+             <Attribute>
+               <option name="separator" value="," />
+             </Attribute>
+           </value>
+         </entry>
+-        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\CPDAT_test\cluster_abs_scaled\CPDAT_centroids.csv">
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_3.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_30.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_31.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_32.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_33.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_34.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_35.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_36.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_37.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_38.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_39.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_4.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_40.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_41.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_42.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_43.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_44.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_45.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_46.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_47.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_48.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_49.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_5.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_50.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_51.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_52.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_53.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_54.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_55.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_56.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_57.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_58.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_59.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_6.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_60.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_61.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_62.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_63.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_64.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_65.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_66.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_67.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_68.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_69.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_7.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_70.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_71.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_72.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_73.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_74.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_75.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_76.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_77.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_78.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_79.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_8.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_80.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_81.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_82.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_83.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_84.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_85.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_86.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_87.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_88.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_89.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_9.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_90.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_91.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_92.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_93.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_94.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_95.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_96.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_97.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_98.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\open_source_data\pubchem\PubChem_RDKit-2024-02-12_99.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\modelling_data\iniitial_trials_modelling\cluster_abs_scaled\CPDAT_centroids.csv">
+           <value>
+             <Attribute>
+               <option name="separator" value="|" />
+             </Attribute>
+           </value>
+         </entry>
+-        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\CPDAT_test\cluster_abs_scaled\CPDAT_probabilities.csv">
++        <entry key="C:\Users\mmanning\PycharmProjects\data\modelling_data\iniitial_trials_modelling\cluster_abs_scaled\CPDAT_labels.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value=":" />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\modelling_data\iniitial_trials_modelling\cluster_abs_scaled\CPDAT_probabilities.csv">
+           <value>
+             <Attribute>
+               <option name="separator" value="#1e#" />
+             </Attribute>
+           </value>
+         </entry>
+-        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\CPDAT_test\cluster_abs_scaled\tox_insoluble_centroids.csv">
++        <entry key="C:\Users\mmanning\PycharmProjects\data\modelling_data\iniitial_trials_modelling\cluster_abs_scaled\tox_insoluble_centroids.csv">
+           <value>
+             <Attribute>
+               <option name="separator" value="#1e#" />
+             </Attribute>
+           </value>
+         </entry>
+-        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\CPDAT_test\cluster_abs_scaled\tox_insoluble_probabilities.csv">
++        <entry key="C:\Users\mmanning\PycharmProjects\data\modelling_data\iniitial_trials_modelling\cluster_abs_scaled\tox_insoluble_probabilities.csv">
+           <value>
+             <Attribute>
+               <option name="separator" value="#1e#" />
+             </Attribute>
+           </value>
+         </entry>
+-        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\CPDAT_test\cluster_test\tox_insoluble_centroids.csv">
++        <entry key="C:\Users\mmanning\PycharmProjects\data\modelling_data\training_results\pipeline_score_report_run10.csv">
+           <value>
+             <Attribute>
+               <option name="separator" value="&#9;" />
+             </Attribute>
+           </value>
+         </entry>
+-        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\CPDAT_test\cluster_test\tox_insoluble_probabilities.csv">
++        <entry key="C:\Users\mmanning\PycharmProjects\data\modelling_data\training_results\pipeline_score_report_run11_prune0.0.csv">
+           <value>
+             <Attribute>
+-              <option name="separator" value="&#9;" />
++              <option name="separator" value="," />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\modelling_data\training_results\pipeline_score_report_run11_prune0.025.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="," />
+             </Attribute>
+           </value>
+         </entry>
+-        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\Chemical List LCSSPUBCHEM-2024-02-12.csv">
++        <entry key="C:\Users\mmanning\PycharmProjects\data\modelling_data\training_results\pipeline_score_report_run11_prune0.05.csv">
+           <value>
+             <Attribute>
+               <option name="separator" value="," />
+             </Attribute>
+           </value>
+         </entry>
+-        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\insoluble_pfas.csv">
++        <entry key="C:\Users\mmanning\PycharmProjects\data\modelling_data\training_results\pipeline_score_report_run11_prune0.075.csv">
+           <value>
+             <Attribute>
+               <option name="separator" value="," />
+             </Attribute>
+           </value>
+         </entry>
+-        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\insoluble_pfas_failed.csv">
++        <entry key="C:\Users\mmanning\PycharmProjects\data\modelling_data\training_results\pipeline_score_report_run11_prune0.1.csv">
+           <value>
+             <Attribute>
+               <option name="separator" value="," />
+             </Attribute>
+           </value>
+         </entry>
+-        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\soluble_pfas.csv">
++        <entry key="C:\Users\mmanning\PycharmProjects\data\modelling_data\training_results\pipeline_score_report_run8.csv">
++          <value>
++            <Attribute>
++              <option name="separator" value="&#9;" />
++            </Attribute>
++          </value>
++        </entry>
++        <entry key="C:\Users\mmanning\PycharmProjects\data\padel_descriptor_names.csv">
+           <value>
+             <Attribute>
+               <option name="separator" value="," />
+             </Attribute>
+           </value>
+         </entry>
+-        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\soluble_pfas_failed.csv">
++        <entry key="C:\Users\mmanning\PycharmProjects\data\related_properties\aq_sol_alogps_2_1_logs_training_ochem.csv">
+           <value>
+             <Attribute>
+-              <option name="separator" value=":" />
++              <option name="separator" value="," />
+             </Attribute>
+           </value>
+         </entry>
+-        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\tox_insoluble_all_factors.csv">
++        <entry key="C:\Users\mmanning\PycharmProjects\data\related_properties\cadaster_mp_test_ochem.csv">
+           <value>
+             <Attribute>
+               <option name="separator" value="," />
+             </Attribute>
+           </value>
+         </entry>
+-        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\tox_insoluble_all_null.csv">
++        <entry key="C:\Users\mmanning\PycharmProjects\data\related_properties\cadaster_mp_training_ochem.csv">
+           <value>
+             <Attribute>
+               <option name="separator" value="," />
+             </Attribute>
+           </value>
+         </entry>
+-        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\tox_insoluble_inorg.csv">
++        <entry key="C:\Users\mmanning\PycharmProjects\data\related_properties\melting_pt_ochem_set2.csv">
+           <value>
+             <Attribute>
+               <option name="separator" value="," />
+             </Attribute>
+           </value>
+         </entry>
+-        <entry key="C:\Users\mmanning\PycharmProjects\data\dmso_solubility\tox_insoluble_salt.csv">
++        <entry key="C:\Users\mmanning\PycharmProjects\data\related_properties\meltingpt_ochem_set1.csv">
+           <value>
+             <Attribute>
+               <option name="separator" value="," />
+             </Attribute>
+           </value>
+         </entry>
+-        <entry key="C:\Users\mmanning\PycharmProjects\data\padel\padel_emol_version_10k_13933.csv">
++        <entry key="\dmso_model_dev\.venv\Lib\site-packages\statsmodels\tsa\stl\tests\results\stl_test_results.csv">
+           <value>
+             <Attribute>
+               <option name="separator" value="," />
+             </Attribute>
+           </value>
+         </entry>
+-        <entry key="C:\Users\mmanning\PycharmProjects\data\padel\padel_emol_version_10k_27655.csv">
++        <entry key="\{}EPA_DASHBOARD_INSOLUBLE_5mM.csv">
+           <value>
+             <Attribute>
+               <option name="separator" value="," />
+             </Attribute>
+           </value>
+         </entry>
+-        <entry key="C:\Users\mmanning\PycharmProjects\data\padel_descriptor_names.csv">
++        <entry key="\{}EPA_DASHBOARD_SOLUBLE_5mM.csv">
+           <value>
+             <Attribute>
+               <option name="separator" value="," />
+Index: test/test_preclustering.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/test/test_preclustering.py b/test/test_preclustering.py
+new file mode 100644
+--- /dev/null	(date 1713191572617)
++++ b/test/test_preclustering.py	(date 1713191572617)
+@@ -0,0 +1,8 @@
++from unittest import TestCase
++import numpy as np
++import pandas as np
++from sklearn.cluster import _agglomerative
++class Test(TestCase):
++    def test_trial_agglom(self):
++        _agglomerative.AgglomerativeClustering()
++        self.fail()

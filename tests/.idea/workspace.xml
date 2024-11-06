@@ -1,0 +1,825 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="9dc1c473-ea2b-47c5-9e47-43c9e5774f1d" name="Changes" comment="Recommit after directory refactor.">
+      <change beforePath="$USER_HOME$/Desktop/qsar-modeling-workflow/codeinventory.json" beforeDir="false" />
+      <change beforePath="$USER_HOME$/Desktop/qsar-modeling-workflow/data/constants.py" beforeDir="false" afterPath="$USER_HOME$/Desktop/qsar-modeling-workflow/data/constants.py" afterDir="false" />
+      <change beforePath="$USER_HOME$/Desktop/qsar-modeling-workflow/notebooks/bivariate_selection.py" beforeDir="false" />
+      <change beforePath="$USER_HOME$/Desktop/qsar-modeling-workflow/notebooks/dmso_workflow.py" beforeDir="false" />
+      <change beforePath="$USER_HOME$/Desktop/qsar-modeling-workflow/notebooks/proto_grove.py" beforeDir="false" />
+      <change beforePath="$USER_HOME$/Desktop/qsar-modeling-workflow/notebooks/rus_cv_brute_force_rfe.py" beforeDir="false" />
+      <change beforePath="$USER_HOME$/Desktop/qsar-modeling-workflow/notebooks/rus_mi_pca_rf_1.log" beforeDir="false" />
+      <change beforePath="$USER_HOME$/Desktop/qsar-modeling-workflow/notebooks/viz.py" beforeDir="false" />
+      <change beforePath="$USER_HOME$/Desktop/qsar-modeling-workflow/qsar_modeling/__init__.py" beforeDir="false" />
+      <change beforePath="$USER_HOME$/Desktop/qsar-modeling-workflow/qsar_modeling/data_handling/__init__.py" beforeDir="false" />
+      <change beforePath="$USER_HOME$/Desktop/qsar-modeling-workflow/qsar_modeling/data_handling/balancing.py" beforeDir="false" />
+      <change beforePath="$USER_HOME$/Desktop/qsar-modeling-workflow/qsar_modeling/data_handling/data_tools.py" beforeDir="false" />
+      <change beforePath="$USER_HOME$/Desktop/qsar-modeling-workflow/qsar_modeling/data_handling/padel_categorization.py" beforeDir="false" />
+      <change beforePath="$USER_HOME$/Desktop/qsar-modeling-workflow/qsar_modeling/data_handling/persistence.py" beforeDir="false" />
+      <change beforePath="$USER_HOME$/Desktop/qsar-modeling-workflow/qsar_modeling/feature_selection/FeatureFrame.py" beforeDir="false" />
+      <change beforePath="$USER_HOME$/Desktop/qsar-modeling-workflow/qsar_modeling/feature_selection/FeatureSelector.py" beforeDir="false" />
+      <change beforePath="$USER_HOME$/Desktop/qsar-modeling-workflow/qsar_modeling/feature_selection/__init__.py" beforeDir="false" />
+      <change beforePath="$USER_HOME$/Desktop/qsar-modeling-workflow/qsar_modeling/feature_selection/bivariate_filters.py" beforeDir="false" />
+      <change beforePath="$USER_HOME$/Desktop/qsar-modeling-workflow/qsar_modeling/feature_selection/feature_combination.py" beforeDir="false" />
+      <change beforePath="$USER_HOME$/Desktop/qsar-modeling-workflow/qsar_modeling/feature_selection/importance.py" beforeDir="false" />
+      <change beforePath="$USER_HOME$/Desktop/qsar-modeling-workflow/qsar_modeling/feature_selection/mutual_info_tools/MINE.py" beforeDir="false" />
+      <change beforePath="$USER_HOME$/Desktop/qsar-modeling-workflow/qsar_modeling/feature_selection/mutual_info_tools/__init__.py" beforeDir="false" />
+      <change beforePath="$USER_HOME$/Desktop/qsar-modeling-workflow/qsar_modeling/feature_selection/mutual_info_tools/cmi_npeet.py" beforeDir="false" />
+      <change beforePath="$USER_HOME$/Desktop/qsar-modeling-workflow/qsar_modeling/feature_selection/mutual_info_tools/conditional_mi.py" beforeDir="false" />
+      <change beforePath="$USER_HOME$/Desktop/qsar-modeling-workflow/qsar_modeling/feature_selection/mutual_info_tools/info_nce.py" beforeDir="false" />
+      <change beforePath="$USER_HOME$/Desktop/qsar-modeling-workflow/qsar_modeling/feature_selection/mutual_info_tools/jmi_homebrew.py" beforeDir="false" />
+      <change beforePath="$USER_HOME$/Desktop/qsar-modeling-workflow/qsar_modeling/feature_selection/mutual_info_tools/npeet_lnc.py" beforeDir="false" />
+      <change beforePath="$USER_HOME$/Desktop/qsar-modeling-workflow/qsar_modeling/feature_selection/univariate_filters.py" beforeDir="false" />
+      <change beforePath="$USER_HOME$/Desktop/qsar-modeling-workflow/qsar_modeling/feature_selection/variance.py" beforeDir="false" />
+      <change beforePath="$USER_HOME$/Desktop/qsar-modeling-workflow/qsar_modeling/feature_selection/vif.py" beforeDir="false" />
+      <change beforePath="$USER_HOME$/Desktop/qsar-modeling-workflow/qsar_modeling/modeling/__init__.py" beforeDir="false" />
+      <change beforePath="$USER_HOME$/Desktop/qsar-modeling-workflow/qsar_modeling/modeling/c4_5.py" beforeDir="false" />
+      <change beforePath="$USER_HOME$/Desktop/qsar-modeling-workflow/qsar_modeling/modeling/grove_membership.py" beforeDir="false" />
+      <change beforePath="$USER_HOME$/Desktop/qsar-modeling-workflow/qsar_modeling/modeling/manual_pipeline.py" beforeDir="false" />
+      <change beforePath="$USER_HOME$/Desktop/qsar-modeling-workflow/qsar_modeling/modeling/model_dataclass.py" beforeDir="false" />
+      <change beforePath="$USER_HOME$/Desktop/qsar-modeling-workflow/qsar_modeling/modeling/preprocessor.py" beforeDir="false" />
+      <change beforePath="$USER_HOME$/Desktop/qsar-modeling-workflow/qsar_modeling/modeling/quick_models.py" beforeDir="false" />
+      <change beforePath="$USER_HOME$/Desktop/qsar-modeling-workflow/qsar_modeling/modeling/score_report.py" beforeDir="false" />
+      <change beforePath="$USER_HOME$/Desktop/qsar-modeling-workflow/qsar_modeling/modeling/working_notebook.py" beforeDir="false" />
+      <change beforePath="$USER_HOME$/Desktop/qsar-modeling-workflow/qsar_modeling/utils/__init__.py" beforeDir="false" />
+      <change beforePath="$USER_HOME$/Desktop/qsar-modeling-workflow/qsar_modeling/utils/cv_tools.py" beforeDir="false" />
+      <change beforePath="$USER_HOME$/Desktop/qsar-modeling-workflow/qsar_modeling/utils/distributions.py" beforeDir="false" />
+      <change beforePath="$USER_HOME$/Desktop/qsar-modeling-workflow/qsar_modeling/utils/features.py" beforeDir="false" />
+      <change beforePath="$USER_HOME$/Desktop/qsar-modeling-workflow/qsar_modeling/utils/math.py" beforeDir="false" />
+      <change beforePath="$USER_HOME$/Desktop/qsar-modeling-workflow/qsar_modeling/utils/samples.py" beforeDir="false" />
+      <change beforePath="$USER_HOME$/Desktop/qsar-modeling-workflow/qsar_modeling/utils/type_check.py" beforeDir="false" />
+      <change beforePath="$USER_HOME$/Desktop/qsar-modeling-workflow/requirements.txt" beforeDir="false" afterPath="$USER_HOME$/Desktop/qsar-modeling-workflow/requirements.txt" afterDir="false" />
+      <change beforePath="$USER_HOME$/Desktop/qsar-modeling-workflow/tests/__init__.py" beforeDir="false" />
+      <change beforePath="$USER_HOME$/Desktop/qsar-modeling-workflow/tests/test_importance.py" beforeDir="false" />
+    </list>
+    <list id="e4c85490-a700-4522-b820-b0452905cb4b" name="Makes feat_vars a private variable to prevent changes." comment="Changes to project files." />
+    <list id="0f201b9c-6fc9-454d-86a6-dbd2879fe5f2" name="Remove DataFrames from FeatureSelector" comment="Remove DataFrames from FeatureSelector" />
+    <list id="5130cae2-933c-46c0-bb11-dd6072e02cb3" name="Uncommitted changes before Checkout at 8/22/2024 9:49 AM [Changes]" comment="Uncommitted changes before Checkout at 8/22/2024 9:49 AM [Changes]" />
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ChangesViewManager" show_ignored="true" />
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Setup Script" />
+        <option value="Python Script" />
+      </list>
+    </option>
+  </component>
+  <component name="FormatOnSaveOptions">
+    <option name="myRunOnSave" value="true" />
+  </component>
+  <component name="Git.Settings">
+    <option name="PREVIOUS_COMMIT_AUTHORS">
+      <list>
+        <option value="Matthew Manning &lt;manning.matthew@epa.gov&gt;" />
+      </list>
+    </option>
+    <option name="RECENT_BRANCH_BY_REPOSITORY">
+      <map>
+        <entry key="$PROJECT_DIR$" value="de-pandaize" />
+      </map>
+    </option>
+    <option name="RECENT_GIT_ROOT_PATH" value="$USER_HOME$/Desktop/qsar-modeling-workflow" />
+    <option name="SIGN_OFF_COMMIT" value="true" />
+    <option name="SWAP_SIDES_IN_COMPARE_BRANCHES" value="true" />
+  </component>
+  <component name="GitRewordedCommitMessages">
+    <option name="onto" value="f77d7f6524713ac4d20093964c8968c563a43582" />
+  </component>
+  <component name="HighlightingSettingsPerFile">
+    <setting file="file://$USER_HOME$/OneDrive/Profile/qsar-modeling-workflow/notebooks/proto_grove.py" root0="SKIP_INSPECTION" />
+  </component>
+  <component name="LogFilters">
+    <option name="FILTER_ERRORS" value="false" />
+    <option name="FILTER_WARNINGS" value="false" />
+    <option name="FILTER_INFO" value="true" />
+    <option name="FILTER_DEBUG" value="true" />
+    <option name="CUSTOM_FILTER" />
+  </component>
+  <component name="MarkdownSettingsMigration">
+    <option name="stateVersion" value="1" />
+  </component>
+  <component name="ProblemsViewState">
+    <option name="selectedTabId" value="DEPENDENCY_CHECKER_PROBLEMS_TAB" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 6
+}</component>
+  <component name="ProjectId" id="2kFqIMfVEvZbpkb5TX5o5TO6A8x" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+    <option name="sortByType" value="true" />
+    <option name="sortKey" value="BY_TYPE" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ASKED_MARK_IGNORED_FILES_AS_EXCLUDED": "true",
+    "Python.Project Default.executor": "Run",
+    "Python.bivariate.executor": "Run",
+    "Python.conditional_mi.executor": "Run",
+    "Python.conditional_mi_test - original.executor": "Run",
+    "Python.conditional_mi_test.executor": "Run",
+    "Python.constants.executor": "Run",
+    "Python.dmso_workflow.executor": "Run",
+    "Python.logging_and_output.executor": "Run",
+    "Python.proto_grove.executor": "Run",
+    "Python.rus_cv_brute_force_rfe.executor": "Run",
+    "Python.scratch.executor": "Run",
+    "RunOnceActivity.OpenProjectViewOnStart": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "git-widget-placeholder": "select-train-score",
+    "last_opened_file_path": "C:/Users/mmanning/OneDrive/Profile/qsar-modeling-workflow",
+    "run.code.analysis.last.selected.profile": "pProject Default",
+    "settings.editor.selected.configurable": "com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable",
+    "vcs.patch.to.clipboard": "true"
+  },
+  "keyToStringList": {
+    "com.intellij.ide.scratch.ScratchImplUtil$2/New Scratch File": [
+      "Python"
+    ]
+  }
+}]]></component>
+  <component name="PyConsoleOptionsProvider">
+    <option name="myPythonConsoleState">
+      <console-settings module-name="qsar-modeling-workflow" is-module-sdk="true" working-directory="$PROJECT_DIR$">
+        <envs>
+          <env key="DATA_DIR" value="$PROJECT_DIR$/../data/dmso_solubility/final_datasets/" />
+          <env key="FINAL_DIR" value="$PROJECT_DIR$/../data/dmso_solubility/final_datasets/" />
+          <env key="MODELS_DIR" value="$PROJECT_DIR$/models/" />
+          <env key="PROJECT_DIR" value="$PROJECT_DIR$/" />
+          <env key="PYTHONUNBUFFERED" value="1" />
+          <env key="SKLEARN_SEED" value="0" />
+          <env key="SKLEARN_TESTS_GLOBAL_RANDOM_SEED" value="0" />
+          <env key="SRC_DIR" value="$PROJECT_DIR$/qsar_modeling/" />
+          <env key="STATS_DIR" value="$PROJECT_DIR$/models/" />
+          <env key="TEST_DIR" value="$PROJECT_DIR$/tests/" />
+        </envs>
+        <option name="useSoftWraps" value="true" />
+        <option name="myUseModuleSdk" value="true" />
+        <option name="myModuleName" value="qsar-modeling-workflow" />
+        <option name="myEnvs">
+          <map>
+            <entry key="DATA_DIR" value="$PROJECT_DIR$/../data/dmso_solubility/final_datasets/" />
+            <entry key="FINAL_DIR" value="$PROJECT_DIR$/../data/dmso_solubility/final_datasets/" />
+            <entry key="MODELS_DIR" value="$PROJECT_DIR$/models/" />
+            <entry key="PROJECT_DIR" value="$PROJECT_DIR$/" />
+            <entry key="PYTHONUNBUFFERED" value="1" />
+            <entry key="SKLEARN_SEED" value="0" />
+            <entry key="SKLEARN_TESTS_GLOBAL_RANDOM_SEED" value="0" />
+            <entry key="SRC_DIR" value="$PROJECT_DIR$/qsar_modeling/" />
+            <entry key="STATS_DIR" value="$PROJECT_DIR$/models/" />
+            <entry key="TEST_DIR" value="$PROJECT_DIR$/tests/" />
+          </map>
+        </option>
+        <option name="myWorkingDirectory" value="$PROJECT_DIR$" />
+      </console-settings>
+    </option>
+  </component>
+  <component name="PyDebuggerOptionsProvider">
+    <option name="mySaveCallSignatures" value="true" />
+  </component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\Users\mmanning\PycharmProjects\qsar-modeling-workflow\data" />
+      <recent name="C:\Users\mmanning\PycharmProjects\qsar-modeling-workflow\models\experiment_14" />
+      <recent name="C:\Users\mmanning\PycharmProjects\qsar-modeling-workflow\notebooks" />
+      <recent name="C:\Users\mmanning\PycharmProjects\qsar-modeling-workflow\qsar_modeling\feature_selection" />
+      <recent name="C:\Users\mmanning\PycharmProjects\qsar-modeling-workflow\qsar_modeling\modeling" />
+    </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\mmanning\OneDrive\Profile\qsar-modeling-workflow\tests" />
+      <recent name="C:\Users\mmanning\OneDrive\Profile\qsar-modeling-workflow" />
+      <recent name="C:\Users\mmanning\Desktop\qsar-modeling-workflow\reports" />
+      <recent name="C:\Users\mmanning\Documents\qsar-modeling-workflow" />
+      <recent name="C:\Users\mmanning\Desktop" />
+    </key>
+  </component>
+  <component name="RunDashboard">
+    <option name="configurationTypes">
+      <set>
+        <option value="docs" />
+      </set>
+    </option>
+  </component>
+  <component name="RunManager">
+    <configuration default="true" type="PerlTestRunConfiguration" factoryName="Perl5 Test" show_console_on_std_err="false" show_console_on_std_out="false">
+      <option name="allowRunningInParallel" value="false" />
+      <option name="alternativeSdkName" />
+      <option name="compileTimeBreakpointsEnabled" value="false" />
+      <option name="consoleCharset" />
+      <option name="envs">
+        <map />
+      </option>
+      <option name="initCode" value="" />
+      <option name="nonInteractiveModeEnabled" value="false" />
+      <option name="passParentEnvs" value="true" />
+      <option name="perlArguments" value="" />
+      <option name="programParameters" value="" />
+      <option name="projectPathOnTarget" />
+      <option name="requiredModules" value="" />
+      <option name="scriptCharset" value="utf8" />
+      <option name="scriptPath" value="" />
+      <option name="selectedOptions">
+        <list />
+      </option>
+      <option name="startMode" value="RUN" />
+      <option name="useAlternativeSdk" value="false" />
+      <option name="workingDirectory" value="" />
+      <JOBS_NUMBER>1</JOBS_NUMBER>
+      <TEST_SCRIPT_PARAMETERS />
+      <method v="2" />
+    </configuration>
+    <configuration name="Project Default" type="PythonConfigurationType" factoryName="Python" show_console_on_std_err="true">
+      <output_file path="C:\Users\mmanning\OneDrive\Profile\qsar-modeling-workflow\reports\console.log" is_save="true" />
+      <module name="qsar-modeling-workflow" />
+      <option name="ENV_FILES" value="$USER_HOME$/OneDrive/Profile/qsar-modeling-workflow/.venv/Scripts" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="DATA_DIR" value="$USER_HOME$/OneDrive/Profile/qsar-modeling-workflow/data/" />
+        <env name="FINAL_DIR" value="$USER_HOME$/OneDrive/Profile/qsar-modeling-workflow/data/final_datasets/" />
+        <env name="MODELS_DIR" value="$USER_HOME$/OneDrive/Profile/qsar-modeling-workflowdata/models/" />
+        <env name="PROJECT_DIR" value="$USER_HOME$/OneDrive/Profile/qsar-modeling-workflow/data/" />
+        <env name="SKLEARN_SEED" value="0" />
+        <env name="SKLEARN_TESTS_GLOBAL_RANDOM_SEED" value="0" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="SDK_NAME" value="Python 3.12 (Test)" />
+      <option name="WORKING_DIRECTORY" value="C:\Users\mmanning\OneDrive\Profile\qsar-modeling-workflow" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$USER_HOME$/OneDrive/Profile/qsar-modeling-workflow/notebooks/rus_cv_brute_force_rfe.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration default="true" type="PythonConfigurationType" factoryName="Python">
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="SDK_NAME" value="Python 3.12 (qsar-modeling-workflow)" />
+      <option name="WORKING_DIRECTORY" value="" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="" />
+      <option name="SCRIPT_NAME" value="" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="true" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration default="true" type="Tox" factoryName="Tox">
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <arguments>
+        <array />
+      </arguments>
+      <runOnlyEnvs>
+        <array />
+      </runOnlyEnvs>
+      <method v="2" />
+    </configuration>
+  </component>
+  <component name="ShelveChangesManager" show_recycled="true">
+    <option name="remove_strategy" value="true" />
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="SvnConfiguration">
+    <configuration>C:\Users\mmanning\AppData\Roaming\Subversion</configuration>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <branch name="dev" repository="C:\Users\mmanning\PycharmProjects\qsar-modeling-workflow" />
+      <changelist id="9dc1c473-ea2b-47c5-9e47-43c9e5774f1d" name="Changes" comment="" />
+      <changelist id="e4c85490-a700-4522-b820-b0452905cb4b" name="Makes feat_vars a private variable to prevent changes." comment="" />
+      <changelist id="5130cae2-933c-46c0-bb11-dd6072e02cb3" name="Uncommitted changes before Checkout at 8/22/2024 9:49 AM [Changes]" comment="" />
+      <created>1722889591321</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1724334326993</updated>
+    </task>
+    <task id="LOCAL-00013" summary="Remove DataFrames from FeatureSelector">
+      <branch name="dev" repository="C:\Users\mmanning\PycharmProjects\qsar-modeling-workflow" original="true" />
+      <branch name="de-pandaize" repository="C:\Users\mmanning\PycharmProjects\qsar-modeling-workflow" />
+      <changelist id="0f201b9c-6fc9-454d-86a6-dbd2879fe5f2" name="Remove DataFrames from FeatureSelector" comment="Remove DataFrames from FeatureSelector" />
+      <created>1723412310494</created>
+      <option name="number" value="00013" />
+      <option name="presentableId" value="LOCAL-00013" />
+      <option name="project" value="LOCAL" />
+      <updated>1724334326993</updated>
+    </task>
+    <task id="LOCAL-00034" summary="Assigns inputs and outputs to a single nested dictionary that accumulates over feature selection methods, CV runs, and models. Scoring, plotting, and saving are functionalized and loop over nested dict at the end of the loop.&#10;&#10;Signed-off-by: MMANNING &lt;manning.matthew@epa.gov&gt;">
+      <option name="closed" value="true" />
+      <created>1724014959139</created>
+      <option name="number" value="00034" />
+      <option name="presentableId" value="LOCAL-00034" />
+      <option name="project" value="LOCAL" />
+      <updated>1724014959139</updated>
+    </task>
+    <task id="LOCAL-00035" summary="Changed data structure for constants.py from nested dictionary to NamedTuples. This makes them both immutable and able to be accessed via indexing and dot notation. Still need to rearrange categories for intuitive division bw FeatureFrame.py and FeatureSelector.py.&#10;&#10;Signed-off-by: MMANNING &lt;manning.matthew@epa.gov&gt;">
+      <option name="closed" value="true" />
+      <created>1724117454997</created>
+      <option name="number" value="00035" />
+      <option name="presentableId" value="LOCAL-00035" />
+      <option name="project" value="LOCAL" />
+      <updated>1724117454997</updated>
+    </task>
+    <task id="LOCAL-00036" summary="Adds nested dictionary to store run parameters.&#10;Reformats log messages.&#10;Adds Barysz and Randic to list of &quot;uninterpretable&quot; features.&#10;&#10;Signed-off-by: MMANNING &lt;manning.matthew@epa.gov&gt;">
+      <option name="closed" value="true" />
+      <created>1724331701198</created>
+      <option name="number" value="00036" />
+      <option name="presentableId" value="LOCAL-00036" />
+      <option name="project" value="LOCAL" />
+      <updated>1724331701198</updated>
+    </task>
+    <task id="LOCAL-00037" summary="Adds a property setter for FeatureFrame.feat_vars.&#10;Moves _set_sparse_dense.&#10;&#10;Signed-off-by: MMANNING &lt;manning.matthew@epa.gov&gt;">
+      <option name="closed" value="true" />
+      <created>1724331811741</created>
+      <option name="number" value="00037" />
+      <option name="presentableId" value="LOCAL-00037" />
+      <option name="project" value="LOCAL" />
+      <updated>1724331811741</updated>
+    </task>
+    <task id="LOCAL-00038" summary="Creates math.py in utils. Adds softmax function compatible with Series to replace numpy version.&#10;&#10;Signed-off-by: MMANNING &lt;manning.matthew@epa.gov&gt;">
+      <option name="closed" value="true" />
+      <created>1724331863867</created>
+      <option name="number" value="00038" />
+      <option name="presentableId" value="LOCAL-00038" />
+      <option name="project" value="LOCAL" />
+      <updated>1724331863868</updated>
+    </task>
+    <task id="LOCAL-00039" summary="Creates conditional_mi.py to calculate Conditional Mutual Information to use in feature selection.&#10;&#10;&#10;Signed-off-by: MMANNING &lt;manning.matthew@epa.gov&gt;">
+      <option name="closed" value="true" />
+      <created>1724331966440</created>
+      <option name="number" value="00039" />
+      <option name="presentableId" value="LOCAL-00039" />
+      <option name="project" value="LOCAL" />
+      <updated>1724331966440</updated>
+    </task>
+    <task id="LOCAL-00040" summary="Adds alternative code for conditional MI to test, function for weighted entropy (for imbalanced data), and gram matrix for precomputation.&#10;&#10;&#10;Signed-off-by: MMANNING &lt;manning.matthew@epa.gov&gt;">
+      <option name="closed" value="true" />
+      <created>1724332049285</created>
+      <option name="number" value="00040" />
+      <option name="presentableId" value="LOCAL-00040" />
+      <option name="project" value="LOCAL" />
+      <updated>1724332049286</updated>
+    </task>
+    <task id="LOCAL-00041" summary="Optimizes imports. Refactors calculate_vif. Test function (vif_bad_apples) that uses selected model, such as LassoCV, to remove irrelevant or highly collinear features. Meant to improve on OLS method for determining multicollinearity.&#10;Attempts to add elimination criteria that combines VIF and MI information. Will replace with method described in MI literature.&#10;&#10;&#10;Signed-off-by: MMANNING &lt;manning.matthew@epa.gov&gt;">
+      <option name="closed" value="true" />
+      <created>1724332338609</created>
+      <option name="number" value="00041" />
+      <option name="presentableId" value="LOCAL-00041" />
+      <option name="project" value="LOCAL" />
+      <updated>1724332338609</updated>
+    </task>
+    <task id="LOCAL-00042" summary="In progress refactoring of model outputs into functions that plot, score, and save results. Changes formatting in plots. WIP.&#10;&#10;Signed-off-by: MMANNING &lt;manning.matthew@epa.gov&gt;">
+      <option name="closed" value="true" />
+      <created>1724332499200</created>
+      <option name="number" value="00042" />
+      <option name="presentableId" value="LOCAL-00042" />
+      <option name="project" value="LOCAL" />
+      <updated>1724332499200</updated>
+    </task>
+    <task id="LOCAL-00043" summary="Adds code copied from GitHub implementing the C4.5 algorithm (sklearn's DT uses CART).">
+      <option name="closed" value="true" />
+      <created>1724419927495</created>
+      <option name="number" value="00043" />
+      <option name="presentableId" value="LOCAL-00043" />
+      <option name="project" value="LOCAL" />
+      <updated>1724419927495</updated>
+    </task>
+    <task id="LOCAL-00044" summary="Refactors MI selection code.">
+      <option name="closed" value="true" />
+      <created>1724420078850</created>
+      <option name="number" value="00044" />
+      <option name="presentableId" value="LOCAL-00044" />
+      <option name="project" value="LOCAL" />
+      <updated>1724420078850</updated>
+    </task>
+    <task id="LOCAL-00045" summary="Fixes errors in plotting code for RocDisplay function.">
+      <option name="closed" value="true" />
+      <created>1724420155473</created>
+      <option name="number" value="00045" />
+      <option name="presentableId" value="LOCAL-00045" />
+      <option name="project" value="LOCAL" />
+      <updated>1724420155473</updated>
+    </task>
+    <task id="LOCAL-00046" summary="Adds uninterpretable keyword and features properties to FeatureSelector.py for later use.">
+      <option name="closed" value="true" />
+      <created>1724420215706</created>
+      <option name="number" value="00046" />
+      <option name="presentableId" value="LOCAL-00046" />
+      <option name="project" value="LOCAL" />
+      <updated>1724420215706</updated>
+    </task>
+    <task id="LOCAL-00047" summary="Changes to project files.">
+      <option name="closed" value="true" />
+      <created>1724420312955</created>
+      <option name="number" value="00047" />
+      <option name="presentableId" value="LOCAL-00047" />
+      <option name="project" value="LOCAL" />
+      <updated>1724420312955</updated>
+    </task>
+    <task id="LOCAL-00048" summary="Changes to project files.&#10;&#10;Signed-off-by: MMANNING &lt;manning.matthew@epa.gov&gt;">
+      <option name="closed" value="true" />
+      <created>1724420329582</created>
+      <option name="number" value="00048" />
+      <option name="presentableId" value="LOCAL-00048" />
+      <option name="project" value="LOCAL" />
+      <updated>1724420329582</updated>
+    </task>
+    <task id="LOCAL-00049" summary="Backup for feature-based training.">
+      <option name="closed" value="true" />
+      <created>1725471805826</created>
+      <option name="number" value="00049" />
+      <option name="presentableId" value="LOCAL-00049" />
+      <option name="project" value="LOCAL" />
+      <updated>1725471805826</updated>
+    </task>
+    <task id="LOCAL-00050" summary="Initial commit. Calculates binomial conditioned, feature;feature (with mixed discrete/continuous predictors), and randomly undersampled mutual information.">
+      <option name="closed" value="true" />
+      <created>1725886990162</created>
+      <option name="number" value="00050" />
+      <option name="presentableId" value="LOCAL-00050" />
+      <option name="project" value="LOCAL" />
+      <updated>1725886990162</updated>
+    </task>
+    <task id="LOCAL-00051" summary="Initial commit. Helper function for plotting ML model results, especially for imbalanced classification tasks.">
+      <option name="closed" value="true" />
+      <created>1725887051831</created>
+      <option name="number" value="00051" />
+      <option name="presentableId" value="LOCAL-00051" />
+      <option name="project" value="LOCAL" />
+      <updated>1725887051831</updated>
+    </task>
+    <task id="LOCAL-00052" summary="Initial commit. Helper functions for splitting data, getting indices as stored listed, and logging split scores and summary stats.">
+      <option name="closed" value="true" />
+      <created>1725887241633</created>
+      <option name="number" value="00052" />
+      <option name="presentableId" value="LOCAL-00052" />
+      <option name="project" value="LOCAL" />
+      <updated>1725887241633</updated>
+    </task>
+    <task id="LOCAL-00053" summary="Initial commit. Functions to calculate Variance Influence Factor to detect multicollinearity in sets of features during feature selection.">
+      <option name="closed" value="true" />
+      <created>1725887299541</created>
+      <option name="number" value="00053" />
+      <option name="presentableId" value="LOCAL-00053" />
+      <option name="project" value="LOCAL" />
+      <updated>1725887299541</updated>
+    </task>
+    <task id="LOCAL-00054" summary="Initial commit. Functions to help with undersampling, feature selection, and cross-validation of ML models.">
+      <option name="closed" value="true" />
+      <created>1725887390174</created>
+      <option name="number" value="00054" />
+      <option name="presentableId" value="LOCAL-00054" />
+      <option name="project" value="LOCAL" />
+      <updated>1725887390174</updated>
+    </task>
+    <task id="LOCAL-00055" summary="Initial commit. Added 'stats' property to class for univariate feature statistics.">
+      <option name="closed" value="true" />
+      <created>1725887460162</created>
+      <option name="number" value="00055" />
+      <option name="presentableId" value="LOCAL-00055" />
+      <option name="project" value="LOCAL" />
+      <updated>1725887460162</updated>
+    </task>
+    <task id="LOCAL-00056" summary="Added dictionaries for common imbalanced learning scoring names and functions and for names and functions of commonly used sklearn/imblearn model functions.">
+      <option name="closed" value="true" />
+      <created>1725887552060</created>
+      <option name="number" value="00056" />
+      <option name="presentableId" value="LOCAL-00056" />
+      <option name="project" value="LOCAL" />
+      <updated>1725887552060</updated>
+    </task>
+    <task id="LOCAL-00057" summary="Notebooks for testing feature selection and training methods.">
+      <option name="closed" value="true" />
+      <created>1725887644877</created>
+      <option name="number" value="00057" />
+      <option name="presentableId" value="LOCAL-00057" />
+      <option name="project" value="LOCAL" />
+      <updated>1725887644877</updated>
+    </task>
+    <task id="LOCAL-00058" summary="Removes unnecessary elements and adds method to only get interpretable features.">
+      <option name="closed" value="true" />
+      <created>1726685586472</created>
+      <option name="number" value="00058" />
+      <option name="presentableId" value="LOCAL-00058" />
+      <option name="project" value="LOCAL" />
+      <updated>1726685586472</updated>
+    </task>
+    <task id="LOCAL-00059" summary="Helper functions to determine feature type.">
+      <option name="closed" value="true" />
+      <created>1726685627543</created>
+      <option name="number" value="00059" />
+      <option name="presentableId" value="LOCAL-00059" />
+      <option name="project" value="LOCAL" />
+      <updated>1726685627543</updated>
+    </task>
+    <task id="LOCAL-00060" summary="Uses distributions.py feature to determine whether a feature is discrete.">
+      <option name="closed" value="true" />
+      <created>1726685682573</created>
+      <option name="number" value="00060" />
+      <option name="presentableId" value="LOCAL-00060" />
+      <option name="project" value="LOCAL" />
+      <updated>1726685682573</updated>
+    </task>
+    <task id="LOCAL-00061" summary="Adds methods to get feature importances using different models, including Random Forest, iterate PCA dimensionality reduction, and sort ordinal/count features (ex. number of rings).">
+      <option name="closed" value="true" />
+      <created>1726685889962</created>
+      <option name="number" value="00061" />
+      <option name="presentableId" value="LOCAL-00061" />
+      <option name="project" value="LOCAL" />
+      <updated>1726685889962</updated>
+    </task>
+    <task id="LOCAL-00062" summary="Removes unnecessary imports. Fixes arguments in iterative PCA.">
+      <option name="closed" value="true" />
+      <created>1726686199168</created>
+      <option name="number" value="00062" />
+      <option name="presentableId" value="LOCAL-00062" />
+      <option name="project" value="LOCAL" />
+      <updated>1726686199168</updated>
+    </task>
+    <task id="LOCAL-00063" summary="Condenses import list. Moves VIF code to its own file. Adds FMIM feature selection algorithm.">
+      <option name="closed" value="true" />
+      <created>1726686373854</created>
+      <option name="number" value="00063" />
+      <option name="presentableId" value="LOCAL-00063" />
+      <option name="project" value="LOCAL" />
+      <updated>1726686373854</updated>
+    </task>
+    <task id="LOCAL-00064" summary="Comments out get_mi_feats. Code was too complex and likely unreliable. Based on recent understanding of how scikit implements the KSG algorithm.">
+      <option name="closed" value="true" />
+      <created>1726686770799</created>
+      <option name="number" value="00064" />
+      <option name="presentableId" value="LOCAL-00064" />
+      <option name="project" value="LOCAL" />
+      <updated>1726686770799</updated>
+    </task>
+    <task id="LOCAL-00065" summary="Fixes scoring name and arguments.&#10;Adds function to get incorrect predictions from model. Helper function to rearrange tuples coming from model output.">
+      <option name="closed" value="true" />
+      <created>1726686951960</created>
+      <option name="number" value="00065" />
+      <option name="presentableId" value="LOCAL-00065" />
+      <option name="project" value="LOCAL" />
+      <updated>1726686951960</updated>
+    </task>
+    <task id="LOCAL-00066" summary="Fix imports.">
+      <option name="closed" value="true" />
+      <created>1726686980196</created>
+      <option name="number" value="00066" />
+      <option name="presentableId" value="LOCAL-00066" />
+      <option name="project" value="LOCAL" />
+      <updated>1726686980196</updated>
+    </task>
+    <task id="LOCAL-00067" summary="Initial imports of outside code for mutual info estimation and feature selection.">
+      <option name="closed" value="true" />
+      <created>1726687130048</created>
+      <option name="number" value="00067" />
+      <option name="presentableId" value="LOCAL-00067" />
+      <option name="project" value="LOCAL" />
+      <updated>1726687130048</updated>
+    </task>
+    <task id="LOCAL-00068" summary="Moves logging info to persistence.py&#10;Moves set pandas, numpy, and sklearn outputs to persistence.py">
+      <option name="closed" value="true" />
+      <created>1726687581465</created>
+      <option name="number" value="00068" />
+      <option name="presentableId" value="LOCAL-00068" />
+      <option name="project" value="LOCAL" />
+      <updated>1726687581465</updated>
+    </task>
+    <task id="LOCAL-00069" summary="Cleans imports.">
+      <option name="closed" value="true" />
+      <created>1726687624860</created>
+      <option name="number" value="00069" />
+      <option name="presentableId" value="LOCAL-00069" />
+      <option name="project" value="LOCAL" />
+      <updated>1726687624860</updated>
+    </task>
+    <task id="LOCAL-00070" summary="Returns metainfo for specific samples. SMILES, INCHI, DATA_SOURCE as DataFrame with InchiKeys as index.">
+      <option name="closed" value="true" />
+      <created>1726687744673</created>
+      <option name="number" value="00070" />
+      <option name="presentableId" value="LOCAL-00070" />
+      <option name="project" value="LOCAL" />
+      <updated>1726687744673</updated>
+    </task>
+    <task id="LOCAL-00071" summary="Initial trial to plot PCA outputs for dimensionality reduction.">
+      <option name="closed" value="true" />
+      <created>1726688138762</created>
+      <option name="number" value="00071" />
+      <option name="presentableId" value="LOCAL-00071" />
+      <option name="project" value="LOCAL" />
+      <updated>1726688138762</updated>
+    </task>
+    <task id="LOCAL-00072" summary="Helper functions to manipulate strings and determine if object is iterable, etc.">
+      <option name="closed" value="true" />
+      <created>1726688176909</created>
+      <option name="number" value="00072" />
+      <option name="presentableId" value="LOCAL-00072" />
+      <option name="project" value="LOCAL" />
+      <updated>1726688176909</updated>
+    </task>
+    <task id="LOCAL-00073" summary="General use function to run tests with specific implementation for Balanced Random Forest and LogisticRegressionCV.&#10;More cases can be added or the general function supplied with instantiated sklearn model.">
+      <option name="closed" value="true" />
+      <created>1726688285381</created>
+      <option name="number" value="00073" />
+      <option name="presentableId" value="LOCAL-00073" />
+      <option name="project" value="LOCAL" />
+      <updated>1726688285381</updated>
+    </task>
+    <task id="LOCAL-00074" summary="Places global variables into their own function.&#10;Removes or splits redundant, overcomplicated, and unnecessary functions.">
+      <option name="closed" value="true" />
+      <created>1726689299253</created>
+      <option name="number" value="00074" />
+      <option name="presentableId" value="LOCAL-00074" />
+      <option name="project" value="LOCAL" />
+      <updated>1726689299253</updated>
+    </task>
+    <task id="LOCAL-00075" summary="Initial of dataclasses meant for CV, multi-run model and model results.">
+      <option name="closed" value="true" />
+      <created>1726689364132</created>
+      <option name="number" value="00075" />
+      <option name="presentableId" value="LOCAL-00075" />
+      <option name="project" value="LOCAL" />
+      <updated>1726689364132</updated>
+    </task>
+    <task id="LOCAL-00076" summary="Helper function for normalizing a DataFrame by dividing row-wise and column-wise the squart-root of the trace.">
+      <option name="closed" value="true" />
+      <created>1726689491164</created>
+      <option name="number" value="00076" />
+      <option name="presentableId" value="LOCAL-00076" />
+      <option name="project" value="LOCAL" />
+      <updated>1726689491164</updated>
+    </task>
+    <task id="LOCAL-00077" summary="Initial commit of feature combination methods.">
+      <option name="closed" value="true" />
+      <created>1726689533920</created>
+      <option name="number" value="00077" />
+      <option name="presentableId" value="LOCAL-00077" />
+      <option name="project" value="LOCAL" />
+      <updated>1726689533920</updated>
+    </task>
+    <task id="LOCAL-00078" summary="Implements some features on planning TODO list.">
+      <option name="closed" value="true" />
+      <created>1726690149177</created>
+      <option name="number" value="00078" />
+      <option name="presentableId" value="LOCAL-00078" />
+      <option name="project" value="LOCAL" />
+      <updated>1726690149177</updated>
+    </task>
+    <task id="LOCAL-00079" summary="Moved feature importance functions from features.py in utils to importance.py in features.&#10;Deleted get_mi_feats due to unnecessary complexity and overlap with other functions">
+      <option name="closed" value="true" />
+      <created>1726692712208</created>
+      <option name="number" value="00079" />
+      <option name="presentableId" value="LOCAL-00079" />
+      <option name="project" value="LOCAL" />
+      <updated>1726692712208</updated>
+    </task>
+    <task id="LOCAL-00080" summary="Initial commit of brute force feature importance search.">
+      <option name="closed" value="true" />
+      <created>1726760104296</created>
+      <option name="number" value="00080" />
+      <option name="presentableId" value="LOCAL-00080" />
+      <option name="project" value="LOCAL" />
+      <updated>1726760104296</updated>
+    </task>
+    <task id="LOCAL-00081" summary="Recommit after directory refactor.">
+      <option name="closed" value="true" />
+      <created>1727022284580</created>
+      <option name="number" value="00081" />
+      <option name="presentableId" value="LOCAL-00081" />
+      <option name="project" value="LOCAL" />
+      <updated>1727022284580</updated>
+    </task>
+    <option name="localTasksCounter" value="82" />
+    <option name="clearContext" value="false" />
+    <servers />
+  </component>
+  <component name="Vcs.Log.History.Properties">
+    <option name="COLUMN_ID_ORDER">
+      <list>
+        <option value="Default.Root" />
+        <option value="Default.Author" />
+        <option value="Default.Date" />
+        <option value="Default.Subject" />
+        <option value="Space.CommitStatus" />
+      </list>
+    </option>
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="RECENT_FILTERS">
+      <map>
+        <entry key="Branch">
+          <value>
+            <list>
+              <RecentGroup>
+                <option name="FILTER_VALUES">
+                  <option value="dev" />
+                </option>
+              </RecentGroup>
+              <RecentGroup>
+                <option name="FILTER_VALUES">
+                  <option value="de-pandaize" />
+                </option>
+              </RecentGroup>
+            </list>
+          </value>
+        </entry>
+      </map>
+    </option>
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <option name="CHECK_CODE_SMELLS_BEFORE_PROJECT_COMMIT" value="true" />
+    <option name="CHECK_CODE_CLEANUP_BEFORE_PROJECT_COMMIT" value="true" />
+    <ignored-roots>
+      <path value="$USER_HOME$/Desktop/qsar-modeling-workflow" />
+    </ignored-roots>
+    <MESSAGE value="Notebooks for testing feature selection and training methods." />
+    <MESSAGE value="Removes unnecessary elements and adds method to only get interpretable features." />
+    <MESSAGE value="Helper functions to determine feature type." />
+    <MESSAGE value="Uses distributions.py feature to determine whether a feature is discrete." />
+    <MESSAGE value="Adds methods to get feature importances using different models, including Random Forest, iterate PCA dimensionality reduction, and sort ordinal/count features (ex. number of rings)." />
+    <MESSAGE value="Removes unnecessary imports. Fixes arguments in iterative PCA." />
+    <MESSAGE value="Condenses import list. Moves VIF code to its own file. Adds FMIM feature selection algorithm." />
+    <MESSAGE value="Comments out get_mi_feats. Code was too complex and likely unreliable. Based on recent understanding of how scikit implements the KSG algorithm." />
+    <MESSAGE value="Fixes scoring name and arguments.&#10;Adds function to get incorrect predictions from model. Helper function to rearrange tuples coming from model output." />
+    <MESSAGE value="Fix imports." />
+    <MESSAGE value="Initial imports of outside code for mutual info estimation and feature selection." />
+    <MESSAGE value="Moves logging info to persistence.py&#10;Moves set pandas, numpy, and sklearn outputs to persistence.py" />
+    <MESSAGE value="Cleans imports." />
+    <MESSAGE value="Returns metainfo for specific samples. SMILES, INCHI, DATA_SOURCE as DataFrame with InchiKeys as index." />
+    <MESSAGE value="Initial trial to plot PCA outputs for dimensionality reduction." />
+    <MESSAGE value="Helper functions to manipulate strings and determine if object is iterable, etc." />
+    <MESSAGE value="General use function to run tests with specific implementation for Balanced Random Forest and LogisticRegressionCV.&#10;More cases can be added or the general function supplied with instantiated sklearn model." />
+    <MESSAGE value="Places global variables into their own function.&#10;Removes or splits redundant, overcomplicated, and unnecessary functions." />
+    <MESSAGE value="Initial of dataclasses meant for CV, multi-run model and model results." />
+    <MESSAGE value="Helper function for normalizing a DataFrame by dividing row-wise and column-wise the squart-root of the trace." />
+    <MESSAGE value="Initial commit of feature combination methods." />
+    <MESSAGE value="Implements some features on planning TODO list." />
+    <MESSAGE value="Moved feature importance functions from features.py in utils to importance.py in features.&#10;Deleted get_mi_feats due to unnecessary complexity and overlap with other functions" />
+    <MESSAGE value="Initial commit of brute force feature importance search." />
+    <MESSAGE value="Recommit after directory refactor." />
+    <option name="LAST_COMMIT_MESSAGE" value="Recommit after directory refactor." />
+    <option name="REFORMAT_BEFORE_PROJECT_COMMIT" value="true" />
+    <option name="REARRANGE_BEFORE_PROJECT_COMMIT" value="true" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$USER_HOME$/OneDrive/Profile/qsar-modeling-workflow/qsar_modeling/feature_selection/variance.py</url>
+          <line>10</line>
+          <option name="timeStamp" value="2" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$USER_HOME$/OneDrive/Profile/qsar-modeling-workflow/.venv/Lib/site-packages/ITMO_FS/filters/multivariate/DISRwithMassive.py</url>
+          <option name="timeStamp" value="9" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$USER_HOME$/OneDrive/Profile/qsar-modeling-workflow/notebooks/dmso_workflow.py</url>
+          <line>26</line>
+          <option name="timeStamp" value="18" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
+  </component>
+</project>
