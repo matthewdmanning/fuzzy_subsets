@@ -22,7 +22,10 @@ def rename_duplicate_features(feature_df):
     feature_df = feature_df.T.drop_duplicates().T
     while feature_df.columns[feature_df.columns.duplicated()].size > 0:
         print(feature_df.columns.duplicated(keep="first"))
-        feature_df.columns = feature_df.columns.where(~feature_df.columns.duplicated(keep="first"), feature_df.columns[feature_df.columns.duplicated()] + 'i')
+        feature_df.columns = feature_df.columns.where(
+            ~feature_df.columns.duplicated(keep="first"),
+            feature_df.columns[feature_df.columns.duplicated()] + "i",
+        )
     assert feature_df.columns[feature_df.columns.duplicated()].size == 0
     """
     dups = feature_df.columns[feature_df.columns.duplicated(keep=False)].unique()
@@ -39,7 +42,12 @@ def check_inchi_only(inchi_keys):
     correct_keys, bad_keys = list(), list()
     for k in inchi_keys:
         ksplit = k.split("-")
-        if len(ksplit) == 3 and len(ksplit[0]) == 14 and len(ksplit[1]) == 10 and len(ksplit[2]) == 1:
+        if (
+            len(ksplit) == 3
+            and len(ksplit[0]) == 14
+            and len(ksplit[1]) == 10
+            and len(ksplit[2]) == 1
+        ):
             correct_keys.append(k)
         else:
             bad_keys.append(k)
