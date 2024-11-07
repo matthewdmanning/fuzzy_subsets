@@ -12,21 +12,25 @@ checker = partial(
 
 
 def load_all_descriptors():
-    with open("{}filtered/PADEL_EPA_ENAMINE_5mM.pkl".format(os.environ.get("FINAL_DIR")), "rb") as f:
+    with open(
+        "{}filtered/PADEL_EPA_ENAMINE_5mM.pkl".format(os.environ.get("FINAL_DIR")), "rb"
+    ) as f:
         feature_df = pickle.load(f)
     return feature_df
 
 
 def load_idx_selector(source_label_combos):
     # with open("{}filtered/PADEL_EPA_ENAMINE_5mM.pkl".format(os.environ.get("FINAL_DIR")), "rb") as f:
-    with open("{}filtered/PADEL_CFP_COMBO_5mM.pkl".format(os.environ.get("FINAL_DIR")), "rb") as f:
+    with open(
+        "{}filtered/PADEL_CFP_COMBO_5mM.pkl".format(os.environ.get("FINAL_DIR")), "rb"
+    ) as f:
         data_df = pickle.load(f)
     print(data_df.columns)
     print(data_df["DATA_SOURCE"].squeeze().unique())
     print(data_df["DMSO_SOLUBILITY"].squeeze().value_counts())
     idx_dict = dict()
-    en_idx = data_df[data_df["DATA_SOURCE"] == 'ENAMINE']
-    epa_idx = data_df[data_df["DATA_SOURCE"] == 'EPA']
+    en_idx = data_df[data_df["DATA_SOURCE"] == "ENAMINE"]
+    epa_idx = data_df[data_df["DATA_SOURCE"] == "EPA"]
     sol_idx = data_df[data_df["DATA_SOURCE"] == 1]
     insol_idx = data_df[data_df["DATA_SOURCE"] == 0]
     for combo in source_label_combos:
@@ -56,7 +60,10 @@ def load_metadata(desc=False):
     #   -INCHI_KEY: Descriptors (DataFrame w/1444 columns)
     # Metadata contains INCHI key, QSAR SMILES, INCHI strings, Circular Fingerprints, and PaDeL descriptors.
     # with open("{}filtered/PADEL_CFP_COMBO_5mM.pkl".format(os.environ.get("FINAL_DIR")), "rb") as f:
-    with open("{}padel/PADEL_EPA_ENAMINE_5mM_TUPLES.pkl".format(os.environ.get("FINAL_DIR")), "rb") as f:
+    with open(
+        "{}padel/PADEL_EPA_ENAMINE_5mM_TUPLES.pkl".format(os.environ.get("FINAL_DIR")),
+        "rb",
+    ) as f:
         tups = pickle.load(f)
     if type(tups) is not dict or not all(
         [t in tups.keys() for t in ["en_sol", "epa_sol", "en_in", "epa_in"]]
@@ -91,9 +98,7 @@ def load_training_idx(clean=True):
     # meta_idx = pickle.load(f)
     # with open(constants.paths.train, 'rb') as f:
     with open(
-        "{}filtered/MAXMIN_PADEL_TRAIN.pkl".format(
-            os.environ.get("FINAL_DIR")
-        ),
+        "{}filtered/MAXMIN_PADEL_TRAIN.pkl".format(os.environ.get("FINAL_DIR")),
         "rb",
     ) as f:
         train_tup = pickle.load(f)
@@ -154,7 +159,13 @@ def get_all_idx(epa_sol=True, interpret=True, meta_desc=False):
                     padel_df["Descriptor name"].tolist(),
                     padel_df["Description"].tolist(),
                 )
-                desc_df = pd.concat([pd.Series(data=r, index=long_names, name=n) for n, r in v[1]['DESCRIPTORS'].items()], axis=1).T
+                desc_df = pd.concat(
+                    [
+                        pd.Series(data=r, index=long_names, name=n)
+                        for n, r in v[1]["DESCRIPTORS"].items()
+                    ],
+                    axis=1,
+                ).T
                 print(desc_df.head())
             else:
                 desc_df = v[2]
