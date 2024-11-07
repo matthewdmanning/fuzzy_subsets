@@ -1,4 +1,5 @@
 import pandas as pd
+from sklearn.utils import check_X_y as checker
 
 
 def remove_duplicate_idx(df):
@@ -18,15 +19,18 @@ def remove_duplicate_idx(df):
 
 def rename_duplicate_features(feature_df):
     # Renames unique-valued, identically-named features in a DataFrame.
+    feature_df = feature_df.T.drop_duplicates().T
     while feature_df.columns[feature_df.columns.duplicated()].size > 0:
-        feature_df.columns = feature_df.columns.where(~feature_df.columns.duplicated(), feature_df.columns + 'i')
+        print(feature_df.columns.duplicated(keep="first"))
+        feature_df.columns = feature_df.columns.where(~feature_df.columns.duplicated(keep="first"), feature_df.columns[feature_df.columns.duplicated()] + 'i')
     assert feature_df.columns[feature_df.columns.duplicated()].size == 0
-
+    """
     dups = feature_df.columns[feature_df.columns.duplicated(keep=False)].unique()
     for col in dups:
         inds = feature_df.columns
         for i, ind in enumerate(inds):
             feature_df.columns[ind] = '{}_i'.format(feature_df.columns[ind])
+    """
     return feature_df
 
 
