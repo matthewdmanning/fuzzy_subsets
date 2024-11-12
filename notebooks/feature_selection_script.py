@@ -1,49 +1,31 @@
 import os.path
 import pprint
 from functools import partial
-from typing import Sequence
-
-import feature_selection.mutual_info_tools.jmi_homebrew
 import numpy as np
 import pandas as pd
-import pickle
-from data import feature_name_lists
-from qsar_modeling.data_handling.data_tools import (
-    get_interpretable_features,
-    load_training_data,
-    load_metadata,
-)
-from feature_selection.correlation_filter import findCorrelation
-from data_handling import data_tools
-from sklearn.ensemble import RandomForestClassifier
-
-# from sklearn.linear_model import LogisticRegressionCV
-from sklearn.model_selection import StratifiedKFold
-from sklearn.feature_selection import RFE, RFECV, SequentialFeatureSelector
-from imblearn.under_sampling import RandomUnderSampler
 from imblearn.ensemble import BalancedRandomForestClassifier
+from imblearn.under_sampling import RandomUnderSampler
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.feature_selection import SequentialFeatureSelector
 from sklearn.metrics import (
     make_scorer,
     matthews_corrcoef,
-    balanced_accuracy_score,
-    roc_auc_score,
-    confusion_matrix,
 )
-from sklearn.utils import check_X_y
-from feature_selection.importance import brute_force_importance_rf_clf
-from data_handling.data_cleaning import remove_duplicate_idx
-from feature_selection.importance import dummy_score_elimination
 
-pd.set_option("display.precision", 4)
-pd.set_option("format.precision", 4)
-np.set_printoptions(formatter={"float": "{: 0.4f}".format})
-correlation_type = "mi"
-importance_model_name = "brf"
-data_set = "epa-sol"
-project_dir = "C:/Users/mmanning/OneDrive - Environmental Protection Agency (EPA)/qsar-modeling-workflow/models/correlation_corrected_feat_selection/"
-if not os.path.isdir(project_dir):
-    os.makedirs(project_dir)
-matthews_scorer = make_scorer(matthews_corrcoef)
+# from sklearn.linear_model import LogisticRegressionCV
+from sklearn.model_selection import StratifiedKFold
+from sklearn.utils import check_X_y
+from data_handling.data_cleaning import remove_duplicate_idx
+from feature_selection.correlation_filter import findCorrelation
+from feature_selection.importance import (
+    brute_force_importance_rf_clf,
+    dummy_score_elimination,
+)
+from feature_selection import vif
+from qsar_modeling.data_handling.data_tools import (
+    get_interpretable_features,
+    load_metadata,
+)
 
 
 def get_epa_sol_all_insol(feature_df, labels, tups):
@@ -88,76 +70,93 @@ def load_data(epa_sol=False):
 
 
 def brute_force_with_collinear(
-        feature_df,
-        labels,
-        clf,
-        clf_name,
-        feat_step_tups,
-        select_dir,
-        corr_method="spearman",
-        dummy_thresh=75,
-        **fit_kwargs
+    feature_df, labels, clf, clf_name, feat_step_tups, select_dir, **fit_kwargs
 ):
     scorer = make_scorer(matthews_corrcoef)
     X_selected = feature_df.copy()
 
     if not os.path.isdir(select_dir):
         os.makedirs(select_dir)
-    for i, (n_feats, step_size) in enumerate(feat_step_tups):
+    for i, (corr_method, n_feats, step_size, corr_cut) in enumerate(feat_step_tups):
         print(X_selected.shape)
-        if step_size == 0:
-            print(step_size)
-            n_keep = n_feats[0]
-            n_drop = X_selected.shape[1] - n_keep
-            corr_cut = n_feats[1]
-            if "mi" in corr_method:
-                cross_mi_path = "{}rus5_cross_mi.csv".format(select_dir)
-                if os.path.isfile(cross_mi_path):
-                    feat_corr = pd.read_csv(cross_mi_path)
-                else:
-                    from feature_selection.mutual_info_tools import jmi_homebrew
-                    from sklearn.feature_selection import mutual_info_regression
+        print(step_size)
+        n_drop = X_selected.shape[1] - n_feats
+        if corr_method == "rfe":
+            feat_ranks, elim = brute_force_importance_rf_clf(
+                X_selected,
+                labels,
+                clf=clf,
+                n_features_out=n_feats,
+                step_size=step_size,
+                **fit_kwargs
+            )
+            feats = feat_ranks[feat_ranks == 1]
 
-                    mi_opt = {
-                        "n_neighbors":  5,
-                        "random_state": 0,
-                        "n_jobs":       -1,
-                    }
-                    mi_part = partial(
-                        mutual_info_regression,
-                        discrete_features="auto",
-                        n_neighbors=5,
-                        random_state=0,
-                        n_jobs=-1,
-                    )
-                    rus_list = list()
-                    for i in np.arange(5):
-                        rus_X, rus_y = RandomUnderSampler(random_state=0).fit_resample(
-                            X_selected, labels
-                        )
-                        rus_list.append(jmi_homebrew.mi_mixed_types(rus_X, **mi_opt))
-                    feat_corr = (
-                        pd.concat(rus_list, axis=1)
-                        .stack()
-                        .groupby(level=[0, 1])
-                        .mean()
-                        .unstack()
-                    )
-                    feat_corr.index = X_selected.columns
-                from sklearn.metrics import normalized_mutual_info_score
+            feature_path = "{}n{}_step{}_rfe_{}.csv".format(
+                select_dir, n_feats, step_size, i
+            )
+        elif "rfe" in corr_method and "dummy" in corr_method:
+            dummy_list = list()
+            X_selected = dummy_score_elimination(
+                X_selected,
+                labels,
+                estimator=clf,
+                min_feats=n_feats,
+                cv=StratifiedKFold(shuffle=True),
+                score_func=scorer,
+                **fit_kwargs
+            )
+            feats = X_selected.columns.to_series()
 
-                feat_corr.to_csv(cross_mi_path, index_label=True)
-                drop_str = corr_method
+            feature_path = "{}n{}_step{}_dummy_elimination_{}.csv".format(
+                select_dir, n_feats, step_size, i
+            )
+        elif "mi" in corr_method:
+            cross_mi_path = "{}rus5_cross_mi.csv".format(select_dir)
+            if os.path.isfile(cross_mi_path):
+                feat_corr = pd.read_csv(cross_mi_path)
             else:
-                if not any(
-                        [corr_method == a for a in ["pearson", "kendall", "spearman"]]
-                ):
-                    print(
-                        "No correlation method chosen! Using Spearman's rank correlation by default."
+                from feature_selection.mutual_info_tools import jmi_homebrew
+                from sklearn.feature_selection import mutual_info_regression
+
+                mi_opt = {
+                    "n_neighbors": 5,
+                    "random_state": 0,
+                    "n_jobs": -1,
+                }
+                mi_part = partial(
+                    mutual_info_regression,
+                    discrete_features="auto",
+                    n_neighbors=5,
+                    random_state=0,
+                    n_jobs=-1,
+                )
+                rus_list = list()
+                for _ in np.arange(5):
+                    rus_X, rus_y = RandomUnderSampler(random_state=0).fit_resample(
+                        X_selected, labels
                     )
-                    corr_method = "spearman"
-                feat_corr = X_selected.corr(method=corr_method)
-                drop_str = "{}-{}".format(n_feats, str(corr_cut).replace(".", "-"))
+                    rus_list.append(jmi_homebrew.mi_mixed_types(rus_X, **mi_opt))
+                feat_corr = (
+                    pd.concat(rus_list, axis=1)
+                    .stack()
+                    .groupby(level=[0, 1])
+                    .mean()
+                    .unstack()
+                )
+                feat_corr.index = X_selected.columns
+                feat_corr.to_csv(cross_mi_path, index_label=True)
+                corr_path = "{}corr_matrix_{}_rfe_{}.csv".format(
+                    select_dir, corr_method, i
+                )
+                feat_corr.to_csv(corr_path, index_label="Features", index=True)
+            drop_str = corr_method
+            drop_list = findCorrelation(corr=feat_corr, cutoff=corr_cut, n_drop=n_drop)
+            X_selected.drop(columns=drop_list, inplace=True)
+            feature_path = "{}collinear_{}_rfe_{}.csv".format(select_dir, drop_str, i)
+        elif any([corr_method == a for a in ["pearson", "kendall", "spearman"]]):
+            feat_corr = X_selected.corr(method=corr_method)
+            drop_str = "{}-{}".format(n_feats, str(corr_cut).replace(".", "-"))
             print("Cross-correlation scores:")
             sorted_corr = feat_corr.stack().sort_values(ascending=False, kind="stable")
             pprint.pp(
@@ -173,38 +172,8 @@ def brute_force_with_collinear(
             feat_corr.to_csv(corr_path, index_label="Features", index=True)
             feature_path = "{}collinear_{}_rfe_{}.csv".format(select_dir, drop_str, i)
             feats = X_selected.columns.to_series()
-        elif step_size > 0:
-            if X_selected.shape[1] > dummy_thresh:
-                feats, elim = brute_force_importance_rf_clf(
-                    X_selected,
-                    labels,
-                    clf=clf,
-                    n_features_out=n_feats,
-                    step_size=step_size,
-                    **fit_kwargs
-                )
-                X_selected = X_selected[feats[feats == 1].index]
 
-                feature_path = "{}n{}_step{}_rfe_{}.csv".format(
-                    select_dir, n_feats, step_size, i
-                )
-            else:
-                dummy_list = list()
-                n_drop = X_selected.shape[1] - n_feats
-                X_selected = dummy_score_elimination(
-                    X_selected,
-                    labels,
-                    estimator=clf,
-                    min_feats=X_selected.shape[1] - n_drop,
-                    cv=StratifiedKFold(shuffle=True),
-                    score_func=scorer,
-                )
-                feats = X_selected.columns.to_series()
-
-                feature_path = "{}n{}_step{}_dummy_elimination_{}.csv".format(
-                    select_dir, n_feats, step_size, i
-                )
-        elif step_size < 0:
+        elif "seq" in corr_method:
             if n_feats >= 1 or n_feats <= -1:
                 print(
                     "Starting Sequential Feature Selection of {} features".format(
@@ -212,10 +181,11 @@ def brute_force_with_collinear(
                     )
                 )
                 sfs = SequentialFeatureSelector(
-                    importance_model,
-                    scoring=matthews_scorer,
+                    clf,
+                    scoring=scorer,
                     n_jobs=-2,
                     n_features_to_select=n_feats,
+                    **fit_kwargs
                 ).set_output(transform="pandas")
             elif -1 < n_feats < 1 and n_feats != 0:
                 print(
@@ -224,11 +194,11 @@ def brute_force_with_collinear(
                     )
                 )
                 sfs = SequentialFeatureSelector(
-                    importance_model, scoring=matthews_scorer, n_jobs=-2, tol=n_feats
+                    clf, scoring=scorer, n_jobs=-2, tol=n_feats, **fit_kwargs
                 ).set_output(transform="pandas")
             else:
                 raise ValueError
-            sfs.fit(X_selected, all_y)
+            sfs.fit(X_selected, labels)
             sfs_out = sfs.transform(X_selected)
             if type(X_selected) is not pd.DataFrame:
                 X_selected = pd.DataFrame(
@@ -238,7 +208,22 @@ def brute_force_with_collinear(
                 X_selected = sfs_out
             feats = X_selected.columns.to_series()
             feature_path = "{}{}_fwrd_seq_{}_{}.csv".format(
-                select_dir, data_set, n_feats, i
+                select_dir, clf_name, n_feats, i
+            )
+        elif "vif" in corr_method:
+            drop_ser = vif.sequential_vif(
+                X_selected,
+                clf,
+                vif_cut=corr_cut,
+                n_keep=n_feats,
+                step_size=step_size,
+                **fit_kwargs
+            )
+            drop_list = drop_ser.index
+            X_selected.drop(columns=drop_list, inplace=True)
+            feats = X_selected.columns
+            feature_path = "{}vif_{}_{}_{}.csv".format(
+                select_dir, clf_name, n_feats, corr_cut, i
             )
         else:
             raise ValueError
@@ -246,54 +231,78 @@ def brute_force_with_collinear(
     return X_selected.columns
 
 
-if "epa" in data_set and "sol" in data_set and "insol" not in data_set:
-    all_X, all_y = load_data(epa_sol=True)
-else:
-    all_X, all_y = load_data()
+def main(
+    data_set="epa_sol",
+    model_name="rf",
+    correlation_type="spearman",
+    run_name=None,
+    project_dir=None,
+):
+    pd.set_option("display.precision", 4)
+    pd.set_option("format.precision", 4)
+    # np.set_printoptions(formatter={"float_kind": "{: 0.4f}".format})
+    matthews_scorer = make_scorer(matthews_corrcoef)
+    if project_dir is None:
+        project_dir = "{}correlation_corrected_feat_selection/".format(
+            os.environ.get("MODEL_DIR")
+        )
+    if not os.path.isdir(project_dir):
+        os.makedirs(project_dir)
+    if (
+        type(data_set) is str
+        and "epa" in data_set
+        and "sol" in data_set
+        and "insol" not in data_set
+    ):
+        all_X, all_y = load_data(epa_sol=True)
+    elif data_set is None:
+        all_X, all_y = load_data()
+    else:
+        all_X, all_y = data_set
 
-if importance_model_name == "brf":
-    importance_model = BalancedRandomForestClassifier(
-        bootstrap=False,
-        n_jobs=-2,
-        random_state=0,
-        replacement=False,
-        sampling_strategy="all",
+    if model_name == "brf":
+        importance_model = BalancedRandomForestClassifier(
+            bootstrap=False,
+            n_jobs=-2,
+            random_state=0,
+            replacement=False,
+            sampling_strategy="all",
+        )
+    else:
+        importance_model = RandomForestClassifier(
+            random_state=0, bootstrap=False, n_jobs=-2, class_weight="balanced"
+        )
+        model_name = "rf"
+    feat_step_list = (
+        ("spearman", 500, 0, 0.95),
+        ("rfe", 500, 25, 0),
+        ("spearman", 250, 0, 0.8),
+        ("rfe", 75, 5, 0),
+        ("vif", 75, 10, 1),
+        ("dummy_rfe", 50, 1, 0),
+        ("seq", 40, -0.005, 0),
     )
-else:
-    importance_model = RandomForestClassifier(
-        random_state=0, bootstrap=False, n_jobs=-2
-    )
-    importance_model_name = "rf"
-feat_step_list = (
-    (
-        (500, 0.8),
-        0,
-    ),
-    (500, 25),
-    (
-        (250, 0.7),
-        0,
-    ),
-    (75, 5),
-    (40, 1),
-    (40, -0.005)
-)
-run_name = "{}_{}_{}".format(data_set, correlation_type, importance_model_name)
-dir_i = 0
-elimination_dir = "{}{}_{}/".format(project_dir, run_name, dir_i)
-while os.path.isdir(elimination_dir):
-    dir_i += 1
+    if run_name is None:
+        run_name = "{}_{}".format(data_set, model_name)
+    dir_i = 0
     elimination_dir = "{}{}_{}/".format(project_dir, run_name, dir_i)
-os.makedirs(elimination_dir, exist_ok=True)
-print(elimination_dir)
-rfe_features = brute_force_with_collinear(
-    all_X,
-    all_y,
-    importance_model,
-    importance_model_name,
-    feat_step_list,
-    elimination_dir,
-    corr_method=correlation_type,
-).to_series()
-rfe_path = "{}final_features_selected.csv".format(elimination_dir, data_set)
-rfe_features.to_csv(rfe_path, index=True, index_label="Features")
+    while os.path.isdir(elimination_dir):
+        dir_i += 1
+        elimination_dir = "{}{}_{}/".format(project_dir, run_name, dir_i)
+    os.makedirs(elimination_dir, exist_ok=True)
+    print(elimination_dir)
+    rfe_features = brute_force_with_collinear(
+        all_X,
+        all_y,
+        importance_model,
+        model_name,
+        feat_step_list,
+        elimination_dir,
+    ).to_series()
+    rfe_path = "{}final_features_selected.csv".format(elimination_dir, data_set)
+    rfe_features.to_csv(rfe_path, index=True, index_label="Features")
+    return rfe_features
+
+
+if __name__ == "__main__":
+    main()
