@@ -19,9 +19,11 @@ def remove_duplicate_idx(df):
 
 def rename_duplicate_features(feature_df):
     # Renames unique-valued, identically-named features in a DataFrame.
-    feature_df = feature_df.T.drop_duplicates().T
+    # feature_df = feature_df.T.drop_duplicates().T
     while feature_df.columns[feature_df.columns.duplicated()].size > 0:
-        print(feature_df.columns.duplicated(keep="first"))
+        dup_col = feature_df.columns[feature_df.columns.duplicated(keep="first")]
+        if dup_col.size > 0:
+            print(dup_col)
         feature_df.columns = feature_df.columns.where(
             ~feature_df.columns.duplicated(keep="first"),
             feature_df.columns[feature_df.columns.duplicated()] + "i",
@@ -54,21 +56,21 @@ def check_inchi_only(inchi_keys):
     return correct_keys, bad_keys
 
 
-def clean_and_check(feature_df, labels, y_dtype=None):
-    tup_X = rename_duplicate_features(feature_df)
-    valid_idx, invalid_idx = check_inchi_only(tup_X.index)
+def clean_and_check(feature_df, labels, y_dtype=None, var_thresh=0.005):
+    X_df = feature_df[feature_df.std(axis=1) > var_thresh].copy()
+    X_df = rename_duplicate_features(X_df)
+    valid_idx, invalid_idx = check_inchi_only(X_df.index)
     if len(invalid_idx) > 0:
         raise UserWarning
         print("INCHI keys are not valid: {}".format(invalid_idx))
-    tup_X = tup_X[tup_X.var(axis=1) > 0]
-    tup_y = remove_duplicate_idx(labels)
-    tup_X = tup_X.loc[tup_y.index]
-    tup_y = tup_y.squeeze()
+    y_ser = remove_duplicate_idx(labels)
+    X_df = X_df.loc[y_ser.index]
+    y_ser = y_ser.squeeze()
     if y_dtype is not None:
-        tup_y = tup_y.astype(y_dtype)
-    feature_arr, labels_arr = checker(tup_X, y=tup_y)
-    X_out = pd.DataFrame(data=feature_arr, index=tup_X.index, columns=tup_X.columns)
-    y_out = pd.Series(data=labels_arr, index=tup_y.index)
+        y_ser = y_ser.astype(y_dtype)
+    feature_arr, labels_arr = checker(X_df, y=y_ser)
+    X_out = pd.DataFrame(data=feature_arr, index=X_df.index, columns=X_df.columns)
+    y_out = pd.Series(data=labels_arr, index=y_ser.index)
     assert not X_out.empty
     assert not y_out.empty
     return X_out, y_out
