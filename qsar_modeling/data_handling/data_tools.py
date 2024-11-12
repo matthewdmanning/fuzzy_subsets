@@ -19,36 +19,47 @@ def load_all_descriptors():
     return feature_df
 
 
-def load_idx_selector(source_label_combos):
+def load_idx_selector(source_label_combos="all"):
+    data_dict = load_combo_data(source_label_combos=source_label_combos)
+    idx_dict = dict([(k, df.index) for k, df in data_dict.items()])
+    return idx_dict
+
+
+def load_combo_data(source_label_combos="all"):
+    if source_label_combos == "all":
+        source_label_combos = ["epa_in", "en_in", "epa_sol", "en_sol"]
     # with open("{}filtered/PADEL_EPA_ENAMINE_5mM.pkl".format(os.environ.get("FINAL_DIR")), "rb") as f:
     with open(
         "{}filtered/PADEL_CFP_COMBO_5mM.pkl".format(os.environ.get("FINAL_DIR")), "rb"
     ) as f:
         data_df = pickle.load(f)
     print(data_df.columns)
-    print(data_df["DATA_SOURCE"].squeeze().unique())
+    print(data_df["DATA_SOURCE"].squeeze().value_counts())
     print(data_df["DMSO_SOLUBILITY"].squeeze().value_counts())
     idx_dict = dict()
-    en_idx = data_df[data_df["DATA_SOURCE"] == "ENAMINE"]
-    epa_idx = data_df[data_df["DATA_SOURCE"] == "EPA"]
-    sol_idx = data_df[data_df["DATA_SOURCE"] == 1]
-    insol_idx = data_df[data_df["DATA_SOURCE"] == 0]
+    en_idx = data_df[data_df["DATA_SOURCE"] == "ENAMINE"].index
+    epa_idx = data_df[data_df["DATA_SOURCE"] == "EPA"].index
+    sol_idx = data_df[data_df["DMSO_SOLUBILITY"] == 1].index
+    insol_idx = data_df[data_df["DMSO_SOLUBILITY"] == 0].index
+    print(en_idx.size, epa_idx.size, sol_idx.size, insol_idx.size)
     for combo in source_label_combos:
         if "epa" in combo.lower():
-            if "insol" in combo.lower():
+            if "in" in combo.lower():
                 idx_dict[combo] = epa_idx.intersection(insol_idx)
             elif "sol" in combo.lower():
                 idx_dict[combo] = epa_idx.intersection(sol_idx)
             else:
                 idx_dict[combo] = epa_idx
         elif "en" in combo.lower():
-            if "insol" in combo.lower():
+            if "in" in combo.lower():
                 idx_dict[combo] = en_idx.intersection(insol_idx)
             elif "sol" in combo.lower():
                 idx_dict[combo] = en_idx.intersection(sol_idx)
             else:
                 idx_dict[combo] = en_idx
-    return idx_dict
+        print(combo, idx_dict[combo].size)
+    grouped_df_dict = dict([(k, data_df.loc[idx]) for k, idx in idx_dict.items()])
+    return grouped_df_dict
 
 
 def load_metadata(desc=False):
@@ -88,26 +99,30 @@ def load_metadata(desc=False):
     return tups
 
 
-def load_training_idx(clean=True):
+def load_maxmin_data(dataset, clean=True):
     # Loads data containing combined PaDeL descriptors and soluble/insoluble labels from all sources.
-    meta_idx = ""
-    # from data import constants
-    # print(constants.paths.combo_path)
-    # with open(constants.paths.combo_path, 'rb') as f:
-    # with open(os.environ.get("FINAL_DIR").format(padel/PADEL_EPA_ENAMINE_5mM_TUPLES.pkl", 'rb') as f:
-    # meta_idx = pickle.load(f)
-    # with open(constants.paths.train, 'rb') as f:
-    with open(
-        "{}filtered/MAXMIN_PADEL_TRAIN.pkl".format(os.environ.get("FINAL_DIR")),
-        "rb",
-    ) as f:
+    if "train" in dataset.lower():
+        fn = "MAXMIN_PADEL_TRAIN.pkl"
+    elif "test" in dataset.lower():
+        fn = "MAXMIN_PADEL_TEST.pkl"
+    else:
+        raise IOError
+    with open("{}filtered/{}".format(os.environ.get("FINAL_DIR"), fn), "rb") as f:
         train_tup = pickle.load(f)
     tupX, tupy = train_tup
     if clean:
         feature_df, labels = clean_and_check(tupX, tupy)
     else:
         feature_df, labels = tupX, tupy
-    return feature_df, labels, meta_idx
+    return feature_df, labels
+
+
+def load_test_data(clean=True):
+    return load_maxmin_data("test", clean=clean)
+
+
+def load_training_data(clean=True):
+    return load_maxmin_data("train", clean=clean)
 
 
 def get_interpretable_features(feature_df=None, labels=None, clean=True):
@@ -115,7 +130,7 @@ def get_interpretable_features(feature_df=None, labels=None, clean=True):
     from data.constants import names
 
     if feature_df is None:
-        feature_df, labels, meta_idx = load_training_idx(clean=clean)
+        feature_df, labels = load_training_data(clean=clean)
     padel_df = get_two_dim_only()
     short_names, long_names = (
         padel_df["Descriptor name"].tolist(),
