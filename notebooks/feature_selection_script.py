@@ -1,6 +1,7 @@
 import os.path
 import pprint
 from functools import partial
+
 import numpy as np
 import pandas as pd
 from imblearn.ensemble import BalancedRandomForestClassifier
@@ -15,13 +16,14 @@ from sklearn.metrics import (
 # from sklearn.linear_model import LogisticRegressionCV
 from sklearn.model_selection import StratifiedKFold
 from sklearn.utils import check_X_y
+
 from data_handling.data_cleaning import remove_duplicate_idx
+from feature_selection import vif
 from feature_selection.correlation_filter import findCorrelation
 from feature_selection.importance import (
     brute_force_importance_rf_clf,
     dummy_score_elimination,
 )
-from feature_selection import vif
 from qsar_modeling.data_handling.data_tools import (
     get_interpretable_features,
     load_metadata,
@@ -146,16 +148,22 @@ def brute_force_with_collinear(
                 )
                 feat_corr.index = X_selected.columns
                 feat_corr.to_csv(cross_mi_path, index_label=True)
-                corr_path = "{}corr_matrix_{}_rfe_{}.csv".format(
-                    select_dir, corr_method, i
+                corr_path = "{}{}}_matrix_{}_{}.csv".format(
+                    select_dir, corr_method, n_feats, i
                 )
-                feat_corr.to_csv(corr_path, index_label="Features", index=True)
+                feat_corr.to_csv(cross_mi_path, index_label="Features", index=True)
             drop_str = corr_method
             drop_list = findCorrelation(corr=feat_corr, cutoff=corr_cut, n_drop=n_drop)
             X_selected.drop(columns=drop_list, inplace=True)
             feature_path = "{}collinear_{}_rfe_{}.csv".format(select_dir, drop_str, i)
+            feats = X_selected.columns.to_series()
         elif any([corr_method == a for a in ["pearson", "kendall", "spearman"]]):
-            feat_corr = X_selected.corr(method=corr_method)
+            corr_path = "{}{}_matrix.csv".format(select_dir, corr_method, drop_str, i)
+            if os.path.isfile(corr_path):
+                feat_corr = pd.read_csv(corr_path, index_col=True)
+            else:
+                feat_corr = X_selected.corr(method=corr_method)
+                feat_corr.to_csv(corr_path, index_label="Features", index=True)
             drop_str = "{}-{}".format(n_feats, str(corr_cut).replace(".", "-"))
             print("Cross-correlation scores:")
             sorted_corr = feat_corr.stack().sort_values(ascending=False, kind="stable")
@@ -164,16 +172,19 @@ def brute_force_with_collinear(
                 compact=True,
             )
             drop_list = findCorrelation(corr=feat_corr, cutoff=corr_cut, n_drop=n_drop)
-            print("Correlation Drops")
-            print(drop_list[:10])
-            print(len([a for a in drop_list]))
+            # print("Correlation Drops")
+            # print(drop_list[:10])
+            # print(len([a for a in drop_list]))
             X_selected.drop(columns=drop_list, inplace=True)
-            corr_path = "{}corr_matrix_{}_rfe_{}.csv".format(select_dir, drop_str, i)
-            feat_corr.to_csv(corr_path, index_label="Features", index=True)
-            feature_path = "{}collinear_{}_rfe_{}.csv".format(select_dir, drop_str, i)
+            feature_path = "{}{}_{}_rfe_{}.csv".format(
+                select_dir, corr_method, drop_str, i
+            )
             feats = X_selected.columns.to_series()
-
         elif "seq" in corr_method:
+            if n_feats < 0:
+                direction = "backwards"
+            else:
+                direction = "forwards"
             if n_feats >= 1 or n_feats <= -1:
                 print(
                     "Starting Sequential Feature Selection of {} features".format(
@@ -182,10 +193,10 @@ def brute_force_with_collinear(
                 )
                 sfs = SequentialFeatureSelector(
                     clf,
+                    direction=direction,
                     scoring=scorer,
                     n_jobs=-2,
                     n_features_to_select=n_feats,
-                    **fit_kwargs
                 ).set_output(transform="pandas")
             elif -1 < n_feats < 1 and n_feats != 0:
                 print(
@@ -194,7 +205,7 @@ def brute_force_with_collinear(
                     )
                 )
                 sfs = SequentialFeatureSelector(
-                    clf, scoring=scorer, n_jobs=-2, tol=n_feats, **fit_kwargs
+                    clf, scoring=scorer, n_jobs=-2, tol=n_feats, direction=direction
                 ).set_output(transform="pandas")
             else:
                 raise ValueError
@@ -213,15 +224,15 @@ def brute_force_with_collinear(
         elif "vif" in corr_method:
             drop_ser = vif.sequential_vif(
                 X_selected,
-                clf,
                 vif_cut=corr_cut,
                 n_keep=n_feats,
                 step_size=step_size,
+                model="elasticnet",
                 **fit_kwargs
             )
             drop_list = drop_ser.index
             X_selected.drop(columns=drop_list, inplace=True)
-            feats = X_selected.columns
+            feats = X_selected.columns.to_series()
             feature_path = "{}vif_{}_{}_{}.csv".format(
                 select_dir, clf_name, n_feats, corr_cut, i
             )
@@ -276,11 +287,12 @@ def main(
     feat_step_list = (
         ("spearman", 500, 0, 0.95),
         ("rfe", 500, 25, 0),
-        ("spearman", 250, 0, 0.8),
-        ("rfe", 75, 5, 0),
-        ("vif", 75, 10, 1),
+        ("rfe", 250, 10, 0),
+        ("vif", 200, 1, 50),
+        ("rfe", 150, 5, 0),
+        ("vif", 125, 1, 15),
         ("dummy_rfe", 50, 1, 0),
-        ("seq", 40, -0.005, 0),
+        # ("seq", 40, -0.005, 0),
     )
     if run_name is None:
         run_name = "{}_{}".format(data_set, model_name)

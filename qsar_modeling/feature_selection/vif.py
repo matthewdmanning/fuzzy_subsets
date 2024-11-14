@@ -6,12 +6,11 @@ import pandas as pd
 import scipy
 import sklearn.utils
 from sklearn.linear_model import (
+    ElasticNetCV,
     LassoCV,
     LinearRegression,
-    LogisticRegressionCV,
-    RidgeClassifier,
-    ElasticNetCV,
-    SGDClassifier,
+    Ridge,
+    SGDRegressor,
 )
 from sklearn.preprocessing import RobustScaler
 
@@ -33,37 +32,43 @@ def calculate_vif(
     verbose=0,
     **fit_kwargs
 ):
-    if model == "ols":
-        model = LinearRegression(n_jobs=n_jobs)
-    elif "log" in model.lower():
-        model = LogisticRegressionCV(
-            max_iter=1000,
-            penalty="elasticnet",
-            class_weight="balanced",
-            solver="saga",
-            n_jobs=n_jobs,
-            scoring=scoring,
-            random_state=0,
-        )
-    elif "elastic" in model:
-        model = ElasticNetCV(
-            tol=5e-2, n_jobs=n_jobs, random_state=0, selection="random"
-        )
-    elif "ridge" in model:
-        model = RidgeClassifier(class_weight="balanced", scoring=scoring)
-    assert feature_df.shape[1] > 1
+    if type(model) is str:
+        if model == "ols":
+            vif_model = LinearRegression(n_jobs=n_jobs)
+        elif "elastic" in model:
+            vif_model = ElasticNetCV(
+                l1_ratio=[0.15, 0.3, 0.5],
+                tol=5e-3,
+                n_alphas=33,
+                n_jobs=n_jobs,
+                random_state=0,
+                selection="random",
+            )
+        elif "ridge" in model:
+            vif_model = Ridge(random_state=0)
+        elif "sgd" in model:
+            vif_model = SGDRegressor(
+                penalty="elasticnet",
+                alpha=0.0005,
+                epsilon=0.0025,
+                learning_rate="adaptive",
+                l1_ratio=0.75,
+                random_state=0,
+                early_stopping=True,
+            )
+    else:
+        vif_model = model
     vif_dict = dict()
     for col in feature_df.columns:
-        training = feature_df.drop(columns=col)
         y = feature_df[col]
-        model.fit(X=training, y=y, sample_weight=sample_wts)
-        r_squared = model.score(X=training, y=y, sample_weight=sample_wts)
-        print(r_squared)
+        training = feature_df.drop(columns=col)
+        vif_model.fit(X=training, y=y, sample_weight=sample_wts)
+        r_squared = vif_model.score(X=training, y=y, sample_weight=sample_wts)
         if r_squared != 1.0:
             vif_i = 1.0 / (1.0 - r_squared)
         else:
             logger.error(
-                "Feature had OOB OLS R2 score of 0!!!! Feature name: {}".format(col)
+                "Feature had OOB OLS R2 score of 1.0!!!! Feature name: {}".format(col)
             )
             vif_i = 1000000
         # print('Original VIF: {}'.format(vif_i))
@@ -102,7 +107,9 @@ def stochastic_vif(
         df = RobustScaler(
             with_centering=False, quantile_range=(15, 85), unit_variance=True
         ).fit_transform(feature_df)
-    df = pd.DataFrame(data=df, index=feature_df.index, columns=feature_df.columns)
+        df = pd.DataFrame(data=df, index=feature_df.index, columns=feature_df.columns)
+    else:
+        df = feature_df.copy()
     logger.info("Number of features for VIF selections: {}".format(mi_ser.size))
     alpha = 0.3
     corr_ser = mi_ser.copy()
@@ -197,7 +204,9 @@ def vif_bad_apples(
                 vif_i = 1.0 / (1.0 - r_squared)
             else:
                 logger.error(
-                    "Feature had OOB OLS R2 score of 0!!!! Feature name: {}".format(col)
+                    "Feature had OOB OLS R2 score of 0!!!! Feature name: {}".format(
+                        target
+                    )
                 )
                 vif_i = 1000000
 
@@ -317,9 +326,7 @@ def repeated_stochastic_vif(
     return crits, vif_score_df, vif_stats, votes
 
 
-def sequential_vif(
-    feature_df, scorer, vif_cut=10, n_keep=1, step_size=1, model=None, **kwargs
-):
+def sequential_vif(feature_df, vif_cut=10, n_keep=1, step_size=1, model=None, **kwargs):
     # Inputs: Features, Target correlations: Series, Covariance, correlation with target, VIF/Condition Num.
     # https://www.sciencedirect.com/science/article/abs/pii/S1386142521012294
     if model is None:
@@ -327,14 +334,18 @@ def sequential_vif(
     copy_feats = feature_df.copy(deep=True)
     feats_df = RobustScaler(unit_variance=True).fit_transform(copy_feats)
     cut_list = list()
-    while feats_df.size > n_keep:
-        vif_ser = calculate_vif(feats_df, model, scorer, **kwargs)
+    while feats_df.shape[1] > n_keep:
+        vif_ser = calculate_vif(feats_df, model, **kwargs)
         over_thresh = vif_ser[vif_ser > vif_cut]
         if over_thresh.size > 0:
-            cuts = over_thresh.sort_values(ascending=False).iloc[:step_size]
+            thresh_cut = over_thresh.sort_values(ascending=False).iloc[:step_size].min()
+            cuts = over_thresh[over_thresh >= thresh_cut]
+            print("Number of cuts in this VIF step: {}".format(cuts.size))
+            pprint.pp(cuts)
             cut_list.append(cuts)
             feats_df.drop(columns=cuts.index, inplace=True)
         else:
+            print("VIF selection terminated at {} features.".format(feats_df.shape[1]))
             break
     cut_ser = pd.concat(cut_list)
     return cut_ser
