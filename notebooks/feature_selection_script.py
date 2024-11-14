@@ -12,6 +12,7 @@ from sklearn.metrics import (
     make_scorer,
     matthews_corrcoef,
 )
+
 # from sklearn.linear_model import LogisticRegressionCV
 from sklearn.model_selection import StratifiedKFold
 from sklearn.utils import check_X_y
@@ -155,7 +156,7 @@ def brute_force_with_collinear(
             drop_list = findCorrelation(corr=feat_corr, cutoff=corr_cut, n_drop=n_drop)
             X_selected.drop(columns=drop_list, inplace=True)
             feature_path = "{}collinear_{}_rfe_{}.csv".format(select_dir, drop_str, i)
-            feats =X_selected.columns.to_series()
+            feats = X_selected.columns.to_series()
         elif any([corr_method == a for a in ["pearson", "kendall", "spearman"]]):
             corr_path = "{}{}_matrix.csv".format(select_dir, corr_method, drop_str, i)
             if os.path.isfile(corr_path):
@@ -175,7 +176,9 @@ def brute_force_with_collinear(
             # print(drop_list[:10])
             # print(len([a for a in drop_list]))
             X_selected.drop(columns=drop_list, inplace=True)
-            feature_path = "{}{}_{}_rfe_{}.csv".format(select_dir, corr_method, drop_str, i)
+            feature_path = "{}{}_{}_rfe_{}.csv".format(
+                select_dir, corr_method, drop_str, i
+            )
             feats = X_selected.columns.to_series()
         elif "seq" in corr_method:
             if n_feats < 0:
