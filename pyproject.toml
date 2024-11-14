@@ -7,6 +7,10 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.12"
+pandas = "^2.2.3"
+imblearn = "^0.0"
+matplotlib = "^3.9.2"
+stats = "^0.1.2a0"
 
 
 [build-system]

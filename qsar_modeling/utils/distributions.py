@@ -12,13 +12,22 @@ def _ser_is_discrete(input_array, unique_thresh=5):
 
 
 def is_discrete(features, unique_thresh=5, diff_thresh=0.001):
-    if type(features) is pd.Series or (type(features) is np.ndarray and len(features.shape)):
+    if type(features) is pd.Series or (
+        type(features) is np.ndarray and len(features.shape)
+    ):
         return _ser_is_discrete(features, unique_thresh)
     elif pd.DataFrame:
-        return pd.Series([_ser_is_discrete(features[f], unique_thresh) for f in features.columns],
-                         index=features.columns)
+        return pd.Series(
+            [_ser_is_discrete(features[f], unique_thresh) for f in features.columns],
+            index=features.columns,
+        )
     elif np.ndarray:
-        return np.array([_ser_is_discrete(features[:, f], unique_thresh) for f in range(features.shape[1])])
+        return np.array(
+            [
+                _ser_is_discrete(features[:, f], unique_thresh)
+                for f in range(features.shape[1])
+            ]
+        )
 
 
 def is_low_cardinal(features, single_thresh=None):

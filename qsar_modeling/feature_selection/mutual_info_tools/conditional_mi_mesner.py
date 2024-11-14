@@ -12,7 +12,7 @@ from sklearn.conftest import set_config
 # If a variable is categorical, M/F eg, we must define a distance
 # if not equal
 # might need to be changed to something else later
-set_config(**{'transform_output': pd.DataFrame, 'enable_cython_pairwise_dist': 1})
+set_config(**{"transform_output": pd.DataFrame, "enable_cython_pairwise_dist": 1})
 
 
 class MutualInformationStation:
@@ -27,13 +27,13 @@ class MutualInformationStation:
     @functools.lru_cache(maxsize=10000, typed=False)
     def getPairwiseDistArray(self, x, y, z=None):
         """
-        Input:
-       self.current_data: pandasself.current_data frame
-        coords: list of indices for variables to be used
-        discrete_dist: distance to be used for non-numeric differences
+         Input:
+        self.current_data: pandasself.current_data frame
+         coords: list of indices for variables to be used
+         discrete_dist: distance to be used for non-numeric differences
 
-        Output:
-        p x n x n array with pairwise distances for each variable
+         Output:
+         p x n x n array with pairwise distances for each variable
         """
         n, p = self.current_data.shape
         coords = x, y, z
@@ -46,23 +46,29 @@ class MutualInformationStation:
             thisdtype = self.current_data[col_names[coord]].dtype
             print(thisdtype)
             if pd.api.types.is_numeric_dtype(thisdtype):
-                distArray[coord, :, :] = abs(self.current_data[col_names[coord]].to_numpy() -
-                                             self.current_data[col_names[coord]].to_numpy()[:, None])
+                distArray[coord, :, :] = abs(
+                    self.current_data[col_names[coord]].to_numpy()
+                    - self.current_data[col_names[coord]].to_numpy()[:, None]
+                )
             else:
-                distArray[coord, :, :] = ((1 - (self.current_data[col_names[coord]].to_numpy() ==
-                                                self.current_data[col_names[coord]].to_numpy()[:, None])) *
-                                          self.discrete_dist)
+                distArray[coord, :, :] = (
+                    1
+                    - (
+                        self.current_data[col_names[coord]].to_numpy()
+                        == self.current_data[col_names[coord]].to_numpy()[:, None]
+                    )
+                ) * self.discrete_dist
         return distArray
 
     def getPointCoordDists(self, distArray, ind_i, coords=None):
-        '''
+        """
         Input:
         ind_i: current observation row index
         distArray: output from getPariwiseDistArray
         coords: list of variable (column) indices
-    
+
         output: n x p matrix of all distancs for row ind_i
-        '''
+        """
         if coords is None:
             coords = list()
         if not coords:
@@ -71,12 +77,12 @@ class MutualInformationStation:
         return obsDists
 
     def countNeighbors(self, coord_dists, rho, coords=None):
-        '''
+        """
         input: list of coordinate distances (output of coordDistList),
         coordinates we want (coords), distance (rho)
-    
+
         output: scalar integer of number of points within ell infinity radius
-        '''
+        """
 
         if coords is None:
             coords = list()
@@ -87,14 +93,14 @@ class MutualInformationStation:
         return count
 
     def getKnnDist(self, distArray, k):
-        '''
+        """
         input:
         distArray: numpy 2D array of pairwise, coordinate wise distances,
         output from getPairwiseDistArray
         k: nearest neighbor value
-    
+
         output: (k, distance to knn)
-        '''
+        """
 
         dists = np.max(distArray, axis=1)
         ordered_dists = np.sort(dists)
@@ -109,20 +115,25 @@ class MutualInformationStation:
         [x, y, z]: list of indices
         k: positive integer scalar for k in knn
         distArray: output of getPairwiseDistArray
-    
+
         output:
         conditional_mi point estimate
         """
         from scipy.spatial.distance import squareform
+
         n = distArray.shape[1]
-        distArray = squareform(pdist(self.current_data.to_numpy(), metric='manhattan'))
-        coords_dists = np.transpose(distArray[coords, :, ind_i])  # => distArray[ind_i , coords]
+        distArray = squareform(pdist(self.current_data.to_numpy(), metric="manhattan"))
+        coords_dists = np.transpose(
+            distArray[coords, :, ind_i]
+        )  # => distArray[ind_i , coords]
         # k_tilde = the number of points whose distance is greater than or equal to the fatherest point.
         # rho = list of distances sorted from smallest
         dists = np.max(distArray, axis=1)
         ordered_dists = np.sort(dists)
         # using k, not k-1, here because this includes dist to self
-        k_tilde = np.count_nonzero(dists <= ordered_dists[k]) - 1  # number of points closer than [k+1]th point minus
+        k_tilde = (
+            np.count_nonzero(dists <= ordered_dists[k]) - 1
+        )  # number of points closer than [k+1]th point minus
         # 1. Guaranteed to be k unless dist calculation or sort got FUBARed rho = distance list for kth point
         return k_tilde, ordered_dists[k]
 
@@ -147,7 +158,7 @@ class MutualInformationStation:
         x, y: list of indices
         k: positive integer scalar for k in knn
         distArray: output of getPairwiseDistArray
-    
+
         output:
         mi point estimate
         """
@@ -161,10 +172,17 @@ class MutualInformationStation:
         xi = digamma(k_tilde) + digamma(n) - digamma(nx) - digamma(ny)
         return xi
 
-    def get_cmi_pt_est(self, x1, x2, metric, ):
+    def get_cmi_pt_est(
+        self,
+        x1,
+        x2,
+        metric,
+    ):
         pass
 
-    def conditional_mi(self, x, y, z, n_neighbors=7, dist_metric='euclidean', minzero=1):
+    def conditional_mi(
+        self, x, y, z, n_neighbors=7, dist_metric="euclidean", minzero=1
+    ):
         """
         computes conditional mutual information, I(x,y|z)
         input:
@@ -173,7 +191,7 @@ class MutualInformationStation:
         z: list of indices for z
         k: hyper parameter for kNN
         self.current_data: pandasself.dataframe
-    
+
         output:
         scalar value of I(x,y|z)
         """
@@ -184,7 +202,7 @@ class MutualInformationStation:
         # convert variable to index if not already
         # assert not np.any(data_df.columns.duplicated())
         cols = [x, y, z]
-        '''
+        """
         recols = list()
         for i, lst in enumerate(cols):
             if pd.api.types.is_list_like(lst) and all([type(elem) == str for elem in lst]) and len(lst) > 0:
@@ -193,26 +211,33 @@ class MutualInformationStation:
         if len(recols) < 3:
             recols = x, y, x
         from sklearn.utils import _safe_indexing
-        '''
+        """
         from sklearn.metrics.pairwise import distance
+
         distance.pdist()
         # distArray = pdist(self.current_data.to_numpy(), metric='manhattan')
         # self.getPairwiseDistArray(coords=cols)
-        print('Original array: {}'.format(self.distArray), flush=True)
+        print("Original array: {}".format(self.distArray), flush=True)
         if len(z) > 0:
-            ptEsts = map(lambda obs: self.cmiPoint(obs, x, y, z, n_neighbors, self.distArray), range(n))
+            ptEsts = map(
+                lambda obs: self.cmiPoint(obs, x, y, z, n_neighbors, self.distArray),
+                range(n),
+            )
         else:
-            ptEsts = map(lambda obs: self.miPoint(obs, x, y, n_neighbors, self.distArray), range(n))
-        print('Point estimates (original): {}'.format(ptEsts))
+            ptEsts = map(
+                lambda obs: self.miPoint(obs, x, y, n_neighbors, self.distArray),
+                range(n),
+            )
+        print("Point estimates (original): {}".format(ptEsts))
         # first =self.data_df.iloc[:, [*x, *z]]
         # print(first, flush=True)
         # kng = kneighbors_graph(X=first, n_neighbors=n_neighbors, mode='distance', p=1, include_self='auto')
         # print('Weighted nearest neighbors graph from sklearn.')
         # pprint.pp(kng)
         if minzero == 1:
-            return (max(sum(ptEsts) / n, default=0))
+            return max(sum(ptEsts) / n, default=0)
         elif minzero == 0:
-            return (sum(ptEsts) / n)
+            return sum(ptEsts) / n
 
     def rename_cols(self, col_groups):
         n, p = self.whole_data.shape
@@ -232,14 +257,19 @@ class MutualInformationStation:
             for c in fl:
                 if c in original_cols:
                     new_ind = original_cols.get_loc(c)
-                elif ((type(c) is int or np.can_cast(type(c), int, casting='equiv') or type(c) is np.int64) and 0 <= c
-                      <= p):
+                elif (
+                    type(c) is int
+                    or np.can_cast(type(c), int, casting="equiv")
+                    or type(c) is np.int64
+                ) and 0 <= c <= p:
                     new_ind = int(c)
                 else:
-                    print('Could not find {} {} in self.dataFrame'.format(c, type(c)))
+                    print("Could not find {} {} in self.dataFrame".format(c, type(c)))
                     new_ind = original_cols.get_loc(c)
                 original_colname[i].append(c)
-                ser_list.append(pd.Series(self.whole_data.iloc[new_ind].copy(), name=c_i))
+                ser_list.append(
+                    pd.Series(self.whole_data.iloc[new_ind].copy(), name=c_i)
+                )
                 # new_df.iloc[:, c_i] =self.data_df[c].copy()
                 new_colind[i].append(c_i)
                 c_i += 1
@@ -251,12 +281,12 @@ class MutualInformationStation:
 # conditional_mi -> [PairwiseDistArray -> L1 norm of X and Y]
 def main():
     url = "https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data"
-    names = ['slength', 'swidth', 'plength', 'pwidth', 'class']
+    names = ["slength", "swidth", "plength", "pwidth", "class"]
     namedata = pd.read_csv(url, names=names)
     print(namedata.head())
-    x = ['slength']
-    y = ['class']
+    x = ["slength"]
+    y = ["class"]
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

@@ -6,8 +6,8 @@ from functools import partial
 
 import numpy as np
 import pandas as pd
-import stats
 from matplotlib import pyplot as plt
+from scipy.stats import gmean
 from sklearn.metrics import (
     average_precision_score,
     balanced_accuracy_score,
@@ -206,7 +206,7 @@ def summarize_scores(score_dict_list, check_scores=True):
     summary_zip = dict(
         zip(
             ["Mean", "GeoMean", "StDev", "Median", "Min", "Max"],
-            [np.mean, stats.geometric_mean, np.std, np.median, np.min, np.max],
+            [np.mean, gmean, np.std, np.median, np.min, np.max],
         )
     )
     print(collated_scores)

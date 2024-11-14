@@ -22,8 +22,6 @@ def rename_duplicate_features(feature_df):
     # feature_df = feature_df.T.drop_duplicates().T
     while feature_df.columns[feature_df.columns.duplicated()].size > 0:
         dup_col = feature_df.columns[feature_df.columns.duplicated(keep="first")]
-        if dup_col.size > 0:
-            print(dup_col)
         feature_df.columns = feature_df.columns.where(
             ~feature_df.columns.duplicated(keep="first"),
             feature_df.columns[feature_df.columns.duplicated()] + "i",

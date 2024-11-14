@@ -12,8 +12,9 @@ from sklearn.utils import tosequence
 # if not equal
 # might need to be changed to something else later
 
+
 def getPairwiseDistArray(data, coords=None, discrete_dist=1):
-    '''
+    """
     Input:
     current_data: pandas current_data frame
     coords: list of indices for variables to be used
@@ -21,7 +22,7 @@ def getPairwiseDistArray(data, coords=None, discrete_dist=1):
 
     Output:
     p x n x n array with pairwise distances for each variable
-    '''
+    """
     n, p = data.shape
     if coords is None:
         coords = []
@@ -32,23 +33,30 @@ def getPairwiseDistArray(data, coords=None, discrete_dist=1):
     for coord in coords:
         thisdtype = data[col_names[coord]].dtype
         if pd.api.types.is_numeric_dtype(thisdtype):
-            distArray[coord, :, :] = abs(data[col_names[coord]].to_numpy() -
-                                         data[col_names[coord]].to_numpy()[:, None])
+            distArray[coord, :, :] = abs(
+                data[col_names[coord]].to_numpy()
+                - data[col_names[coord]].to_numpy()[:, None]
+            )
         else:
-            distArray[coord, :, :] = (1 - (data[col_names[coord]].to_numpy() ==
-                                           data[col_names[coord]].to_numpy()[:, None])) * discrete_dist
+            distArray[coord, :, :] = (
+                1
+                - (
+                    data[col_names[coord]].to_numpy()
+                    == data[col_names[coord]].to_numpy()[:, None]
+                )
+            ) * discrete_dist
     return distArray
 
 
 def getPointCoordDists(distArray, ind_i, coords=None):
-    '''
+    """
     Input:
     ind_i: current observation row index
     distArray: output from getPariwiseDistArray
     coords: list of variable (column) indices
 
     output: n x p matrix of all distancs for row ind_i
-    '''
+    """
     if coords is None:
         coords = list()
     if not coords:
@@ -58,12 +66,12 @@ def getPointCoordDists(distArray, ind_i, coords=None):
 
 
 def countNeighbors(coord_dists, rho, coords=None):
-    '''
+    """
     input: list of coordinate distances (output of coordDistList),
     coordinates we want (coords), distance (rho)
 
     output: scalar integer of number of points within ell infinity radius
-    '''
+    """
 
     if coords is None:
         coords = list()
@@ -75,14 +83,14 @@ def countNeighbors(coord_dists, rho, coords=None):
 
 
 def getKnnDist(distArray, k):
-    '''
+    """
     input:
     distArray: numpy 2D array of pairwise, coordinate wise distances,
     output from getPairwiseDistArray
     k: nearest neighbor value
 
     output: (k, distance to knn)
-    '''
+    """
 
     dists = np.max(distArray, axis=1)
     ordered_dists = np.sort(dists)
@@ -116,7 +124,7 @@ def cmiPoint(point_i, x, y, z, k, distArray):
 
 
 def miPoint(point_i, x, y, k, distArray):
-    '''
+    """
     input:
     point_i: current observation row index
     x, y: list of indices
@@ -125,7 +133,7 @@ def miPoint(point_i, x, y, k, distArray):
 
     output:
     mi point estimate
-    '''
+    """
     n = distArray.shape[1]
     coord_dists = getPointCoordDists(distArray, point_i, x + y)
     k_tilde, rho = getKnnDist(coord_dists, k)
@@ -142,7 +150,7 @@ def rename_cols(data_df, x, y, z):
     original_cols = data_df.columns
     seq_list = [tosequence(a) for a in [x, y, z]]
     all = [list().extend(a) for a in seq_list][0]
-    print('Column names in a single list:\n {}'.format(all))
+    print("Column names in a single list:\n {}".format(all))
     new_df = pd.DataFrame(np.empty([n, len(all)]))
     numeric_indices = list()
     c_i = 0
@@ -154,13 +162,13 @@ def rename_cols(data_df, x, y, z):
             elif type(c) is int and c >= 0 and c < p:
                 new_ind = c
             else:
-                print('Could not find {} in feature DataFrame'.format(c))
+                print("Could not find {} in feature DataFrame".format(c))
                 raise KeyError
             numeric_indices[i].append(c)
             new_df[:, i] = data_df[:, c].copy()
     return new_df, numeric_indices
 
-    '''
+    """
     # convert variable to index if not already
     col_names = [x, y, z]
     new_names, ind_list = list(), list()
@@ -190,7 +198,7 @@ def rename_cols(data_df, x, y, z):
             else:
                 num_col.append(list(col_list))
     x, y, z = num_col
-    '''
+    """
 
 
 def conditional_mi(data_df, x, y, z, n_neighbors, discrete_dist=1, minzero=1):
@@ -212,22 +220,24 @@ def conditional_mi(data_df, x, y, z, n_neighbors, discrete_dist=1, minzero=1):
     n, p = data_df.shape
     distArray = getPairwiseDistArray(data_df, x + y + z, discrete_dist)
     if len(z) > 0:
-        ptEsts = map(lambda obs: cmiPoint(obs, x, y, z, n_neighbors, distArray), range(n))
+        ptEsts = map(
+            lambda obs: cmiPoint(obs, x, y, z, n_neighbors, distArray), range(n)
+        )
     else:
         ptEsts = map(lambda obs: miPoint(obs, x, y, n_neighbors, distArray), range(n))
     if minzero == 1:
-        return (max(sum(ptEsts) / n, 0))
+        return max(sum(ptEsts) / n, 0)
     elif minzero == 0:
-        return (sum(ptEsts) / n)
+        return sum(ptEsts) / n
 
 
 def main():
     url = "https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data"
-    names = ['slength', 'swidth', 'plength', 'pwidth', 'class']
+    names = ["slength", "swidth", "plength", "pwidth", "class"]
     df = pd.read_csv(url, names=names)
-    print(conditional_mi(df, ['slength'], ['class'], ['swidth'], 5))
+    print(conditional_mi(df, ["slength"], ["class"], ["swidth"], 5))
     pass
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

@@ -25,21 +25,21 @@ sklearn.utils.validation\r\nfrom
 sklearn.pipeline
 import Pipeline\r\nfrom
 sklearn.linear_model
-import LassoCV, ElasticNetCV\r\nfrom
+\r\nfrom
 sklearn.feature_selection
-import mutual_info_classif, SelectKBest, SequentialFeatureSelector, SelectFromModel, \\\r\n
+ \\\r\n
 VarianceThreshold\r\nfrom
 sklearn.metrics
 import balanced_accuracy_score, confusion_matrix, roc_curve, classification_report, \\\r\n
 matthews_corrcoef\r\nfrom
 sklearn.feature_selection
-import f_classif, chi2, mutual_info_classif\r\nfrom
+\r\nfrom
 sklearn.ensemble
-import RandomTreesEmbedding, RandomForestClassifier, ExtraTreesClassifier, BaggingClassifier\r\nfrom
+\r\nfrom
 sklearn.preprocessing
 import RobustScaler, Normalizer\r\nfrom
 sklearn.base
-import TransformerMixin, OneToOneFeatureMixin\r\nfrom
+\r\nfrom
 sklearn.utils
 import check_X_y\r\nfrom
 statsmodels.stats.outliers_influence

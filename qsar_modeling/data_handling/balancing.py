@@ -2,20 +2,24 @@ import numpy as np
 import pandas as pd
 
 
-def balance_df(df, sample_wts, rounding='auto'):
+def balance_df(df, sample_wts, rounding="auto"):
     if type(sample_wts) is dict:
         sample_wts = pd.Series(sample_wts)
-    if rounding == 'auto':
+    if rounding == "auto":
         sample_wts = sample_wts.round(0)
-    elif rounding == 'ceiling' or rounding == 'ceil':
+    elif rounding == "ceiling" or rounding == "ceil":
         sample_wts = pd.Series(np.ceil(sample_wts), index=sample_wts.index)
-    elif rounding == 'floor':
+    elif rounding == "floor":
         sample_wts = pd.Series(np.floor(sample_wts), index=sample_wts.index)
     divisor = np.gcd(sample_wts)
     if divisor > 1:
         sample_wts = sample_wts.divide(divisor)
     if sample_wts.le(1).all():
-        print('N will increase by {} when DataFrame of N={}.'.format(sample_wts.subtract(1).sum(), df.shape[0]))
+        print(
+            "N will increase by {} when DataFrame of N={}.".format(
+                sample_wts.subtract(1).sum(), df.shape[0]
+            )
+        )
         balancing_df = None
 
 
@@ -25,19 +29,28 @@ def get_epa_sol_all_insol(feature_df, labels, tups):
     # insol_samples = pd.concat([tups['epa_in'][0], tups['en_in'][0]]).index.intersection(train_insols)
     # train_sols = labels[labels == 1].index
     # sol_samples = tups['epa_sol'][0].index.intersection(train_sols)
-    en_in = tups['en_in'][0][[c for c in tups['en_in'][0].index if c not in tups['epa_in'][0].index]]
-    all_samples_ind = pd.concat([tups['epa_in'][0], en_in, tups['epa_sol'][0]]).index.intersection(
-        feature_df.index)
+    en_in = tups["en_in"][0][
+        [c for c in tups["en_in"][0].index if c not in tups["epa_in"][0].index]
+    ]
+    all_samples_ind = pd.concat(
+        [tups["epa_in"][0], en_in, tups["epa_sol"][0]]
+    ).index.intersection(feature_df.index)
     all_samples = labels[all_samples_ind]
-    all_samples[all_samples == 'Insoluble'] = 0
-    all_samples[all_samples == 'Soluble'] = 1
+    all_samples[all_samples == "Insoluble"] = 0
+    all_samples[all_samples == "Soluble"] = 1
     select_y = labels[all_samples.index]
     select_X = feature_df.loc[all_samples.index]
     # assert not select_X.isna().any()
     return select_X, select_y
 
 
-def mixed_undersampling(minority_group: pd.DataFrame, majority_group, maj_ratio, min_sizes=None, random_state=0):
+def mixed_undersampling(
+    minority_group: pd.DataFrame,
+    majority_group,
+    maj_ratio,
+    min_sizes=None,
+    random_state=0,
+):
     # Undersamples majority class, like Imbalanced-Learns Random Undersampler, but allows different ratios of
     # categories within the majority class (given by maj_ratio). The size of the minimum class(es) can be specified in
     # min_sizes.
@@ -45,15 +58,24 @@ def mixed_undersampling(minority_group: pd.DataFrame, majority_group, maj_ratio,
         if min_sizes is not None and not np.iterable(min_sizes):
             all_min = [minority_group.sample(min_sizes, random_state=random_state)]
         elif min_sizes is not None and np.iterable(min_sizes):
-            all_min = [m.sample(s, random_state=random_state) for m, s in zip(minority_group, min_sizes)]
+            all_min = [
+                m.sample(s, random_state=random_state)
+                for m, s in zip(minority_group, min_sizes)
+            ]
         else:
             all_min = minority_group
     elif not np.iterable(minority_group):
         all_min = [minority_group]
     if not np.iterable(majority_group):
         majority_group = [majority_group]
-    maj_sizes = [int(m.shape[0] * s * pd.concat(all_min).shape[0]) for m, s in zip(majority_group, maj_ratio)]
-    all_maj = [m.sample(s, random_state=random_state) for m, s in zip(minority_group, min_sizes)]
+    maj_sizes = [
+        int(m.shape[0] * s * pd.concat(all_min).shape[0])
+        for m, s in zip(majority_group, maj_ratio)
+    ]
+    all_maj = [
+        m.sample(s, random_state=random_state)
+        for m, s in zip(minority_group, min_sizes)
+    ]
     # sampler = RandomUnderSampler(sampling_strategy=maj_ratio, random_state=random_state)
     return all_min, all_maj
 

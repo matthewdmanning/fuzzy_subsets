@@ -16,7 +16,10 @@ def softmax(X, axis=0):
 
 def norm_df_by_trace(df):
     frame = df.copy()
-    df_trace = [frame.iloc[i, j] for i, j in zip(np.arange(frame.shape[0]), np.arange(frame.shape[1]))]
+    df_trace = [
+        frame.iloc[i, j]
+        for i, j in zip(np.arange(frame.shape[0]), np.arange(frame.shape[1]))
+    ]
     trace_root = np.sqrt(df_trace)
     for i, col in enumerate(frame.columns):
         if trace_root[i] < 0.0001:

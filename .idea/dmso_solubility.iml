@@ -13,12 +13,15 @@
     </content>
     <content url="file://$DATA_DIR$" />
     <content url="file://$MODEL_DIR$" />
-    <orderEntry type="jdk" jdkName="Poetry (dmso_solubility) (2)" jdkType="Python SDK" />
+    <orderEntry type="jdk" jdkName="Poetry (dmso_solubility)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
   <component name="PackageRequirementsSettings">
-    <option name="requirementsPath" value="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_solubility\poetry.lock" />
     <option name="versionSpecifier" value="Strong equality (==x.y.z)" />
-    <option name="removeUnused" value="true" />
+  </component>
+  <component name="PyDocumentationSettings">
+    <option name="format" value="NUMPY" />
+    <option name="myDocStringFormat" value="NumPy" />
+    <option name="renderExternalDocumentation" value="true" />
   </component>
 </module>

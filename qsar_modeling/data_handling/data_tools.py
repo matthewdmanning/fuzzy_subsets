@@ -1,9 +1,12 @@
 import os
 import pickle
 from functools import partial
+
 import pandas as pd
 from sklearn.utils import check_X_y
-from data_handling.data_cleaning import clean_and_check, check_inchi_only
+
+from data.feature_name_lists import get_estate_counts
+from data_handling.data_cleaning import check_inchi_only, clean_and_check
 from padel_categorization import get_two_dim_only
 
 checker = partial(
@@ -101,6 +104,7 @@ def load_metadata(desc=False):
 
 def load_maxmin_data(dataset, clean=True):
     # Loads data containing combined PaDeL descriptors and soluble/insoluble labels from all sources.
+    raise NotImplementedError
     if "train" in dataset.lower():
         fn = "MAXMIN_PADEL_TRAIN.pkl"
     elif "test" in dataset.lower():
@@ -118,11 +122,31 @@ def load_maxmin_data(dataset, clean=True):
 
 
 def load_test_data(clean=True):
-    return load_maxmin_data("test", clean=clean)
+    feature_df = pd.read_csv(
+        "{}filtered/padel_random_split_test.csv".format(os.environ.get("FINAL_DIR"))
+    )
+    labels = pd.read_csv(
+        "{}filtered/solubility_random_split_test.csv".format(
+            os.environ.get("FINAL_DIR")
+        )
+    )
+    if clean:
+        feature_df, labels = clean_and_check(feature_df, labels)
+    return feature_df, labels
 
 
 def load_training_data(clean=True):
-    return load_maxmin_data("train", clean=clean)
+    feature_df = pd.read_csv(
+        "{}filtered/padel_random_split_train.csv".format(os.environ.get("FINAL_DIR"))
+    )
+    labels = pd.read_csv(
+        "{}filtered/solubility_random_split_train.csv".format(
+            os.environ.get("FINAL_DIR")
+        )
+    )
+    if clean:
+        feature_df, labels = clean_and_check(feature_df, labels)
+    return feature_df, labels
 
 
 def get_interpretable_features(feature_df=None, labels=None, clean=True):
@@ -144,6 +168,7 @@ def get_interpretable_features(feature_df=None, labels=None, clean=True):
             c
             for c in feature_df.columns
             if any([u.lower() in c.lower() for u in names.uninterpretable])
+            and c not in get_estate_counts(feature_df.columns.tolist())
         ]
     )
     feature_df.drop(columns=bad_feats, inplace=True)
