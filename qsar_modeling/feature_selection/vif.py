@@ -5,7 +5,13 @@ import numpy as np
 import pandas as pd
 import scipy
 import sklearn.utils
-from sklearn.linear_model import (ElasticNetCV, LassoCV, LinearRegression, Ridge, SGDRegressor)
+from sklearn.linear_model import (
+    ElasticNetCV,
+    LassoCV,
+    LinearRegression,
+    Ridge,
+    SGDRegressor,
+)
 from sklearn.preprocessing import RobustScaler
 
 from feature_selection.importance import logger
@@ -42,7 +48,13 @@ def calculate_vif(
             vif_model = Ridge(random_state=0)
         elif "sgd" in model:
             vif_model = SGDRegressor(
-                penalty="elasticnet", alpha=0.0005, epsilon=0.0025, learning_rate='adaptive', l1_ratio=0.75, random_state=0, early_stopping=True
+                penalty="elasticnet",
+                alpha=0.0005,
+                epsilon=0.0025,
+                learning_rate="adaptive",
+                l1_ratio=0.75,
+                random_state=0,
+                early_stopping=True,
             )
     else:
         vif_model = model
@@ -192,7 +204,9 @@ def vif_bad_apples(
                 vif_i = 1.0 / (1.0 - r_squared)
             else:
                 logger.error(
-                    "Feature had OOB OLS R2 score of 0!!!! Feature name: {}".format(target)
+                    "Feature had OOB OLS R2 score of 0!!!! Feature name: {}".format(
+                        target
+                    )
                 )
                 vif_i = 1000000
 
