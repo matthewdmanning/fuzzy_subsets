@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="GithubDefaultAccount">
-    <option name="defaultAccountId" value="526a4e38-b73d-4ed3-95de-f88f75ef1246" />
+  <component name="Black">
+    <option name="enabledOnReformat" value="true" />
+    <option name="sdkName" value="Poetry (dmso_solubility)" />
   </component>
   <component name="MarkdownSettingsMigration">
     <option name="stateVersion" value="1" />

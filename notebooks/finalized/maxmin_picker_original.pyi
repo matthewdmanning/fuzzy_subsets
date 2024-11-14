@@ -1,23 +1,16 @@
 import itertools
-import sys
 import pickle
+import sys
 
-import imblearn.metrics
+import dmso_model_dev.data_handling.descriptor_preprocessing as descriptor_preprocessing
+# from rdkit.DataStructs.cDataStructs import CreateFromBinaryText
+# from dmso_model_dev.data_handling.descriptor_preprocessing import ks_stats, kde_grouped
+import dmso_model_dev.data_handling.padel_categorization as padel_categorization
 import numpy as np
 import pandas as pd
-import plotly.express
-import scipy.ndimage
-import sklearn.feature_selection
-import sklearn.linear_model
-
 # from rdkit.ML.Cluster import Butina
 # from rdkit.DataManip.Metric import GetTanimotoDistMat, GetTanimotoSimMat
 from dmso_model_dev.constants import DISALLOWED
-# from rdkit.DataStructs.cDataStructs import CreateFromBinaryText
-from dmso_model_dev.DescriptorRequestor import DescriptorGrabber
-# from dmso_model_dev.data_handling.descriptor_preprocessing import ks_stats, kde_grouped
-import dmso_model_dev.data_handling.padel_categorization as padel_categorization
-import dmso_model_dev.data_handling.descriptor_preprocessing as descriptor_preprocessing
 
 sys.path.insert(0, 'C:/Users/mmanning/PycharmProjects/compLoiel/dmso_model_dev/data_handling')
 sys.path.insert(0, 'C:/Users/mmanning/PycharmProjects/compLoiel/dmso_model_dev/')
@@ -420,7 +413,6 @@ for i, feat_cols in zip(feat_group_names, feat_col_list):
             fig.show()
         [print(a) for a in report_list]
 '''
-from rdkit.DataStructs import cDataStructs
 
 butina_clusters = Butina.ClusterData(data=dist_mat, nPts=total_meta_df.shape[0], distThresh=0.6, isDistData=True,
                                      reordering=True)
@@ -453,7 +445,6 @@ ks_pvals = descriptor_preprocessing.ks_stats(dfs=new_desc_list, df_pairs=df_pair
 ks_list.append(pd.DataFrame.from_dict(ks_pvals, orient='index'))
 ks_results = pd.concat(ks_list, axis=1).T
 # Nested dict col -> (pair, results)
-from scipy.stats import pmean
 
 pair_dict = dict(enumerate(df_pairs))
 # ks_summary = pd.DataFrame(index=list(pair_dict.keys()), columns=intercols)

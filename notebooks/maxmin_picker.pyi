@@ -1,49 +1,68 @@
-import itertools
-import os
-import sys
 import pickle
+import sys
+
+import pandas as pd
 
 import data_handling.data_tools
-import imblearn.metrics
-import numpy as np
-import pandas as pd
-from sklearn.utils import check_X_y
-import plotly.express
-import scipy.ndimage
-import sklearn.feature_selection
-import sklearn.linear_model
+from data.element_lists import DISALLOWED
+
 # from rdkit.ML.Cluster import Butina
 # from rdkit.DataManip.Metric import GetTanimotoDistMat, GetTanimotoSimMat
 # from dmso_model_dev.constants import DISALLOWED
-from rdkit.DataStructs.cDataStructs import CreateFromBinaryText
-from qsar_modeling.data_handling.DescriptorRequestor import DescriptorGrabber
 # from dmso_model_dev.data_handling.descriptor_preprocessing import ks_stats, kde_grouped
-import qsar_modeling.data_handling.padel_categorization as padel_categorization
 from qsar_modeling.data_handling import padel_categorization
-from data.element_lists import DISALLOWED
 
 project_dir = "C:/Users/mmanning/OneDrive - Environmental Protection Agency (EPA)/qsar-modeling-workflow/"
-sys.path.insert(0, '{}data_handling'.format(project_dir))
+sys.path.insert(0, "{}data_handling".format(project_dir))
 sys.path.insert(0, project_dir)
 
-FP_MAPPER = col_mapper = dict(zip((
-    'info', 'name', 'version', 'options', 'type', 'radius', 'bits', 'chemicals', 'smiles',
-    'inchi', 'inchiKey', 'descriptors'), (
-    'FP_SOFTWARE', 'FP_NAME', 'FP_VERSION', 'FP_OPTIONS', 'FP_TYPE', 'FP_RADIUS',
-    'FP_BITS', 'FP_COMPOUNDS', 'FP_SMILES', 'FP_INCHI', 'FP_INCHI_KEY',
-    'FP_DESCRIPTORS')))
+FP_MAPPER = col_mapper = dict(
+    zip(
+        (
+            "info",
+            "name",
+            "version",
+            "options",
+            "type",
+            "radius",
+            "bits",
+            "chemicals",
+            "smiles",
+            "inchi",
+            "inchiKey",
+            "descriptors",
+        ),
+        (
+            "FP_SOFTWARE",
+            "FP_NAME",
+            "FP_VERSION",
+            "FP_OPTIONS",
+            "FP_TYPE",
+            "FP_RADIUS",
+            "FP_BITS",
+            "FP_COMPOUNDS",
+            "FP_SMILES",
+            "FP_INCHI",
+            "FP_INCHI_KEY",
+            "FP_DESCRIPTORS",
+        ),
+    )
+)
 
 FP_MULTIINDEX = pd.MultiIndex.from_tuples(
-    [('FP_SOFTWARE', 'FP_NAME', 'FP_VERSION'), ('FP_OPTIONS', 'FP_TYPE', 'FP_RADIUS', 'FP_BITS'),
-     ('FP_COMPOUNDS', 'FP_INCHI', 'FP_INCHI_KEY',
-      'FP_DESCRIPTORS')])  # "?smiles=CCCCCCC&headers=true&type=cfp&radius=4&bits=1024
+    [
+        ("FP_SOFTWARE", "FP_NAME", "FP_VERSION"),
+        ("FP_OPTIONS", "FP_TYPE", "FP_RADIUS", "FP_BITS"),
+        ("FP_COMPOUNDS", "FP_INCHI", "FP_INCHI_KEY", "FP_DESCRIPTORS"),
+    ]
+)  # "?smiles=CCCCCCC&headers=true&type=cfp&radius=4&bits=1024
 cfp_radius = 4
 fp_num_bits = 1024
-fp_name = 'cpf'
+fp_name = "cpf"
 COL_LABELS = padel_categorization.get_full_padel_names()
 DROP_STRINGS = DISALLOWED
-DROP_STRINGS.append('SH')
-DATA_KEYS = ['epa_sol', 'epa_in', 'en_sol', 'en_in']
+DROP_STRINGS.append("SH")
+DATA_KEYS = ["epa_sol", "epa_in", "en_sol", "en_in"]
 final_dir = "C:/Users/mmanning/OneDrive - Environmental Protection Agency (EPA)/dmso_zip/final_datasets/"
 cache_dir = "C:/Users/mmanning/OneDrive - Environmental Protection Agency (EPA)/dmso_zip/tmp_cache.pkl"
 DATA_DIR = "{}filtered/PADEL_EPA_ENAMINE_5mM.pkl".format(final_dir)
@@ -51,13 +70,21 @@ TRAIN_DIR = "{}filtered/MAXMIN_PADEL_TRAIN.pkl".format(final_dir)
 TEST_DIR = "{}filtered/MAXMIN_PADEL_TEST.pkl".format(final_dir)
 COMBO_DIR = "{}filtered/PADEL_CFP_COMBO_5mM.pkl".format(final_dir)
 TUP_DIR = "{}padel/PADEL_EPA_ENAMINE_5mM_TUPLES.pkl".format(final_dir)
-dist_path = "{}circ_fingerprints/TANIMOTO_R{}_{}.pkl".format(final_dir, cfp_radius, fp_num_bits)
+dist_path = "{}circ_fingerprints/TANIMOTO_R{}_{}.pkl".format(
+    final_dir, cfp_radius, fp_num_bits
+)
 DROPPED_DIR = "{}filtered/PADEL_EPA_ENAMINE_5mM_FILTERED.pkl".format(final_dir)
 
-new_desc_list, cfp_df_list, padel_df_list, new_cfps, fp_list = list(), list(), list(), list(), list()
+new_desc_list, cfp_df_list, padel_df_list, new_cfps, fp_list = (
+    list(),
+    list(),
+    list(),
+    list(),
+    list(),
+)
 dropped_dict = dict()
-dropped_dict['total'] = list()
-'''
+dropped_dict["total"] = list()
+"""
 # TODO: Make INCHI_KEYS the index.
 # TODO: Verify agreement with descriptor (ie. Padel) API output.
 # TODO: Incorporate class weights into data structures.
@@ -209,23 +236,25 @@ rogers_arr = pdist(twod_bits['descriptors'].to_numpy, metric='rogerstanimoto')
 tani_sim_arr = GetTanimotoSimMat(list(rdk_vecs.values()))
 tani_dis_arr = -np.log2(tani_sim_arr)
 dist_mat = rogers_arr
-'''
+"""
 
 # np.save(dist_path, dist_mat)
 import deepchem.data
 from rdkit.SimDivFilters import MaxMinPicker
 from sklearn.utils import compute_class_weight, compute_sample_weight
 
-with open(COMBO_DIR, 'rb') as f:
+with open(COMBO_DIR, "rb") as f:
     total_meta_df = pickle.load(f)
-with open(dist_path, 'rb') as f:
+with open(dist_path, "rb") as f:
     dist_mat = pickle.load(f)
 assert total_meta_df.shape[0] > 0
 X, y, _ = data_handling.data_tools.load_training_data()
 
 cweights = compute_class_weight(y.astype(int))
-sweights = compute_sample_weight(class_weight='balanced', y=y)
-rog_set = deepchem.data.NumpyDataset(dist_mat, y=y.to_numpy(), w=cweights, ids=y.index.to_numpy())
+sweights = compute_sample_weight(class_weight="balanced", y=y)
+rog_set = deepchem.data.NumpyDataset(
+    dist_mat, y=y.to_numpy(), w=cweights, ids=y.index.to_numpy()
+)
 del dist_mat
 mms = MaxMinPicker()
 n_test = int(total_meta_df.shape[0] / 5)
@@ -233,14 +262,22 @@ n_train = int(total_meta_df.shape[0] - n_test)
 print(n_train, n_test)
 assert n_test > 1000
 assert n_train > 1000
-mms_picks = list(mms.Pick(MaxMinPicker=mms, distMat=rog_set.X, poolSize=int(y.shape[0]), pickSize=int(n_test), seed=0))
+mms_picks = list(
+    mms.Pick(
+        MaxMinPicker=mms,
+        distMat=rog_set.X,
+        poolSize=int(y.shape[0]),
+        pickSize=int(n_test),
+        seed=0,
+    )
+)
 print(mms_picks)
 new_mms_path = "C:/Users/mmanning/OneDrive - Environmental Protection Agency (EPA)/Profile/Documents/new_mms_picks.pkl"
-with open(new_mms_path, 'rb') as f:
+with open(new_mms_path, "rb") as f:
     pickle.dump(mms_picks)
 del rog_set
 exit()
-with open(DATA_DIR, 'rb') as f:
+with open(DATA_DIR, "rb") as f:
     total_padel_df = pickle.load(f)
 # from rdkit.Chem.Fingerprints.ClusterMols import GetDistanceMatrix
 # from rdkit.DataManip.Metric.rdMetricMatrixCalc import GetEuclideanDistMat
@@ -254,7 +291,7 @@ print(total_padel_df.shape, total_meta_df.shape)
 
 test = total_meta_df.index[mms_picks]
 train = total_meta_df.index.symmetric_difference(test)
-print(test.shape, '\n', train.shape)
+print(test.shape, "\n", train.shape)
 assert test.shape[0] > 0
 assert train.shape[0] > 0
 train_meta, test_meta = total_meta_df.loc[train], total_meta_df.loc[test]
@@ -265,16 +302,16 @@ train_meta, test_meta = total_meta_df.loc[train], total_meta_df.loc[test]
 # TODO: Implement assert methods at beginning to validate incoming data before any operations.
 train_X = total_padel_df.loc[train]
 test_X = total_padel_df.loc[test]
-train_y = train_meta['DMSO_SOLUBILITY'].to_frame()
-test_y = test_meta['DMSO_SOLUBILITY'].to_frame()
+train_y = train_meta["DMSO_SOLUBILITY"].to_frame()
+test_y = test_meta["DMSO_SOLUBILITY"].to_frame()
 check_X_y(train_X, train_y)
 check_X_y(test_X, test_y)
 
-with open(TRAIN_DIR, 'wb') as f:
+with open(TRAIN_DIR, "wb") as f:
     pickle.dump(train_tup, f)
-with open(TEST_DIR, 'wb') as f:
+with open(TEST_DIR, "wb") as f:
     pickle.dump(test_tup, f)
-'''
+"""
 # Graphing Options
 from plotly.express import scatter
 import plotly.io as pio
@@ -435,41 +472,49 @@ for i, feat_cols in zip(feat_group_names, feat_col_list):
                 rocd.plot(ax=sub, name=cname, plot_chance_level=True)
             fig.show()
         [print(a) for a in report_list]
-'''
-from rdkit.DataStructs import cDataStructs
+"""
 
-butina_clusters = Butina.ClusterData(data=dist_mat, nPts=total_meta_df.shape[0], distThresh=0.6, isDistData=True,
-                                     reordering=True)
+butina_clusters = Butina.ClusterData(
+    data=dist_mat,
+    nPts=total_meta_df.shape[0],
+    distThresh=0.6,
+    isDistData=True,
+    reordering=True,
+)
 [print(len(a) for a in butina_clusters)]
 butina_path = "{}circ_fingerprints/BUTINA_CLUSTERS.pkl".format(final_dir)
-with open(butina_path, 'wb') as f:
+with open(butina_path, "wb") as f:
     pickle.dump(file=f, obj=(train, test))
-'''
+"""
 
 from sklearn.manifold import TSNE
-'''
+"""
 intercols = new_desc_list[0].columns.intersection(new_desc_list[1].columns)
 for dft in new_desc_list[2:]:
     intercols = intercols.intersection(dft.columns)
 if 1443 in intercols:
     raise KeyError
-''
+""
 df_pairs, ks_list = list(), list()
 # Calculate KS statistic and p-value for each column in each pair of DFs.
 
 for df1_meta, df2_meta in itertools.combinations(new_desc_list, r=2):
-    if df1_meta.source != df2_meta.source and df1_meta.dmso_soluble != df2_meta.dmso_soluble:
-        print('Nonmatching pair found\n\n.')
+    if (
+        df1_meta.source != df2_meta.source
+        and df1_meta.dmso_soluble != df2_meta.dmso_soluble
+    ):
+        print("Nonmatching pair found\n\n.")
         continue
     # df1 = pd.DataFrame(df1_meta['DESCRIPTORS'].to_list(), columns=COL_LABELS)
     df1 = df1_meta[intercols]
     df2 = df2_meta[intercols]
     df_pairs.append((df1, df2))
-ks_pvals = descriptor_preprocessing.ks_stats(dfs=new_desc_list, df_pairs=df_pairs, use_cols=intercols)
-ks_list.append(pd.DataFrame.from_dict(ks_pvals, orient='index'))
+ks_pvals = descriptor_preprocessing.ks_stats(
+    dfs=new_desc_list, df_pairs=df_pairs, use_cols=intercols
+)
+ks_list.append(pd.DataFrame.from_dict(ks_pvals, orient="index"))
 ks_results = pd.concat(ks_list, axis=1).T
 # Nested dict col -> (pair, results)
-from scipy.stats import pmean
 
 pair_dict = dict(enumerate(df_pairs))
 # ks_summary = pd.DataFrame(index=list(pair_dict.keys()), columns=intercols)
@@ -484,7 +529,7 @@ for ks_col in ks_results.columns:
         if pair_key and ks_col and type(pair_key) is not list:
             ks_summary.loc[pair_key, ks_col] = ks_ser
         else:
-            print('Pair_key is an empty list.')
+            print("Pair_key is an empty list.")
             ks_summary[pair_key, ks_col] = 1.0
 
 ks_summary = pd.DataFrame(columns=ks_results.columns)
@@ -503,7 +548,7 @@ sorted_cols = ks_summary.sort_values().squeeze()
 if len(sorted_cols.shape) < 2 or sorted_cols.shape[1] <= 0:
     raise ValueError
 print(sorted_cols)
-ks_results.var(axis='columns', numeric_only=True)
+ks_results.var(axis="columns", numeric_only=True)
 descriptor_preprocessing.kde_grouped(dfs=new_desc_list, cols=sorted_cols[:100])
 
 # Calculate weighted geometric mean.
@@ -518,4 +563,6 @@ for col, pvals in ks_summary.items():
         print(pvals)
 sorted_cols = pd.Series(pmeans)
 print(sorted_cols.sort_values())
-descriptor_preprocessing.kde_grouped(dfs=new_desc_list, cols=sorted_cols.sort_values()[:100])
+descriptor_preprocessing.kde_grouped(
+    dfs=new_desc_list, cols=sorted_cols.sort_values()[:100]
+)

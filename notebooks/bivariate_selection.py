@@ -1,7 +1,7 @@
-import logging
 import os
+
 import pandas as pd
-from data_handling.data_tools import get_interpretable_features
+
 from feature_selection.mutual_info_tools import jmi_homebrew
 
 
@@ -21,7 +21,7 @@ def mi_bivariate(feature_df, labels, save_dir=None):
         mi_ser.sort_values(ascending=False, inplace=True)
         logger.info(mi_ser.iloc[:50])
     if (
-            False
+        False
     ):  # os.path.isdir('{}conditional_mis_all_train_neg.csv'.format(save_dir)) and os.path.isdir('{}conditional_mis_all_train_pos.csv'.format(save_dir)):
         condition_list = list()
         condition_list.append(

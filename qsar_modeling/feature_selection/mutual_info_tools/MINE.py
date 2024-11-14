@@ -5,7 +5,7 @@ import torch.nn.functional as F
 from torch.autograd import Variable
 from tqdm import tqdm
 
-hv.extension('bokeh')
+hv.extension("bokeh")
 
 H = 10
 n_epoch = 500
@@ -33,15 +33,21 @@ for epoch in tqdm(range(n_epoch)):
     y_sample = gen_y(x_sample)
     y_shuffle = np.random.permutation(y_sample)
 
-    x_sample = Variable(torch.from_numpy(x_sample).type(torch.FloatTensor), requires_grad=True)
-    y_sample = Variable(torch.from_numpy(y_sample).type(torch.FloatTensor), requires_grad=True)
-    y_shuffle = Variable(torch.from_numpy(y_shuffle).type(torch.FloatTensor), requires_grad=True)
+    x_sample = Variable(
+        torch.from_numpy(x_sample).type(torch.FloatTensor), requires_grad=True
+    )
+    y_sample = Variable(
+        torch.from_numpy(y_sample).type(torch.FloatTensor), requires_grad=True
+    )
+    y_shuffle = Variable(
+        torch.from_numpy(y_shuffle).type(torch.FloatTensor), requires_grad=True
+    )
 
     pred_xy = model(x_sample, y_sample)
     pred_x_y = model(x_sample, y_shuffle)
 
     ret = torch.mean(pred_xy) - torch.log(torch.mean(torch.exp(pred_x_y)))
-    loss = - ret  # maximize
+    loss = -ret  # maximize
     plot_loss.append(loss.data.numpy())
     model.zero_grad()
     loss.backward()
