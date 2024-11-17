@@ -1,52 +1,51 @@
+import pandas as pd
+
 from feature_selection.bivariate_filters import filter_covariants
 from feature_selection.mutual_info_tools.jmi_homebrew import balanced_mi_y
 
 
-def pearson_filtered(
+def corr_filter(
     feature_df,
     labels,
     n_features_out,
-    var_thresh=0.1,
-    covar_thresh=0.9,
+    var_thresh=0.001,
+    xcorr_thresh=0.95,
     corr_thresh=None,
-    cov_method="pearson",
+    xcorr_method="spearman",
 ):
-    col_size = min(2 * n_features_out, feature_df.shape[1])
-    feature_df = feature_df.iloc[:, :col_size].copy()
-    if var_thresh is not None:
-        feat_std = feature_df.std() / feature_df.mean(axis=0)
-        feature_df.drop(
-            columns=feat_std[feat_std.abs() < var_thresh].index, inplace=True
-        )
-    print(feature_df.shape)
+    feat_df = feature_df.copy()
+    if var_thresh is not None and var_thresh > 0:
+        feat_std = feat_df.std() / feat_df.mean(axis=0)
+        feat_df.drop(columns=feat_std[feat_std.abs() < var_thresh].index, inplace=True)
+    print(feat_df.shape)
     print(labels.shape)
-    feat_corr = feature_df.corrwith(labels).abs().sort_values(ascending=False)
-    # feat_corr = pointbiserialr(x=feature_df, y=labels.to_numpy().reshape(-1, 1)).pvalue.abs().sort_values(ascending=False)
+    feat_corr = feat_df.corrwith(labels).abs().sort_values(ascending=False)
+    # feat_corr = pointbiserialr(x=feat_df, y=labels.to_numpy().reshape(-1, 1)).pvalue.abs().sort_values(ascending=False)
     if corr_thresh is not None:
-        feature_df.drop(columns=feat_corr[feat_corr < corr_thresh].index, inplace=True)
-    if covar_thresh is not None:
-        if (
-            n_features_out is not None
-            and int(1.5 * n_features_out) > feature_df.shape[1]
-        ):
-            feat_cov = feature_df.iloc[:, : int(1.5 * n_features_out)].corr(
-                method=cov_method
+        feat_df.drop(columns=feat_corr[feat_corr < corr_thresh].index, inplace=True)
+    if xcorr_thresh is not None:
+        if n_features_out is not None and int(1.5 * n_features_out) > feat_df.shape[1]:
+            feat_cov = feat_df.iloc[:, : int(1.5 * n_features_out)].corr(
+                method=xcorr_method
             )
         else:
-            feat_cov = feature_df.corr(method=cov_method)
+            feat_cov = feat_df.corr(method=xcorr_method)
         cov_drop, cov_matrix = filter_covariants(
-            feature_df,
+            feat_df,
             labels,
-            covar_thresh,
+            xcorr_thresh,
             n_features_out,
             sort_ser=feat_corr,
-            cov_method=cov_method,
+            cov_method=xcorr_method,
             cov_matrix=feat_cov,
         )
-        feature_df.drop(columns=cov_drop, inplace=True)
-    selected = feat_corr[feature_df.columns].iloc[:n_features_out].index
+        feat_df.drop(columns=cov_drop, inplace=True)
+    selected = (
+        feat_corr[feat_df.columns].iloc[: min(n_features_out, feat_df.shape[1])].index
+    )
     if selected.empty:
         print("\n\n Selected features from PCC is empty!!!\n\n")
+        selected = feature_df.columns
     return feature_df[selected]
 
 
