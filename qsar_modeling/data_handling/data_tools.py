@@ -137,13 +137,19 @@ def load_test_data(clean=True):
 
 def load_training_data(clean=True):
     feature_df = pd.read_csv(
-        "{}filtered/padel_random_split_train.csv".format(os.environ.get("FINAL_DIR"))
+        "{}filtered/padel_random_split_train.csv".format(os.environ.get("FINAL_DIR")),
+        index_col="INCHI_KEY",
     )
-    labels = pd.read_csv(
-        "{}filtered/solubility_random_split_train.csv".format(
-            os.environ.get("FINAL_DIR")
+    labels = (
+        pd.read_csv(
+            "{}filtered/solubility_random_split_train.csv".format(
+                os.environ.get("FINAL_DIR"), index_col="INCHI_KEY"
+            )
         )
+        .set_index(keys="INCHI_KEY", drop=True)
+        .squeeze()
     )
+    print(labels.head())
     if clean:
         feature_df, labels = clean_and_check(feature_df, labels)
     return feature_df, labels
