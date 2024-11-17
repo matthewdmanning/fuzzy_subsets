@@ -12,13 +12,13 @@ def get_features_dict(feature_list):
     fused = [
         c
         for c in feature_list
-        if ("rings" in c.lower() and "fused" in c.lower() and not "hetero" in c.lower())
+        if ("rings" in c.lower() and "fused" in c.lower() and "hetero" not in c.lower())
         and "membered" in c.lower()
     ]
     plain_hetero = [
         c
         for c in feature_list
-        if ("rings" in c.lower() and not "fused" in c.lower() and "hetero" in c.lower())
+        if ("rings" in c.lower() and "fused" not in c.lower() and "hetero" in c.lower())
         and "membered" in c.lower()
     ]
     all_rings = [
@@ -29,64 +29,67 @@ def get_features_dict(feature_list):
     size_rings = [
         c
         for c in feature_list
-        if "rings" in c.lower() and "membered" in c.lower() and not "all" in c.lower()
+        if "rings" in c.lower() and "membered" in c.lower() and "all" not in c.lower()
     ]
     molwalk = [
         c
         for c in feature_list
-        if "molecular walk count" in c.lower() and not "return" in c.lower()
+        if "molecular walk count" in c.lower() and "return" not in c.lower()
     ]
     molpath = [
         c
         for c in feature_list
-        if "molecular path count" in c.lower() and not "return" in c.lower()
+        if "molecular path count" in c.lower() and "return" not in c.lower()
     ]  # .append('Total path count (up to order 10)')
-    border = [c for c in feature_list if "Conventional bond order" in c]
+    b_ord = [c for c in feature_list if "Conventional bond order" in c]
+    all_val = [c for c in feature_list if "Valence path" in c]
     valpath = [
-        c
-        for c in feature_list
-        if "Valence path" in c
-        and not "simple" in c.lower()
-        and not "average" in c.lower()
+        c for c in all_val if "simple" not in c.lower() and "average" not in c.lower()
     ]
     simpath = [
-        c for c in feature_list if "Simple path" in c and not "average" in c.lower()
+        c for c in feature_list if "Simple path" in c and "average" not in c.lower()
     ]
     selfwalk = [c for c in feature_list if "returning" in c and "walk" in c.lower()]
     hbond = [
         c
         for c in feature_list
         if (
-            "e-state" in c.lower()
-            and "hydrogen bond" in c.lower()
-            and not (
-                "minimum" in c.lower() or "maximum" in c.lower() or "sum" in c.lower()
+            (
+                "e-state" in c.lower()
+                and "hydrogen bond" in c.lower()
+                and not (
+                    "minimum" in c.lower()
+                    or "maximum" in c.lower()
+                    or "sum" in c.lower()
+                )
             )
+            or ("hbond" in c.lower() or "acceptor" in c.lower() or "donor" in c.lower())
         )
     ]
-    funct_group = [
+    func_group = [
         c
         for c in feature_list
         if "e-state" in c.lower() and ("count" in c.lower() or "number" in c.lower())
     ]
     # Dictionary Construction
-    list_names = [
-        "Bond_Orders",
-        "Valence_Path_Counts",
-        "Molecular_Path_Counts",
-        "Molecular_Walk_Count",
-        "Simple_Path",
-        "Self_Return",
-        "Sized_Rings",
-        "Total_Rings",
-        "Rotations",
-        "HBond",
-        "FuncGroup",
-        "Mol_Wt",
-        "LogP",
-    ]
+    names_dict = {
+        "Bond_Orders": b_ord,
+        "All_Valence_Path": all_val,
+        "Valence_Path_Counts": valpath,
+        "Molecular_Path_Counts": molpath,
+        "Molecular_Walk_Count": molwalk,
+        "Simple_Path": simpath,
+        "Self_Return": selfwalk,
+        "Sized_Rings": size_rings,
+        "Total_Rings": all_rings,
+        "Rotations": rotate,
+        "HBond": hbond,
+        "FuncGroup": func_group,
+        "Mol_Wt": mol_wt,
+        "LogP": logp,
+    }
     feat_lists = [
-        border,
+        b_ord,
         valpath,
         molpath,
         molwalk,
@@ -96,11 +99,11 @@ def get_features_dict(feature_list):
         all_rings,
         rotate,
         hbond,
-        funct_group,
+        func_group,
         mol_wt,
         logp,
     ]
-    names_dict = dict(zip(list_names, feat_lists))
+    # names_dict = dict(zip(list_names, feat_lists))
     return names_dict
 
 
