@@ -7,11 +7,9 @@ from imblearn.under_sampling import RandomUnderSampler
 from plotly import subplots as sp
 from sklearn.feature_selection import mutual_info_classif
 
-from notebooks.dmso_workflow import names, train_X, train_y
 
-
-def mutual_info_rus_():
-    print(train_y)
+def mutual_info_rus_(feature_df, labels):
+    print(labels)
     for name, cols in names.items():
         if len(cols) == 0:
             print("{} has no columns!".format(name))
@@ -21,7 +19,7 @@ def mutual_info_rus_():
         fig = sp.make_subplots(rows=nrows, cols=ncols, shared_xaxes="columns")
         print(fig)
         labeled_cols = pd.concat(
-            [train_X[cols], train_y], axis=1
+            [feature_df[cols], labels], axis=1
         )  # .rename(columns=labels)'
         sol_labeled = labeled_cols[labeled_cols["Solubility"] == 1]
         insol_labeled = labeled_cols[labeled_cols["Solubility"] == 0]
@@ -42,10 +40,10 @@ def mutual_info_rus_():
     if True:
         px.histogram(data_frame=labeled_cols, x=cols, color="Solubility")
 
-        selected_X = train_X[cols]
+        selected_X = feature_df[cols]
         evr_list, mi_list = list(), list()
         for i in range(1):
-            new_X, new_y = RandomUnderSampler().fit_resample(X=selected_X, y=train_y)
+            new_X, new_y = RandomUnderSampler().fit_resample(X=selected_X, y=labels)
             print("Total Sample: {}".format(new_y.size))
             print("Soluble Sample: {}".format(new_y[new_y == 1].size))
             print("Inoluble Sample: {}".format(new_y[new_y == 0].size))
@@ -74,7 +72,7 @@ def mutual_info_rus_():
             for col, mi, mistd in zip(cols, mi_mean.tolist(), mi_std.tolist())
         ]
 
-        labeled_cols = pd.concat([train_X[names[name]], train_y]).columns.set_names(
+        labeled_cols = pd.concat([feature_df[names[name]], labels]).columns.set_names(
             names=list(names.keys()).append("Solubility")
         )
         print(labeled_cols.head())
@@ -97,3 +95,22 @@ def mutual_info_rus_():
     plt.errorbar(yerr=evstd[:10], capsize=2, barsabove=True)
     plt.title('PCA of Molecular Walk/Path Counts')
     plt.ylabel('Explained Variance Ratio')"""
+
+
+def cv_boxplots(cv_folds, feature_subset="auto", max_features=10):
+    import matplotlib.pyplot as plt
+    import plotly.express as px
+    from utils import distributions
+
+    if feature_subset == "auto":
+        cv_means = distributions.ks_feature_tests(cv_folds).index
+    elif feature_subset == "all":
+        cv_means = cv_means = distributions.ks_feature_tests(cv_folds).index
+    else:
+        cv_means = feature_subset
+    if type(max_features) is int:
+        cv_means = cv_means[:max_features]
+    for col in cv_means:
+        cv_data = pd.concat([df[col] for df in cv_folds], axis=1)
+        px.box(cv_data)
+        plt.show()
