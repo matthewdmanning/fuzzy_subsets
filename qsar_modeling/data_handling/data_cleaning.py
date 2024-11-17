@@ -72,3 +72,28 @@ def clean_and_check(feature_df, labels, y_dtype=None, var_thresh=0.005):
     assert not X_out.empty
     assert not y_out.empty
     return X_out, y_out
+
+
+def data_check():
+    from data_tools import load_all_descriptors, load_combo_data, load_training_data
+
+    all_X = load_all_descriptors()
+    print("Shapes of all descriptor DFs")
+    print(all_X.shape)
+    train_X, train_y = load_training_data()
+    combo_data = load_combo_data()
+    all_idx_dict = dict([(k, df.index) for k, df in combo_data.items()])
+    # Verification
+    print("Shape from combo data dictionary: ")
+    print([(k, idx.size) for k, idx in all_idx_dict.items()])
+    all_y_dict = dict([(k, df["DMSO_SOLUBILITY"]) for k, df in combo_data.items()])
+    all_y = pd.concat(all_y_dict.values())
+    # all_y = pd.concat(all_y_dict.values())
+    # all_X = pd.concat(all_X_dict.values())
+    test_idx = all_X.index.difference(train_X.index)
+    test_y = all_y[test_idx]
+    test_X = all_X.loc[test_idx]
+    print("Test data sizes:")
+    print(test_idx.size)
+    for k, idx in all_idx_dict.items():
+        print(k, test_idx.intersection(idx).size, train_y.index.intersection(idx).size)
