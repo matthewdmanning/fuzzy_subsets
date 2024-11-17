@@ -1,8 +1,10 @@
 import numpy as np
 import pandas as pd
+from sklearn.model_selection import train_test_split
 
 
 def balance_df(df, sample_wts, rounding="auto"):
+    raise NotImplementedError
     if type(sample_wts) is dict:
         sample_wts = pd.Series(sample_wts)
     if rounding == "auto":
@@ -51,6 +53,8 @@ def mixed_undersampling(
     min_sizes=None,
     random_state=0,
 ):
+    # Combines minority groups and undersamples majority groups.
+    # maj_ratio is an iterable of each majority group's sampled size relative to total minority size.
     # Undersamples majority class, like Imbalanced-Learns Random Undersampler, but allows different ratios of
     # categories within the majority class (given by maj_ratio). The size of the minimum class(es) can be specified in
     # min_sizes.
@@ -64,17 +68,14 @@ def mixed_undersampling(
             ]
         else:
             all_min = minority_group
-    elif not np.iterable(minority_group):
+    else:
         all_min = [minority_group]
     if not np.iterable(majority_group):
         majority_group = [majority_group]
-    maj_sizes = [
-        int(m.shape[0] * s * pd.concat(all_min).shape[0])
-        for m, s in zip(majority_group, maj_ratio)
-    ]
+    maj_sizes = [int(r * np.sum([a.shape[0] for a in all_min])) for r in maj_ratio]
     all_maj = [
         m.sample(s, random_state=random_state)
-        for m, s in zip(minority_group, min_sizes)
+        for m, s in zip(majority_group, maj_sizes)
     ]
     # sampler = RandomUnderSampler(sampling_strategy=maj_ratio, random_state=random_state)
     return all_min, all_maj
@@ -90,3 +91,18 @@ def data_by_groups(labels, group_dict):
         elif type(v) is pd.DataFrame or type(v) is pd.Series:
             ind_dict[k] = v.index.intersection(labels.index)
     return ind_dict
+
+
+def random_test_train_by_group(combo_data, split_ratio=0.2, random_state=0):
+    # This is the function used to generate the new train/test split. Nov 11, 2024
+    train_test_dict = dict()
+    test_dict, train_dict = dict(), dict()
+    for k, df in combo_data.items():
+        train_idx, test_idx = train_test_split(
+            df.index.tolist(), test_size=split_ratio, random_state=random_state
+        )
+        train_test_dict[k] = train_idx, test_idx
+        test_dict[k] = test_idx
+        train_dict[k] = train_idx
+    # all_idx_dict = dict([(k, df.index) for k, df in combo_data.items()])
+    return train_dict, test_dict
