@@ -149,18 +149,16 @@ def load_training_data(clean=True):
         .set_index(keys="INCHI_KEY", drop=True)
         .squeeze()
     )
-    print(labels.head())
     if clean:
         feature_df, labels = clean_and_check(feature_df, labels)
     return feature_df, labels
 
 
-def get_interpretable_features(feature_df=None, labels=None, clean=True):
+def get_interpretable_features(feature_df, labels, *args, **kwargs):
     # Removes less intepretable features from PaDeL data.
+    # 11-17-2024: Removed default loading of feature_df and labels due to changes in data used.
     from data.constants import names
 
-    if feature_df is None:
-        feature_df, labels = load_training_data(clean=clean)
     padel_df = get_two_dim_only()
     short_names, long_names = (
         padel_df["Descriptor name"].tolist(),
