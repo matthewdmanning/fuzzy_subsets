@@ -2,9 +2,10 @@ import os
 
 import pandas as pd
 from imblearn.ensemble import BalancedRandomForestClassifier
-from sklearn.model_selection import train_test_split
 
 import feature_selection_script
+from archive.dmso_hyperparameter_part_two import cv_model_documented
+from balancing import random_test_train_by_group
 from data import feature_name_lists
 from data_handling.balancing import data_by_groups
 from data_handling.data_cleaning import check_inchi_only, clean_and_check
@@ -16,12 +17,12 @@ from data_handling.data_tools import (
     load_metadata,
     load_training_data,
 )
-from notebooks.dmso_hyperparameter_part_two import cv_model_documented
 
 
 def get_training_data(epa_sol=True, interpret=True):
+    raise DeprecationWarning
     # Select EPA soluble/combined insoluble dataset.
-    interp_X, interp_y = get_interpretable_features()
+    interp_X, interp_y = get_interpretable_features(load_training_data())
     valid_inchi, invalid_inchi = check_inchi_only(interp_y.index)
     if len(invalid_inchi) > 0:
         print("\n\nInvalid INCHI keys:")
@@ -53,12 +54,13 @@ def get_training_data(epa_sol=True, interpret=True):
     train_y = interp_y[train_X.index]
     # meta['en_in'][0].drop(index=meta['en_in'][0].index.intersection(meta['epa_in'][0].index), inplace=True)
     # full_groups_list = dict([(k, v[0]) for k, v in meta.items() if k in ['epa_sol', 'epa_in', 'en_in']])
-    unique_X, unique_y = clean_and_check(train_X, train_y, y_dtype=int)
+    # unique_X, unique_y = clean_and_check(train_X, train_y, y_dtype=int)
 
     return unique_X, unique_y
 
 
 def grab_test_data():
+    raise DeprecationWarning
     group_dict = load_idx_selector()
     all_X = load_all_descriptors()
     all_y = load_metadata()[0]
@@ -82,46 +84,9 @@ def get_grouped_data():
     return all_idx_dict
 
 
-def random_grouped_sample(combo_data, split_ratio=0.2, random_state=0):
-    train_test_dict = dict()
-    test_dict, train_dict = dict(), dict()
-    for k, df in combo_data.items():
-        train_idx, test_idx = train_test_split(
-            df.index.tolist(), test_size=split_ratio, random_state=random_state
-        )
-        train_test_dict[k] = train_idx, test_idx
-        test_dict[k] = test_idx
-        train_dict[k] = train_idx
-    # all_idx_dict = dict([(k, df.index) for k, df in combo_data.items()])
-    return train_dict, test_dict
-
-
-def data_check():
-    all_X = load_all_descriptors()
-    print("Shapes of all descriptor DFs")
-    print(all_X.shape)
-    train_X, train_y = load_training_data()
-    combo_data = load_combo_data()
-    all_idx_dict = dict([(k, df.index) for k, df in combo_data.items()])
-    # Verification
-    print("Shape from combo data dictionary: ")
-    print([(k, idx.size) for k, idx in all_idx_dict.items()])
-    all_y_dict = dict([(k, df["DMSO_SOLUBILITY"]) for k, df in combo_data.items()])
-    all_y = pd.concat(all_y_dict.values())
-    # all_y = pd.concat(all_y_dict.values())
-    # all_X = pd.concat(all_X_dict.values())
-    test_idx = all_X.index.difference(train_X.index)
-    test_y = all_y[test_idx]
-    test_X = all_X.loc[test_idx]
-    print("Test data sizes:")
-    print(test_idx.size)
-    for k, idx in all_idx_dict.items():
-        print(k, test_idx.intersection(idx).size, train_y.index.intersection(idx).size)
-
-
 def get_new_test_train(random_state=0, subgroups="all"):
     combo_data = load_combo_data(subgroups)
-    train_meta_dict, test_meta_dict = random_grouped_sample(
+    train_meta_dict, test_meta_dict = random_test_train_by_group(
         combo_data, random_state=random_state
     )
     train_idx = pd.concat([pd.Series(df) for df in train_meta_dict.values()])
@@ -157,10 +122,9 @@ def quick_brf_train():
 
 
 def save_train_test_data():
+    raise IOError.add_note("Data already saved. Stopping process to avoid overwriting.")
     train_data, test_data = get_new_test_train()
-    feature_df, labels = get_interpretable_features(
-        train_data[0], train_data[1], clean=False
-    )
+    feature_df, labels = get_interpretable_features(train_data[0], train_data[1])
     feats = feature_df.columns
     clean_train_df, clean_train_y = clean_and_check(
         train_data[0][feats], train_data[1], y_dtype=int
@@ -203,7 +167,7 @@ def main():
         (feature_df, labels),
         model_name="brf",
         run_name="brf_epa_sol",
-        project_dir=os.environ.get("PROJECT_DIR"),
+        rfe_dir=os.environ.get("PROJECT_DIR"),
     )
 
 
