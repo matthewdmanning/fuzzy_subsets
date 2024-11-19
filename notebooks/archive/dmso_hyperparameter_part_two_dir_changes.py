@@ -327,7 +327,7 @@ def combined_rus_cv_results(
 
 n_features_out = 40
 project_dir = "C:/Users/mmanning/OneDrive - Environmental Protection Agency (EPA)/qsar-modeling-workflow/"
-# exp_dir = '{}models/hyperopted-training_curve/'.format(project_dir)
+# exp_dir = '{}models/hyperopted-training_curve/'.format(rfe_dir)
 feature_dir = "{}models/epa_solubles_hyperparam/".format(project_dir)
 exp_dir = "{}models/epa_solubles_final_test/".format(project_dir)
 train_data_dir = "{}epa_solubles_atom_type_count/".format(project_dir)
