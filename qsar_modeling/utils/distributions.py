@@ -49,13 +49,16 @@ def is_low_cardinal(features, single_thresh=None):
 
 def ks_feature_tests(feature_dfs, dist_stat="ks"):
     from scipy.stats import hmean
+
     assert [(a.shape[1] == b.shape[1]) for a, b in itertools.combinations(feature_dfs)]
     if type(dist_stat) is str:
         if dist_stat == "ks":
             from scipy.stats import ks_2samp
+
             dist_stat = ks_2samp
         elif dist_stat == "js":
             from scipy.spatial.distance import jensenshannon
+
             dist_stat = jensenshannon
     for df in feature_dfs[1:]:
         df = df[feature_dfs[0].columns]

@@ -9,9 +9,8 @@ import pandas as pd
 import cv_tools
 import samples
 from data import feature_name_lists
-from data.feature_name_lists import get_features_dict
 from data_handling.data_tools import get_interpretable_features
-from feature_selection import feature_combination
+from feature_combination import combine_feature_groups
 from feature_selection.feature_combination import weight_by_feature
 from feature_selection.univariate_filters import get_mi_features
 from modeling.quick_models import balanced_forest, logistic_clf
@@ -73,64 +72,6 @@ def get_feature_set(feature_df, labels, split_list, n_features_out):
     return pearson_feat_list, mi_feat_list
 
 
-def pca_loop(
-    train_data, test_data, train_labels, n_features_out, sort_key=None, oversampler=True
-):
-    train_data, test_data, train_labels = (
-        train_data.copy(),
-        test_data.copy(),
-        train_labels.copy(),
-    )
-    feature_dict = get_features_dict(test_data.columns)
-    groups_list = [
-        "Bond_Orders",
-        "Valence_Path_Counts",
-        "Molecular_Path_Counts",
-        "Molecular_Walk_Count",
-        "Simple_Path",
-        "Self_Return",
-        "Sized_Rings",
-        "Total_Rings",
-        "Rotations",
-        "HBond",
-    ]
-    group_len_dict = dict(
-        [
-            (k, len(v))
-            for k, v in feature_dict.items()
-            if k in groups_list and len(v) < 0
-        ]
-    )
-    train_pca_features, test_pca_features = list(), list()
-    for group_name, feat_list in group_len_dict.items():
-        present_features = [
-            f for f in feature_dict[group_name] if f in train_data.columns
-        ]
-        # if sort_key is not None:
-        #    feat_list.sort(key=sort_key)
-        train_pca_data, test_pca_data, pca_former = feature_combination.pca_threshold(
-            train_data[present_features],
-            test_data[present_features],
-            group_name,
-            evr_thresh=0.925,
-            train_labels=train_y,
-            oversampler=oversampler,
-        )
-        if train_pca_data is not None:
-            drop_list = pca_former.feature_names_in_
-            # train_data = pd.concat([train_data, train_pca_data], axis=1)
-            # test_data = pd.concat([test_data, test_pca_data], axis=1)
-            train_pca_features.append(train_pca_data)
-            test_pca_features.append(test_pca_data)
-            train_data.drop(drop_list, inplace=True)
-            test_data.drop(drop_list, inplace=True)
-        else:
-            print("Feature group {} did not produce a PCA result.".format(group_name))
-    train_out = pd.concat(train_pca_features, axis=1)
-    test_out = pd.concat(test_pca_features, axis=1)
-    return train_data, train_out, test_data, test_out, pca_former
-
-
 def model_feat_loop(
     model,
     model_name,
@@ -160,12 +101,7 @@ def model_feat_loop(
             feature_set = feature_set.index.tolist()
             rus, rus_y = RandomUnderSampler().fit_resample(dev_X, dev_y)
             erus, erus_y = RandomUnderSampler().fit_resample(eva_X, eva_y)
-            dx, dy, ex, ey, former = pca_loop(
-                train_data=rus[feature_set],
-                test_data=erus[feature_set],
-                train_labels=rus_y,
-                oversampler=False,
-            )
+            dx, dy, ex, ey, former = combine_feature_groups(feature_df=rus[feature_set])
             dev_X = former(dev_X)
             eva_X = former(eva_X)
             feature_set = [c for c in dev_X if c in feature_set]
@@ -193,7 +129,7 @@ def model_feat_loop(
 
 
 # if pca_features is not None:
-#     dev_X, dev_X_pca, eva_X, eva_X_pca = pca_loop(train_data=all_dev_X[feature_set], test_data=all_eva_X[feature_set], train_labels=dev_y, sort_key=mi_avg,
+#     dev_X, dev_X_pca, eva_X, eva_X_pca = combine_feature_groups(train_data=all_dev_X[feature_set], test_data=all_eva_X[feature_set], train_labels=dev_y, sort_key=mi_avg,
 #                                                   oversampler=False)
 #    features_in = dev_X.columns[:pca_features - dev_X_pca.shape[1]].append(dev_X_pca.columns)
 # for group_name, feat_list in
@@ -280,7 +216,6 @@ for set_name, feat_sets in [("MI_interaction_list", mi_list)]:
             train_y,
             feature_set_list=mi_list,
             indices_list=ind_list,
-            pca_features=None,
         )
         wrong_insol_df = pd.concat(
             [utils.samples.get_sample_info(w) for w in miss_insol], axis=1
