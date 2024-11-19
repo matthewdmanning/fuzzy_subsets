@@ -3,29 +3,10 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 
 
-def balance_df(df, sample_wts, rounding="auto"):
-    raise NotImplementedError
-    if type(sample_wts) is dict:
-        sample_wts = pd.Series(sample_wts)
-    if rounding == "auto":
-        sample_wts = sample_wts.round(0)
-    elif rounding == "ceiling" or rounding == "ceil":
-        sample_wts = pd.Series(np.ceil(sample_wts), index=sample_wts.index)
-    elif rounding == "floor":
-        sample_wts = pd.Series(np.floor(sample_wts), index=sample_wts.index)
-    divisor = np.gcd(sample_wts)
-    if divisor > 1:
-        sample_wts = sample_wts.divide(divisor)
-    if sample_wts.le(1).all():
-        print(
-            "N will increase by {} when DataFrame of N={}.".format(
-                sample_wts.subtract(1).sum(), df.shape[0]
-            )
-        )
-        balancing_df = None
+def balance_source_sol_data(source_sol_df):
+    return None
 
 
-# from statsmodels.stats.moment_helpers import corr2cov
 def get_epa_sol_all_insol(feature_df, labels, tups):
     # Retrieves all insoluble and EPA soluble compounds and returns as a combined feature DataFrame and solubility Series.
     # insol_samples = pd.concat([tups['epa_in'][0], tups['en_in'][0]]).index.intersection(train_insols)
