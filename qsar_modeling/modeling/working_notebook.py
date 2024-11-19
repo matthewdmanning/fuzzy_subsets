@@ -240,7 +240,7 @@ def train_models(train_X, train_y, total_meta_df):
         # candidates.drop(vif_columns, inplace=True)
         for i in list(range(vif_loops)):
             vif_ser = calculate_vif(
-                vif_all_feats, candidates, n_jobs=1, generalized=False
+                vif_all_feats, candidates, generalized=False, n_jobs=1
             )
             vif_ser.copy().transform(func=softmax, axis=0)
             mi_scores = (
@@ -302,12 +302,10 @@ def train_models(train_X, train_y, total_meta_df):
             uni_mi = mutual_info_classif(X=df, y=target, random_state=0, n_jobs=-1)
         vif_returns = repeated_stochastic_vif(
             feats_df[feature_names_in],
-            mi_ser=uni_mi,
-            target=target,
-            num_select=n_feats,
+            importance_ser=uni_mi,
             sample_wts=sample_wts,
             model_size=model_size,
-            cv=model_cv,
+            rounds=model_cv,
             n_jobs=-1,
             verbose=verbose,
             **kwargs
