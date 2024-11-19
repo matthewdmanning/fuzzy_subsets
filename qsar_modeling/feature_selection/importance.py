@@ -117,6 +117,7 @@ def dummy_score_elimination(
     subset = list(subset)
     if type(cv) is int:
         cv = StratifiedKFold(n_splits=cv)
+    mean_scores = None
     while dummy_df.shape[1] > min_feats:
         score_dict = dict()
         test_splits = list()
@@ -166,7 +167,7 @@ def dummy_score_elimination(
         pprint.pp(mean_scores.iloc[: max(5, drop_size * 2)])
         dummy_df.drop(columns=dropped_feats, inplace=True)
         [subset.pop(subset.index(f)) for f in dropped_feats]
-    return dummy_df
+    return mean_scores
 
 
 def _get_importance_model(model, target_type, **model_kwargs):
@@ -300,9 +301,11 @@ def brute_force_importance_rf_clf(
     feature_df, labels, clf, n_features_out, step_size=1, **fit_kwargs
 ):
     # Helper function for brute force feature selection.
-    eliminator = RFE(
-        estimator=clf, n_features_to_select=n_features_out, step=step_size
-    ).fit(feature_df, y=labels, **fit_kwargs)
+    eliminator = (
+        RFE(estimator=clf, n_features_to_select=n_features_out, step=step_size)
+        .set_output(transform="pandas")
+        .fit(feature_df, y=labels, **fit_kwargs)
+    )
     brute_features_rankings = pd.Series(
         eliminator.ranking_, index=feature_df.columns.tolist()
     ).sort_values()
