@@ -64,9 +64,9 @@ def find_correlation(
         colsToCheck = combsAboveCutoff.get_level_values(1)
 
         msk = col_center[colsToCheck] > col_center[rowsToCheck].values
-        delete_dict = pd.unique(np.r_[colsToCheck[msk], rowsToCheck[~msk]]).tolist()
-
-        return delete_dict
+        delete_list = pd.unique(np.r_[colsToCheck[msk], rowsToCheck[~msk]]).tolist()
+        delete_ser = pd.Series(data=1, index=delete_list)
+        return delete_ser
 
     def _find_correlation_exact(corr_df, max_drop, thresh):
         """
@@ -79,9 +79,8 @@ def find_correlation(
         corr_sorted.values[(*[np.arange(len(corr_sorted))] * 2,)] = np.Nan
         """
 
-        corr_sorted = corr_df.copy().astype(float)
-        col_norms_sorted = np.argsort(norm_fn(corr_sorted.to_numpy(), axis=0))
-        corr_sorted = corr_sorted.iloc[col_norms_sorted]
+        col_norms_sorted = np.argsort(norm_fn(corr_df.to_numpy(), axis=0))
+        corr_sorted = corr_df.iloc[col_norms_sorted]
         # corr_sorted = corr_sorted.loc[col_norms_sorted]
         sorted_indices = math_tools.get_max_arr_indices(corr_sorted)
         delete_dict = OrderedDict()
@@ -101,7 +100,7 @@ def find_correlation(
             else:
                 delete_dict[j] = j_norm
                 corr_sorted.loc[j] = corr_sorted[j] = np.nan
-        return delete_dict
+        return pd.Series(delete_dict)
 
     """
     if not np.allclose(corr, corr.T, rtol=1e-3, atol=1e-2):
@@ -109,10 +108,12 @@ def find_correlation(
     elif any(corr.columns != corr.index):
         raise ValueError("Columns aren't equal to indices.")
     """
-    acorr = corr.abs()
+    acorr = corr.copy().astype(float).abs()
     avg = np.mean(corr, axis=1)
     if n_drop is None:
-        n_drop = int(corr.shape[1] / 2)
+        n_drop = corr.shape[1]
+    else:
+        n_drop = min(n_drop, corr.shape[1])
     if exact or (exact is None and corr.shape[1] < 100):
         print("Initiating exact correlation search")
         return _find_correlation_exact(acorr, n_drop, cutoff)
