@@ -9,7 +9,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from imblearn.ensemble import BalancedRandomForestClassifier
-# from chefboost import Chefboost
 from imblearn.under_sampling import NearMiss, RandomUnderSampler
 from scipy.special import softmax
 from sklearn.decomposition import IncrementalPCA
