@@ -155,11 +155,12 @@ def brute_force_with_collinear(
         elif "stoch-vif" in filter_kws["method_name"]:
             vif_survival, vif_score_df, vif_stats, votes = vif.repeated_stochastic_vif(
                 X_selected,
-                importance[X_selected.columns],
-                cut=filter_kws["threshold"],
-                sample_wts=s_weights,
+                importance_ser=importance[X_selected.columns],
+                threshold=filter_kws["threshold"],
+                model_name="hubb",
                 step_size=filter_kws["step_size"],
-                # filter_kws["fit_kwargs"]
+                sample_wts=s_weights,
+                save_dir=select_dir,
             )
             results["scores_"] = vif_score_df
             feature_path = "{}{}_n{}_stoch-vif-{}_{}.csv".format(
@@ -255,7 +256,7 @@ def correlation_filter(
                 save_dir, filter_kws["corr_method"], filter_kws["cross_corr"].shape[0]
             )
         )
-    return results["feats_out_"]
+    return results["scores_"]
 
 
 def rfe_dummy(X_selected, labels, filter_kws, fit_kwargs=None, save_dir=None):
@@ -365,14 +366,25 @@ def main(
             "method_name": correlation_type,
             "cross_corr": cross_corr,
         },
-        {"method_name": "stoch-vif", "n_feats": 200, "step_size": 1, "threshold": 25},
+        {
+            "method_name": "stoch-vif",
+            "n_feats": 200,
+            "step_size": 1,
+            "threshold": 25,
+            "model_name": "hubb",
+        },
         {
             "method_name": "rfe",
             "n_feats": 150,
             "step_size": 5,
             "model": get_importance_model("brf")[0],
         },
-        {"method_name": "stoch-vif", "n_feats": 125, "threshold": 15},
+        {
+            "method_name": "stoch-vif",
+            "n_feats": 125,
+            "threshold": 15,
+            "model_name": "hubb",
+        },
         {
             "method_name": "dummy_rfe",
             "n_feats": 50,
