@@ -1,4 +1,5 @@
 import copy
+import os
 import pprint
 from collections import OrderedDict
 from functools import partial
@@ -15,98 +16,63 @@ from sklearn.linear_model import (
     SGDRegressor,
 )
 from sklearn.preprocessing import RobustScaler
-
+from utils.parallel_subsets import train_model_subsets
 from feature_selection.importance import logger
 from utils.features import compute_gram
-
+from sklearn.pipeline import clone as clone_model
 
 # from features import compute_gram
 
 
 def calculate_vif(
     feature_df,
+    model,
     subset=None,
-    model="sgd",
+    parallelize=False,
     sample_wts=None,
     generalized=False,
-    scorer=None,
-    n_jobs=-1,
     verbose=0,
-    vif_dict=None,
     **fit_kwargs
 ):
-    if vif_dict is None:
-        vif_dict = OrderedDict()
-    if type(model) is str:
-        if "elastic" in model:
-            vif_model = ElasticNetCV(
-                l1_ratio=[0.15, 0.3, 0.5],
-                tol=5e-3,
-                n_alphas=33,
-                n_jobs=n_jobs,
-                random_state=0,
-                selection="random",
-            )
-        elif "ridge" in model:
-            vif_model = Ridge(solver="lsqr", max_iter=1000, tol=1e-03, random_state=0)
-        elif "sgd" in model:
-            vif_model = SGDRegressor(
-                loss="huber",
-                penalty="elasticnet",
-                max_iter=5000,
-                alpha=0.0005,
-                epsilon=0.0025,
-                learning_rate="adaptive",
-                l1_ratio=0.75,
-                fit_intercept=False,
-                early_stopping=True,
-            )
-        elif "hubb" in model:
-            from sklearn.linear_model import HuberRegressor
-
-            vif_model = HuberRegressor(max_iter=1000, tol=1e-04, fit_intercept=False)
-        else:
-            vif_model = LinearRegression(n_jobs=n_jobs)
-    else:
-        vif_model = LinearRegression(n_jobs=n_jobs)
-
+    predictors = list()
     if subset is None:
         for col in feature_df.columns:
-            y = feature_df[col]
-            training = feature_df.drop(columns=col)
-            vif_dict[col] = single_vif(
-                training,
-                y,
-                col,
-                generalized,
-                sample_wts,
-                sklearn.clone(vif_model),
-                scorer=scorer,
-            )
+            predictors.append((feature_df.columns.drop(col), col))
     else:
         if all(c in feature_df.columns for c in subset.columns):
             for col, target in subset.items():
-                vif_dict[col] = single_vif(
-                    feature_df.drop(columns=subset.columns),
-                    y=target,
-                    col_name=col,
-                    generalized=generalized,
-                    sample_wts=sample_wts,
-                    vif_model=sklearn.clone(vif_model),
-                    scorer=scorer,
-                )
+                predictors.append((feature_df.columns.drop(subset.columns), col))
         else:
             for col, target in subset.items():
-                vif_dict[col] = single_vif(
-                    feature_df.drop(columns=col),
-                    target,
-                    col,
-                    generalized,
-                    sample_wts,
-                    sklearn.clone(vif_model),
-                    scorer=scorer,
-                )
+                predictors.append((feature_df.columns.drop(col), col))
+
     # print('\n\nVIF length: {}\n\n'.format(len(vif_dict.keys())))
+    if parallelize:
+        vif_models = train_model_subsets(
+            feature_df,
+            predictor_list=predictors,
+            model=model,
+            mem_dir=os.environ.get("JOBLIB_TMP"),
+            sample_weights=sample_wts,
+        )
+    else:
+        vif_models = [
+            clone_model(model).fit(
+                X=feature_df[p[0]], y=feature_df[p[1]], sample_weight=sample_wts
+            )
+            for p in predictors
+        ]
+    vif_dict = dict(
+        [
+            (
+                p[1],
+                model.score(
+                    X=feature_df[p[0]], y=feature_df[p[1]], sample_weight=sample_wts
+                ),
+            )
+            for p, model in zip(predictors, vif_models)
+        ]
+    )
     if generalized:
         vif_ser = pd.DataFrame.from_dict(
             vif_dict, orient="index", columns=["VIF", "GVIF"]
@@ -117,6 +83,55 @@ def calculate_vif(
     logger.info(pprint.pformat(vif_ser.sort_values(ascending=False), compact=True))
     assert not vif_ser.empty
     return vif_ser
+
+
+def get_vif_model(model, n_jobs, uncentered=True):
+    parallelize = False
+    if type(model) is str:
+        if "elastic" in model:
+            vif_model = ElasticNetCV(
+                l1_ratio=[0.15, 0.3, 0.5],
+                tol=5e-3,
+                n_alphas=33,
+                n_jobs=n_jobs,
+                random_state=0,
+                selection="random",
+                fit_intercept=uncentered,
+            )
+        elif "ridge" in model:
+            vif_model = Ridge(
+                solver="lsqr",
+                max_iter=1000,
+                fit_intercept=uncentered,
+                tol=1e-03,
+                random_state=0,
+            )
+            parallelize = True
+        elif "sgd" in model:
+            vif_model = SGDRegressor(
+                loss="huber",
+                penalty="elasticnet",
+                max_iter=5000,
+                alpha=0.0005,
+                epsilon=0.0025,
+                learning_rate="adaptive",
+                l1_ratio=0.75,
+                fit_intercept=uncentered,
+                early_stopping=True,
+            )
+            parallelize = True
+        elif "hubb" in model:
+            from sklearn.linear_model import HuberRegressor
+
+            vif_model = HuberRegressor(
+                max_iter=5000, tol=1e-03, fit_intercept=uncentered
+            )
+            parallelize = True
+        else:
+            vif_model = LinearRegression(n_jobs=n_jobs, fit_intercept=uncentered)
+    else:
+        vif_model = LinearRegression(n_jobs=n_jobs, fit_intercept=uncentered)
+    return parallelize, vif_model
 
 
 def single_vif(
@@ -147,26 +162,58 @@ def single_vif(
 def repeated_stochastic_vif(
     feature_df,
     importance_ser=None,
-    cut=10.0,
+    threshold=10.0,
+    model_name="sgd",
+    model_size="auto",
     feat_wts="auto",
-    scoring="sgd",
-    model_size=25,
+    step_size=1,
     rounds=1000,
     sample_wts=None,
     n_jobs=-1,
     verbose=1,
-    step_size=1,
+    save_dir=None,
     **kwargs
 ):
+    """
+    Repeatedly calculates feature Variance Inflation Factors (VIF = 1 / (1-r^2)) where r^2 is the score of the linear regressor for each feature using the other features in the subset. Feature inclusion in a subset is stochastically chosen from feat_wts. This process is run rounds times. A features total score is a weighted ratio of percentage of model appearances where a model's VIF is above the cut threshold.
+    Parameters
+    ----------
+    feature_df: pd.DataFrame
+    Training data for feature selection.
+    importance_ser: pd.Series
+    Multiplier for final score (more is less multicollinear). If feat_wts not provided, weighting for selecting features for appearance (lower is more likely)
+    threshold: float
+    VIF threshold. Greatest step_size features in a subset have "Cuts" incremented by 1.
+    feat_wts: pd.Series
+    Probabilities for including features in VIF calculation subset. Values >= 0.
+    model_name: sklearn.linear_model._base
+    Callable for model scoring to calculate VIF. If not given, model's default score method is used.
+    model_size: int
+    Number of features used in model.
+    rounds
+    sample_wts
+    n_jobs
+    verbose
+    step_size
+    kwargs
+
+    Returns
+    -------
+
+    """
     df = (
-        RobustScaler(with_centering=False, quantile_range=(15, 85), unit_variance=True)
+        RobustScaler(with_centering=True, quantile_range=(15, 85), unit_variance=True)
         .set_output(transform="pandas")
         .fit_transform(feature_df)
     )
+    if model_size == "auto":
+        model_size = -1
+        while model_size < 10:
+            model_size += os.cpu_count()
     if importance_ser is None:
         importance_ser = (
             pd.Series(
-                scipy.linalg.norm(feature_df.corr(method="pearson").to_numpy()),
+                1,
                 index=feature_df.columns,
             )
             .squeeze()
@@ -196,24 +243,26 @@ def repeated_stochastic_vif(
         index=importance_ser.index,
         columns=["Appearances", "Cuts"],
     ).add(0.5)
+    parallelize, vif_model = get_vif_model(model_name, n_jobs, uncentered=False)
     for i in list(range(rounds)):
         # print('Selected: {}'.format(len(select_set)))
         feats = importance_ser.sample(
             weights=scipy.special.softmax(feat_wts), n=model_size
         ).index
         votes.loc[feats, "Appearances"].add(1)
+
         vif_ser = calculate_vif(
             feature_df=df,
+            model=vif_model,
             subset=df[feats],
-            model=scoring,
+            parallelize=parallelize,
             sample_wts=sample_wts,
-            n_jobs=n_jobs,
             verbose=verbose,
             **kwargs
         )
         vif_list.append(vif_ser)
         votes.loc[
-            vif_ser[vif_ser > cut].sort_values(ascending=False).index[:step_size],
+            vif_ser[vif_ser > threshold].sort_values(ascending=False).index[:step_size],
             "Cuts",
         ] += 1
     cut_score = importance_ser.multiply(
@@ -230,6 +279,8 @@ def repeated_stochastic_vif(
     vif_score_df = pd.concat(
         vif_list, axis=1, keys=["VIF_{}".format(i) for i in list(range(rounds))]
     )
+    if save_dir is not None:
+        vif_score_df.to_csv("{}vif_scores.csv".format(save_dir))
     vif_stats = pd.DataFrame(
         data=pd.concat((vif_score_df.mean(axis=1), vif_score_df.std(axis=1)), axis=1)
     )
@@ -394,7 +445,6 @@ def stochastic_vif(
     else:
         df = feature_df.copy()
     logger.info("Number of features for VIF selections: {}".format(importance_ser.size))
-    alpha = 0.3
     corr_ser = importance_ser.copy()
     select_set = list()
     if feat_wts == "auto":
@@ -419,8 +469,6 @@ def stochastic_vif(
             df[select_set],
             subset=feats,
             sample_wts=sample_wts,
-            scorer=scoring,
-            n_jobs=n_jobs,
             verbose=verbose,
         )
         # probs = max((alpha * vif / 100.), 1.0)
