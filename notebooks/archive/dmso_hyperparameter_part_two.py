@@ -1,16 +1,13 @@
 import itertools
 import os
-import pickle
 import pprint
 from functools import partial
 
 import numpy as np
 import pandas as pd
-from imblearn.under_sampling import RandomUnderSampler
 from sklearn._config import set_config as sk_config
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import ParameterGrid, StratifiedKFold
-from sklearn.pipeline import clone as clone_model
 from sklearn.utils import check_X_y
 
 import data_handling.data_cleaning
@@ -21,8 +18,7 @@ from qsar_modeling.data_handling.data_tools import (
     get_interpretable_features,
     load_metadata,
 )
-from qsar_modeling.modeling import scoring
-from qsar_modeling.utils import cv_tools, samples
+from quick_models import combined_rus_cv_results
 
 # from utils import cv_tools
 
@@ -142,112 +138,6 @@ def get_notebook_data(epa_soluble=True):
     check_X_y(unique_X, unique_y)
 
     return unique_X, unique_y
-
-
-def cv_model_documented(
-    input_X,
-    input_y,
-    cv_model,
-    model_name,
-    save_dir,
-    cv_splitter=None,
-    sweight=None,
-    **splitter_kw
-):
-    cv = 0
-    dev_score_list, eva_score_list = list(), list()
-    for dev_X, dev_y, eva_X, eva_y in cv_tools.split_df(
-        input_X, input_y, splitter=cv_splitter, **splitter_kw
-    ):
-        cv += 1
-        cv_dir = "{}cv_{}/".format(save_dir, cv)
-        model_dir = cv_dir  # '{}{}/'.format(cv_dir, model_name)
-        if not os.path.isdir(cv_dir):
-            os.makedirs(cv_dir, exist_ok=True)
-        if not os.path.isdir(model_dir):
-            os.makedirs(model_dir, exist_ok=True)
-        model_obj_path = "{}model_obj.pkl".format(model_dir)
-        cv_dev_path = "{}dev_true.csv".format(cv_dir)
-        cv_eva_path = "{}eval_true.csv".format(cv_dir)
-        cv_dev_pred_path = "{}dev_pred.csv".format(model_dir)
-        cv_eva_pred_path = "{}eval_pred.csv".format(model_dir)
-        dev_y.to_csv(cv_dev_path)
-        eva_y.to_csv(cv_eva_path)
-        cv_model = clone_model(cv_model).fit(dev_X, dev_y, sample_weight=sweight)
-        with open(model_obj_path, "wb") as f:
-            pickle.dump(cv_model, f)
-        dev_pred = pd.Series(data=cv_model.predict(dev_X), index=dev_y.index)
-        eva_pred = pd.Series(data=cv_model.predict(eva_X), index=eva_y.index)
-        dev_pred.to_csv(cv_dev_pred_path, index_label="INCHI_KEY")
-        eva_pred.to_csv(cv_eva_pred_path, index_label="INCHI_KEY")
-        dev_score_dict = scoring.score_model(cv_model, dev_X, dev_y)
-        eva_score_dict = scoring.score_model(cv_model, eva_X, eva_y)
-        dev_score_list.append(dev_score_dict)
-        eva_score_list.append(eva_score_dict)
-        tn, fp, fn, tp = samples.get_confusion_samples((eva_y, eva_pred))
-        for iks, s in zip([tn, fp, fn, tp], ["tn", "fp", "fn", "tp"]):
-            samples.get_sample_info(iks).to_csv(
-                "{}{}_eval_samples.csv".format(model_dir, s), index_label="INCHI_KEY"
-            )
-    return dev_score_list, eva_score_list
-
-
-def combined_rus_cv_results(
-    feature_df,
-    labels,
-    model,
-    model_params,
-    model_name,
-    save_dir,
-    n_rus=5,
-    cv_splitter=None,
-    sweight=None,
-    **splitter_kw
-):
-    total_dev_scores, total_eva_scores = list(), list()
-    model_inst = model().set_params(**model_params)
-    for r in np.arange(n_rus):
-        rus_dir = "{}rus_{}/".format(save_dir, r)
-        if not os.path.isdir(rus_dir):
-            os.makedirs(rus_dir, exist_ok=True)
-        rus_state = 1000 * r
-        X_under, y_under = RandomUnderSampler(random_state=rus_state).fit_resample(
-            feature_df, labels
-        )
-        rus_dev_scores, rus_eva_scores = cv_model_documented(
-            X_under,
-            y_under,
-            model_inst,
-            model_name,
-            rus_dir,
-            cv_splitter,
-            sweight,
-            **splitter_kw
-        )
-        assert len(rus_dev_scores) > 0 and len(rus_eva_scores) > 0
-        for dl in [rus_dev_scores, rus_eva_scores]:
-            for cv_num, d in enumerate(dl):
-                d["RUS"] = r
-                d["CV"] = cv_num
-        total_dev_scores.extend(rus_dev_scores)
-        total_eva_scores.extend(rus_eva_scores)
-    dev_summary = [
-        dict([(k, v) for k, v in d.items() if k != "RUS" and k != "CV"])
-        for d in total_dev_scores
-    ]
-    eva_summary = [
-        dict([(k, v) for k, v in d.items() if k != "RUS" and k != "CV"])
-        for d in total_eva_scores
-    ]
-    print("Eva summary: {}".format(eva_summary))
-    dev_score_df = scoring.summarize_scores(dev_summary)
-    eva_score_df = scoring.summarize_scores(eva_summary)
-    assert not dev_score_df.empty and not eva_score_df.empty
-    dev_score_path = "{}dev_score_summary.csv".format(save_dir)
-    eva_score_path = "{}eval_score_summary.csv".format(save_dir)
-    dev_score_df.to_csv(dev_score_path, index_label="Metric")
-    eva_score_df.to_csv(eva_score_path, index_label="Metric")
-    return dev_score_df, eva_score_df, total_dev_scores, total_eva_scores
 
 
 model_passing = True
