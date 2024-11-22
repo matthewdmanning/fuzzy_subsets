@@ -121,29 +121,16 @@ def load_maxmin_data(dataset, clean=True):
     return feature_df, labels
 
 
-def load_test_data(clean=True):
+def load_split_data(split="train", clean=True):
     feature_df = pd.read_csv(
-        "{}filtered/padel_random_split_test.csv".format(os.environ.get("FINAL_DIR"))
-    )
-    labels = pd.read_csv(
-        "{}filtered/solubility_random_split_test.csv".format(
-            os.environ.get("FINAL_DIR")
+        "{}filtered/padel_random_split_{}.csv".format(
+            os.environ.get("FINAL_DIR"), split
         )
-    )
-    if clean:
-        feature_df, labels = clean_and_check(feature_df, labels)
-    return feature_df, labels
-
-
-def load_training_data(clean=True):
-    feature_df = pd.read_csv(
-        "{}filtered/padel_random_split_train.csv".format(os.environ.get("FINAL_DIR")),
-        index_col="INCHI_KEY",
-    )
+    ).set_index(keys="INCHI_KEY", drop=True)
     labels = (
         pd.read_csv(
-            "{}filtered/solubility_random_split_train.csv".format(
-                os.environ.get("FINAL_DIR"), index_col="INCHI_KEY"
+            "{}filtered/solubility_random_split_{}.csv".format(
+                os.environ.get("FINAL_DIR"), split
             )
         )
         .set_index(keys="INCHI_KEY", drop=True)
@@ -151,6 +138,16 @@ def load_training_data(clean=True):
     )
     if clean:
         feature_df, labels = clean_and_check(feature_df, labels)
+    return feature_df, labels
+
+
+def load_test_data(clean=True):
+    feature_df, labels = load_split_data("test", clean=clean)
+    return feature_df, labels
+
+
+def load_training_data(clean=True):
+    feature_df, labels = load_split_data("train", clean=clean)
     return feature_df, labels
 
 
