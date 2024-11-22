@@ -54,18 +54,30 @@ def check_inchi_only(inchi_keys):
     return correct_keys, bad_keys
 
 
-def clean_and_check(feature_df, labels, y_dtype=None, var_thresh=0.005):
-    X_df = feature_df[feature_df.std(axis=1) > var_thresh].copy()
+def clean_and_check(feature_df, labels, y_dtype=None, var_thresh=0, verbose=False):
+    X_df = feature_df.copy()
     X_df = rename_duplicate_features(X_df)
     valid_idx, invalid_idx = check_inchi_only(X_df.index)
     if len(invalid_idx) > 0:
         raise UserWarning
         print("INCHI keys are not valid: {}".format(invalid_idx))
     y_ser = remove_duplicate_idx(labels)
-    X_df = X_df.loc[y_ser.index]
-    y_ser = y_ser.squeeze()
+    if type(y_ser.index) is pd.RangeIndex:
+        X_df = X_df.loc[y_ser]
+    else:
+        X_df = X_df.loc[y_ser.index]
     if y_dtype is not None:
         y_ser = y_ser.astype(y_dtype)
+    zero_var_cols = X_df[X_df.var(axis=1) <= var_thresh].columns
+    if verbose:
+        print(feature_df.shape)
+        print(
+            "{} features with less than {} variance removed.".format(
+                feature_df.shape[1] - zero_var_cols.size, var_thresh
+            )
+        )
+    if zero_var_cols.size == 0:
+        X_df.drop(columns=zero_var_cols, inplace=True)
     feature_arr, labels_arr = checker(X_df, y=y_ser)
     X_out = pd.DataFrame(data=feature_arr, index=X_df.index, columns=X_df.columns)
     y_out = pd.Series(data=labels_arr, index=y_ser.index)
