@@ -1,5 +1,4 @@
 from collections import OrderedDict
-from functools import partial
 
 import numpy as np
 import pandas as pd
@@ -8,7 +7,7 @@ from utils import math_tools
 
 
 def find_correlation(
-    corr, cutoff=0.9, n_drop=None, exact=True, norm_fn=partial(np.linalg.norm, ord=2)
+    corr, cutoff=0.95, n_drop=None, corr_tol=0.0025, exact=True, verbose=False
 ):
     """
     This function is the Python implementation of the R function
@@ -65,7 +64,8 @@ def find_correlation(
 
         msk = col_center[colsToCheck] > col_center[rowsToCheck].values
         delete_list = pd.unique(np.r_[colsToCheck[msk], rowsToCheck[~msk]]).tolist()
-        print(delete_list)
+        if verbose:
+            print(delete_list)
         delete_ser = pd.Series(data=1, index=delete_list)
         return delete_ser
 
@@ -79,29 +79,49 @@ def find_correlation(
 
         corr_sorted.values[(*[np.arange(len(corr_sorted))] * 2,)] = np.Nan
         """
-
-        col_norms_sorted = np.argsort(norm_fn(corr_df.to_numpy(), axis=0))
-        corr_sorted = corr_df.iloc[col_norms_sorted]
-        # corr_sorted = corr_sorted.loc[col_norms_sorted]
-        sorted_indices = math_tools.get_max_arr_indices(corr_sorted)
         delete_dict = OrderedDict()
-        for i, j in sorted_indices:
-            if len(delete_dict) >= np.abs(max_drop):
+        for i in list(range(corr_df.shape[0])):
+            corr_df.iloc[i, i] = 0.0
+        sq_corr = corr_df * corr_df
+        sum_sq_corr = np.sum(sq_corr, axis=0)
+        # corr_sorted = corr_sorted.loc[col_norms_sorted]
+        while len(delete_dict.keys()) < np.abs(max_drop):
+            max_corr_idx = math_tools.get_max_arr_indices(
+                corr_df, threshold=thresh, tol=corr_tol
+            )
+            max_corr_feats = set()
+            [
+                [max_corr_feats.add(i) for i in a]
+                for a in max_corr_idx
+                if corr_df.loc[a] >= thresh and a[0] != a[1]
+            ]
+            if len(max_corr_feats) == 0:
+                if verbose:
+                    print("All pairs over {} correlation eliminated".format(thresh))
                 break
-            elif i in delete_dict or j in delete_dict or i == j:
-                continue
-            elif corr_sorted.loc[i, j] < thresh:
-                print("All pairs above threshold {} eliminated.".format(thresh))
-                break
-            i_norm = norm_fn(corr_sorted.loc[i])
-            j_norm = norm_fn(corr_sorted.loc[j])
-            if i_norm > j_norm:
-                delete_dict[i] = i_norm
-                corr_sorted.loc[i] = corr_sorted[i] = np.nan
-            else:
-                delete_dict[j] = j_norm
-                corr_sorted.loc[j] = corr_sorted[j] = np.nan
-        return pd.Series(delete_dict)
+            del_feature = sum_sq_corr[list(max_corr_feats)].idxmax()
+            if verbose:
+                print("Deleted Feature: {}".format(del_feature))
+            del_partners = set()
+            [
+                del_partners.add(i)
+                for i, j in max_corr_idx
+                if j == del_feature and i != del_feature
+            ]
+            [
+                del_partners.add(j)
+                for i, j in max_corr_idx
+                if i == del_feature and j != del_feature
+            ]
+            delete_dict[del_feature] = [
+                (p, corr_df.loc[del_feature, p]) for p in del_partners
+            ]
+            sum_sq_corr -= sq_corr[del_feature]
+            sum_sq_corr.clip(lower=0.0, inplace=True)
+            sq_corr.loc[del_feature] = sq_corr[del_feature] = 0.0
+            corr_df.loc[del_feature] = corr_df[del_feature] = 0.0
+        delete_ser = pd.Series(delete_dict, name="Correlated Features")
+        return delete_ser
 
     """
     if not np.allclose(corr, corr.T, rtol=1e-3, atol=1e-2):
@@ -109,13 +129,17 @@ def find_correlation(
     elif any(corr.columns != corr.index):
         raise ValueError("Columns aren't equal to indices.")
     """
-    acorr = corr.copy().astype(float).abs()
-    if exact or (exact is None and corr.shape[1] < 250):
+    acorr = corr.astype(float).abs()
+    if exact or (exact is None and corr.shape[1] < 100):
         if n_drop is None:
             n_drop = corr.shape[1]
         else:
-            n_drop = min(n_drop, corr.shape[1])
-        print("Initiating exact correlation search")
+            n_drop = min(n_drop, corr.shape[1] - 1)
+        print(
+            "Initiating exact correlation search and dropping {} at most.".format(
+                n_drop
+            )
+        )
         return _find_correlation_exact(acorr, n_drop, cutoff)
     else:
         avg = np.mean(corr, axis=1)
