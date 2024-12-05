@@ -155,13 +155,15 @@ def group_padel_descriptors_manual(desc_names):
     return desc_dict
 
 
-def get_two_dim_only(long_names=None, short_names=None):
+def get_two_dim_only(long_names=False, short_names=False):
     # Returns only one and two-dimensional descriptors from PaDeL.
     padel_names = get_full_padel_df()
     two_d = padel_names[padel_names["Dimension"] <= 2]
-    if long_names is not None:
+    if long_names and short_names:
+        two_d = two_d[["Description", "Descriptor name"]]
+    elif long_names:
         two_d = two_d["Description"]
-    elif short_names is not None:
+    elif short_names:
         two_d = two_d["Descriptor name"]
     return two_d
 

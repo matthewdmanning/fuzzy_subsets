@@ -40,7 +40,14 @@ paths = Paths(
 )
 Names = namedtuple(
     "Names",
-    ("feat_cols", "auto_corr_weights", "index_groups", "uninterpretable"),
+    (
+        "feat_cols",
+        "auto_corr_weights",
+        "index_groups",
+        "uninterpretable",
+        "forbidden",
+        "info",
+    ),
     module=__name__,
 )
 names = Names(
@@ -56,9 +63,38 @@ names = Names(
         "I-state",
     ),
     ("zero_var", "nonzero_var", "sparse", "dense", "discrete", "cont", "nonneg", "neg"),
-    ("information", "eigen", "e-state", "spectral", "barysz", "randic", "bcut"),
+    (
+        "information",
+        "eigen",
+        "e-state",
+        "spectral",
+        "barysz",
+        "randic",
+        "bcut",
+        "estrada",
+        "detour",
+        "burden",
+    ),
+    (
+        "BurdenModifiedEigenvaluesDescriptor",
+        "BaryszMatrixDescriptor",
+        "ExtendedTopochemicalAtomDescriptor",
+        "DetourMatrixDescriptor",
+        "ChiClusterDescriptor",
+        "ChiPathDescriptor",
+        "ChiPathClusterDescriptor",
+        "ChiChainDescriptor",
+    ),
+    (
+        "InformationContentDescriptor",
+        "TotalInformationContentDescriptor",
+        "StructuralInformationContentDescriptor",
+        "ComplementaryInformationContentDescriptor",
+        "BondInformationContentDescriptor",
+        "ModifiedInformationContentDescriptor",
+        "Z-modifiedInformationContentDescriptor",
+    ),
 )
-
 min_feats_dict = {
     "min_sparse": 10,
     "min_dense": 10,
