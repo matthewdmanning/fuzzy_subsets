@@ -87,3 +87,14 @@ def random_test_train_by_group(combo_data, split_ratio=0.2, random_state=0):
         train_dict[k] = train_idx
     # all_idx_dict = dict([(k, df.index) for k, df in combo_data.items()])
     return train_dict, test_dict
+
+
+def get_undersampler(sampler_name, **sampler_kws):
+    if all([n in sampler_name for n in ["near", "miss"]]):
+        from imblearn.under_sampling import NearMiss
+
+        return NearMiss
+    elif "tomek" in sampler_name:
+        from imblearn.under_sampling import TomekLinks
+
+        return TomekLinks
