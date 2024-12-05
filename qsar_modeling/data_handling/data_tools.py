@@ -15,8 +15,9 @@ checker = partial(
 
 
 def load_all_descriptors():
+    raise DeprecationWarning
     with open(
-        "{}filtered/PADEL_EPA_ENAMINE_5mM.pkl".format(os.environ.get("FINAL_DIR")), "rb"
+        "{}data/enamine_all_padel.pkl".format(os.environ.get("PROJECT_DIR")), "rb"
     ) as f:
         feature_df = pickle.load(f)
     return feature_df
@@ -36,9 +37,6 @@ def load_combo_data(source_label_combos="all"):
         "{}filtered/PADEL_CFP_COMBO_5mM.pkl".format(os.environ.get("FINAL_DIR")), "rb"
     ) as f:
         data_df = pickle.load(f)
-    print(data_df.columns)
-    print(data_df["DATA_SOURCE"].squeeze().value_counts())
-    print(data_df["DMSO_SOLUBILITY"].squeeze().value_counts())
     idx_dict = dict()
     en_idx = data_df[data_df["DATA_SOURCE"] == "ENAMINE"].index
     epa_idx = data_df[data_df["DATA_SOURCE"] == "EPA"].index
@@ -122,11 +120,9 @@ def load_maxmin_data(dataset, clean=True):
 
 
 def load_split_data(split="train", clean=True):
-    feature_df = pd.read_csv(
-        "{}filtered/padel_random_split_{}.csv".format(
-            os.environ.get("FINAL_DIR"), split
-        )
-    ).set_index(keys="INCHI_KEY", drop=True)
+    train_path = "{}data/enamine_all_padel.pkl".format(os.environ.get("PROJECT_DIR"))
+    with open(train_path, "rb") as f:
+        feature_df = pickle.load(f)
     labels = (
         pd.read_csv(
             "{}filtered/solubility_random_split_{}.csv".format(
@@ -134,7 +130,7 @@ def load_split_data(split="train", clean=True):
             )
         )
         .set_index(keys="INCHI_KEY", drop=True)
-        .squeeze()
+        .squeeze()[feature_df.index]
     )
     if clean:
         feature_df, labels = clean_and_check(feature_df, labels)
@@ -142,6 +138,7 @@ def load_split_data(split="train", clean=True):
 
 
 def load_test_data(clean=True):
+    raise NotImplementedError
     feature_df, labels = load_split_data("test", clean=clean)
     return feature_df, labels
 

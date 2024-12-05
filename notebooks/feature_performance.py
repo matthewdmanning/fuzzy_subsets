@@ -13,10 +13,7 @@ from sklearn.preprocessing import RobustScaler
 
 import balancing
 import data_tools
-from archive.dmso_hyperparameter_part_two import (
-    combined_rus_cv_results,
-    cv_model_documented,
-)
+from quick_models import combined_rus_cv_results, cv_model_documented
 
 
 def hyperparam(
@@ -54,10 +51,10 @@ def hyperparam(
             feature_df,
             labels,
             cv_model,
-            model_name=model_id,
             save_dir=param_dir,
             cv_splitter=cv,
             sweight=samp_wts,
+            model_name=model_id,
             **splitter_kws
         )
         print(([s["Balanced Accuracy"] for s in dev_scores]))
@@ -80,7 +77,6 @@ def hyperparam(
                 labels,
                 base_model,
                 param_set,
-                model_name=model_id,
                 save_dir=param_dir,
                 sweight=samp_wts,
             )

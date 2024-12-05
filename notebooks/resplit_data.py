@@ -4,7 +4,6 @@ import pandas as pd
 from imblearn.ensemble import BalancedRandomForestClassifier
 
 import feature_selection_script
-from archive.dmso_hyperparameter_part_two import cv_model_documented
 from balancing import random_test_train_by_group
 from data import feature_name_lists
 from data_handling.balancing import data_by_groups
@@ -17,6 +16,7 @@ from data_handling.data_tools import (
     load_metadata,
     load_training_data,
 )
+from quick_models import cv_model_documented
 
 
 def get_training_data(epa_sol=True, interpret=True):
@@ -114,8 +114,8 @@ def quick_brf_train():
         feature_df[estates],
         labels,
         brf_model,
-        model_name="default_brf",
         save_dir=quick_model_dir,
+        model_name="default_brf",
     )
     print(dev_scores)
     print(eval_scores)
@@ -167,7 +167,7 @@ def main():
         (feature_df, labels),
         model_name="brf",
         run_name="brf_epa_sol",
-        rfe_dir=os.environ.get("PROJECT_DIR"),
+        sel_dir=os.environ.get("PROJECT_DIR"),
     )
 
 
