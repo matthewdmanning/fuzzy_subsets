@@ -6,7 +6,6 @@ import numpy as np
 import pandas as pd
 from imblearn.ensemble import BalancedRandomForestClassifier
 from imblearn.under_sampling import RandomUnderSampler
-from sklearn import clone as clone_model
 from sklearn.linear_model import LogisticRegressionCV
 from sklearn.metrics import make_scorer, matthews_corrcoef
 
@@ -90,8 +89,8 @@ def cv_model_documented(
     input_X,
     input_y,
     cv_model,
-    model_name,
     save_dir,
+    model_params=None,
     cv_splitter=None,
     sweight=None,
     **splitter_kw
@@ -115,15 +114,19 @@ def cv_model_documented(
         cv_eva_pred_path = "{}eval_pred.csv".format(model_dir)
         dev_y.to_csv(cv_dev_path)
         eva_y.to_csv(cv_eva_path)
-        cv_model = clone_model(cv_model).fit(dev_X, dev_y, sample_weight=sweight)
+        if model_params is None:
+            model_inst = cv_model()
+        else:
+            model_inst = cv_model().set_params(**model_params)
+        model_inst.fit(dev_X, dev_y, sample_weight=sweight)
         with open(model_obj_path, "wb") as f:
-            pickle.dump(cv_model, f)
-        dev_pred = pd.Series(data=cv_model.predict(dev_X), index=dev_y.index)
-        eva_pred = pd.Series(data=cv_model.predict(eva_X), index=eva_y.index)
+            pickle.dump(model_inst, f)
+        dev_pred = pd.Series(data=model_inst.predict(dev_X), index=dev_y.index)
+        eva_pred = pd.Series(data=model_inst.predict(eva_X), index=eva_y.index)
         dev_pred.to_csv(cv_dev_pred_path, index_label="INCHI_KEY")
         eva_pred.to_csv(cv_eva_pred_path, index_label="INCHI_KEY")
-        dev_score_dict = scoring.score_model(cv_model, dev_X, dev_y)
-        eva_score_dict = scoring.score_model(cv_model, eva_X, eva_y)
+        dev_score_dict = scoring.score_model(model_inst, dev_X, dev_y)
+        eva_score_dict = scoring.score_model(model_inst, eva_X, eva_y)
         dev_score_list.append(dev_score_dict)
         eva_score_list.append(eva_score_dict)
         tn, fp, fn, tp = samples.get_confusion_samples((eva_y, eva_pred))
@@ -139,7 +142,6 @@ def combined_rus_cv_results(
     labels,
     model,
     model_params,
-    model_name,
     save_dir,
     n_rus=3,
     cv_splitter=None,
@@ -147,10 +149,6 @@ def combined_rus_cv_results(
     **splitter_kw
 ):
     dev_score_list, eva_score_list = list(), list()
-    if model_params is not None:
-        model_inst = model().set_params(**model_params)
-    else:
-        model_inst = model()
     for r in np.arange(n_rus):
         rus_dir = "{}rus_{}/".format(save_dir, r)
         if not os.path.isdir(rus_dir):
@@ -161,14 +159,15 @@ def combined_rus_cv_results(
         X_under, y_under = RandomUnderSampler(random_state=rus_state).fit_resample(
             feature_df, labels
         )
+        print(X_under.shape)
         rus_dev_scores, rus_eva_scores = cv_model_documented(
             X_under,
             y_under,
-            model_inst,
-            model_name,
+            model,
             rus_dir,
-            cv_splitter,
-            sweight,
+            model_params,
+            cv_splitter=cv_splitter,
+            sweight=sweight,
             **splitter_kw
         )
         assert len(rus_dev_scores) > 0 and len(rus_eva_scores) > 0
@@ -178,6 +177,10 @@ def combined_rus_cv_results(
                 d["CV"] = cv_num
         dev_score_list.extend(rus_dev_scores)
         eva_score_list.extend(rus_eva_scores)
+    if len(dev_score_list) == 0 or len(eva_score_list) == 0:
+        raise RuntimeWarning
+        print("Model score list is empty")
+        return pd.DataFrame(), pd.DataFrame(), list(), list()
     dev_summary = [
         dict([(k, v) for k, v in d.items() if k != "RUS" and k != "CV"])
         for d in dev_score_list
