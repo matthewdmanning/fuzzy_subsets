@@ -1,6 +1,5 @@
 import numbers
 import pickle
-import pprint
 from collections import defaultdict
 from functools import partial
 
@@ -161,6 +160,7 @@ def score_model(
     if scorer_tuple is None:
         # score_dict = get_pred_score_funcs()
         scorer_tuple = ("Balanced Accuracy", balanced_accuracy_score)
+        # scorer_tuple = ("MCC", matthews_corrcoef)
         # for score_name, score_obj in scorer_tuple:
         score_name, score_obj = scorer_tuple
         score = score_obj(labels, preds)
@@ -173,12 +173,13 @@ def score_model(
 
 def collate_score_dicts(score_dict_list):
     # Rearrange a list of model results into a dictionary whose keys are score names and values are lists of model scores.
+    assert len(score_dict_list) > 0
     collated = dict.fromkeys(score_dict_list[1].keys(), list())
-    print("Score dict list: {}".format(score_dict_list))
+    # print("Score dict list: {}".format(score_dict_list))
     for score_dict in score_dict_list:
         for k, v in score_dict.items():
             collated[k].append(v)
-    [print("Collated {}: {}".format(k, c)) for k, c in collated.items()]
+    # [print("Collated {}: {}".format(k, c)) for k, c in collated.items()]
     check_model_bounds(collated)
     return collated
 
@@ -201,6 +202,7 @@ def check_model_bounds(collated_scores):
 
 def summarize_scores(score_dict_list, check_scores=True):
     # Calculates summary statistics of CV runs.
+    assert len(score_dict_list) > 0
     collated_scores = collate_score_dicts(score_dict_list)
     score_series, score_series_dict = list(), dict()
     summary_zip = dict(
@@ -209,26 +211,20 @@ def summarize_scores(score_dict_list, check_scores=True):
             [np.mean, gmean, np.std, np.median, np.min, np.max],
         )
     )
-    print(collated_scores)
+    # print(collated_scores)
     for k, v in collated_scores.items():
         if not np.iterable(v) or not all(
             [isinstance(val, numbers.Number) for val in v]
         ):
             print("Collated values for {} are not scalars: {}".format(k, v))
             continue
-        print(v)
-        print(
-            "Dictionary values: {}".format(
-                [(name, s(v)) for name, s in summary_zip.items()]
-            )
-        )
+        # print(v)
+        # print("Dictionary values: {}".format([(name, s(v)) for name, s in summary_zip.items()]))
         score_summary = defaultdict(
             None, [(name, s(v)) for name, s in summary_zip.items()]
         )
-
         score_ser = pd.Series(score_summary, name=k)
-
-        print("Calculating {} summary: \n{}".format(k, score_ser))
+        # print("Calculating {} summary: \n{}".format(k, score_ser))
         if not score_ser.empty:
             score_series.append(score_ser)
             score_series_dict[k] = score_ser
@@ -236,15 +232,15 @@ def summarize_scores(score_dict_list, check_scores=True):
             print("No scores found for {}: {}".format(k, v))
             raise RuntimeError
     assert len(score_series) > 0 and not any([a.empty for a in score_series])
-    score_series_dict = pd.DataFrame.from_dict(score_series_dict)
+    score_series_dict = pd.DataFrame.from_dict(score_series_dict, orient="columns")
     score_df = pd.concat(score_series, axis=1)
     if check_scores:
         check_model_bounds(score_df.to_dict(orient="list"))
-    pprint.pp(score_series)
-    pprint.pp(score_series_dict)
-    pprint.pp(score_df)
+    # pprint.pp(score_series)
+    # pprint.pp(score_series_dict)
+    # pprint.pp(score_df)
     assert not score_df.empty
-    return score_series_dict
+    return score_df
 
 
 def learn_curve(estimator, name, feature_df, labels, fname_stub=None):

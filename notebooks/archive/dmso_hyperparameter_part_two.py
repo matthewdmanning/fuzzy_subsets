@@ -251,7 +251,6 @@ def train_model():
                 final_y,
                 base_model,
                 param_set,
-                model_name=model_id,
                 save_dir=param_dir,
                 sweight=samp_wts,
             )

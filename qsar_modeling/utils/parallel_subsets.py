@@ -1,8 +1,7 @@
-import numpy as np
-import pandas as pd
-from joblib import Parallel, delayed, parallel_config
-from sklearn.pipeline import clone as clone_model
 import os
+
+from joblib import delayed, Parallel
+from sklearn.pipeline import clone as clone_model
 
 
 def train_model_subsets(

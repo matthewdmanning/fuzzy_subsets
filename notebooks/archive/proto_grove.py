@@ -16,13 +16,13 @@ from feature_selection.univariate_filters import get_mi_features
 from modeling.quick_models import balanced_forest, logistic_clf
 
 logger_opts = {
-    "filename": "dmso_model.log",
-    "filemode": "w",
+    "filename": "grove.log",
+    "filemode": "a",
     "format": "%(message)s",
     "style": "%",
 }
 logging.basicConfig(**logger_opts)
-grove_log = logging.getLogger()
+logger = logging.getLogger()
 # Load data
 train_X, train_y = get_interpretable_features()
 ind_list = cv_tools.get_split_ind(train_X, train_y, n_splits=5)

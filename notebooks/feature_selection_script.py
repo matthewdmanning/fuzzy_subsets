@@ -7,7 +7,6 @@ import pandas as pd
 from imblearn.ensemble import BalancedRandomForestClassifier
 from sklearn.ensemble import ExtraTreesClassifier, RandomForestClassifier
 from sklearn.feature_selection import (
-    SelectKBest,
     SequentialFeatureSelector,
     VarianceThreshold,
 )
@@ -69,19 +68,20 @@ def brute_force_with_collinear(
         assert type(X_selected) is pd.DataFrame
         results = defaultdict()
         results["inputs"] = filter_kws
-        if filter_kws["method_name"] == "rfe":
+        if filter_kws["record_score"] == "rfe":
             results = rfe(X_selected, labels, filter_kws)
             feature_path = "{}{}_n{}_rfe_{}.csv".format(
                 select_dir, i, filter_kws["n_feats"], filter_kws["step_size"]
             )
         elif (
-            "rfe" in filter_kws["method_name"] and "dummy" in filter_kws["method_name"]
+            "rfe" in filter_kws["record_score"]
+            and "dummy" in filter_kws["record_score"]
         ):
             results = rfe_dummy(X_selected, labels, filter_kws, save_dir=select_dir)
             feature_path = "{}{}_n{}_dummy_step{}.csv".format(
                 select_dir, i, filter_kws["n_feats"], filter_kws["step_size"]
             )
-        elif "mi" in filter_kws["method_name"]:
+        elif "mi" in filter_kws["record_score"]:
             continue
             """
             cross_mi_path = "{}rus5_cross_mi.csv".format(select_dir)
@@ -96,18 +96,21 @@ def brute_force_with_collinear(
             )
             """
         elif any(
-            [filter_kws["method_name"] == a for a in ["pearson", "kendall", "spearman"]]
+            [
+                filter_kws["record_score"] == a
+                for a in ["pearson", "kendall", "spearman"]
+            ]
         ):
             if "corr_method" not in filter_kws.keys():
                 filter_kws["corr_method"] = [
                     a
                     for a in ["pearson", "kendall", "spearman"]
-                    if a in filter_kws["method_name"]
+                    if a in filter_kws["record_score"]
                 ][0]
             if "cross_corr" not in filter_kws:
                 if "corr_path" not in filter_kws.keys():
                     filter_kws["corr_path"] = "{}{}_matrix.csv".format(
-                        select_dir, filter_kws["method_name"]
+                        select_dir, filter_kws["record_score"]
                     )
                 if os.path.isfile(filter_kws["corr_path"]):
                     feat_corr_more = pd.read_csv(
@@ -123,7 +126,7 @@ def brute_force_with_collinear(
                     filter_kws["cross_corr"].to_csv(
                         filter_kws["corr_path"], index_label="Features", index=True
                     )
-            results["scores_"] = correlation_filter(
+            results["scores_"] = feature_correlation_filter(
                 X_selected, labels, filter_kws, select_dir
             )
             feature_path = "{}{}_n{}_{}-{}.csv".format(
@@ -133,13 +136,13 @@ def brute_force_with_collinear(
                 filter_kws["corr_method"],
                 filter_kws["threshold"],
             )
-        elif "sfs" in filter_kws["method_name"]:
+        elif "sfs" in filter_kws["record_score"]:
             if filter_kws["direction"] is None:
                 if filter_kws["n_feats"] > X_selected.shape[1] / 2:
                     filter_kws["direction"] = "backwards"
                 else:
                     filter_kws["direction"] = "forwards"
-            elif "back" in filter_kws["method_name"]:
+            elif "back" in filter_kws["record_score"]:
                 filter_kws["direction"] = "backwards"
             else:
                 filter_kws["direction"] = "forwards"
@@ -152,17 +155,21 @@ def brute_force_with_collinear(
                 filter_kws["model_name"],
             )
 
-        elif "stoch-vif" in filter_kws["method_name"]:
-            vif_survival, vif_score_df, vif_stats, votes = vif.repeated_stochastic_vif(
-                X_selected,
-                importance_ser=importance[X_selected.columns],
-                threshold=filter_kws["threshold"],
-                model_name="hubb",
-                step_size=filter_kws["step_size"],
-                sample_wts=s_weights,
-                save_dir=select_dir,
+        elif "stoch-vif" in filter_kws["record_score"]:
+            feat_score, vif_survival, vif_score_df, vif_stats, votes = (
+                vif.repeated_stochastic_vif(
+                    X_selected,
+                    importance_ser=importance[X_selected.columns],
+                    threshold=filter_kws["threshold"],
+                    model_name=filter_kws["model_name"],
+                    model_size=filter_kws["model_size"],
+                    min_feat_out=filter_kws["n_feats"],
+                    step_size=filter_kws["step_size"],
+                    sample_wts=s_weights,
+                    save_dir=select_dir,
+                )
             )
-            results["scores_"] = vif_score_df
+            results["scores_"] = feat_score
             feature_path = "{}{}_n{}_stoch-vif-{}_{}.csv".format(
                 select_dir,
                 i,
@@ -170,7 +177,7 @@ def brute_force_with_collinear(
                 filter_kws["threshold"],
                 filter_kws["step_size"],
             )
-        elif "vif" in filter_kws["method_name"]:
+        elif "vif" in filter_kws["record_score"]:
             drop_ser = vif.sequential_vif(
                 X_selected,
                 vif_cut=filter_kws["threshold"],
@@ -224,7 +231,7 @@ def sequential(X_selected, labels, filter_kws, save_dir=None):
     return pd.Series(sfs.feature_names_in_[sfs.support_])
 
 
-def correlation_filter(
+def feature_correlation_filter(
     X_selected,
     labels,
     filter_kws,
@@ -291,23 +298,23 @@ def main(
     model_name="brf",
     correlation_type="spearman",
     run_name=None,
-    rfe_dir=None,
+    sel_dir=None,
 ):
     pd.set_option("display.precision", 4)
     pd.set_option("format.precision", 4)
     # np.set_printoptions(formatter={"float_kind": "{: 0.4f}".format})
     mcc = make_scorer(matthews_corrcoef)
-    if rfe_dir is None:
-        rfe_dir = "{}data_gaps_feat_selection/".format(os.environ.get("MODEL_DIR"))
-    if not os.path.isdir(rfe_dir):
-        os.makedirs(rfe_dir)
+    if sel_dir is None:
+        sel_dir = "{}enamine_sfs/".format(os.environ.get("MODEL_DIR"))
+    if not os.path.isdir(sel_dir):
+        os.makedirs(sel_dir)
     if run_name is None:
         run_name = "{}".format(data_set_name)
     dir_i = 0
-    elimination_dir = "{}{}_{}/".format(rfe_dir, run_name, dir_i)
+    elimination_dir = "{}{}_{}/".format(sel_dir, run_name, dir_i)
     while os.path.isdir(elimination_dir):
         dir_i += 1
-        elimination_dir = "{}{}_{}/".format(rfe_dir, run_name, dir_i)
+        elimination_dir = "{}{}_{}/".format(sel_dir, run_name, dir_i)
     os.makedirs(elimination_dir, exist_ok=True)
     print(elimination_dir)
     if data_set is None:
@@ -331,26 +338,31 @@ def main(
         all_y = train_labels[all_X.index]
     else:
         all_X, all_y = data_set
-    X_path = "{}{}_df.pkl".format(rfe_dir, data_set_name)
-    y_path = "{}selection_labels_df.csv".format(rfe_dir)
+    X_path = "{}{}_df.pkl".format(sel_dir, data_set_name)
+    y_path = "{}selection_labels_df.csv".format(sel_dir)
     all_X.to_pickle(X_path)
     all_y.to_csv(y_path, index=True, index_label="INCHI_KEY")
     importance_model, model_name = get_importance_model(model_name)
     # Start Feature Selection
     all_X = VarianceThreshold().set_output(transform="pandas").fit_transform(all_X)
-    all_X = pca_combos(all_X, elimination_dir)
-    nbest = 500
-    f_kbest = SelectKBest(k=nbest).set_output(transform="pandas")
-    f_kbest.fit(all_X, all_y)
-    f_best = pd.Series(index=all_X.columns, data=f_kbest.scores_)
-    f_best.to_csv("{}{}-fscore.csv".format(elimination_dir, nbest))
+    # all_X = pca_combos(all_X, elimination_dir)
+    from sklearn.feature_selection import f_classif
+
+    f_stats, f_pvals = f_classif(all_X, all_y)
+    f_best = pd.Series(index=all_X.columns, data=f_stats).sort_values(ascending=False)
+    f_best.to_csv("{}fstats.csv".format(elimination_dir))
     pprint.pp(f_best.sort_values(ascending=False), compact=True)
-    kbest_cols = f_kbest.transform(all_X).columns
-    corr_path = "{}{}_{}.csv".format(rfe_dir, correlation_type, nbest)
+    f_score = False
+    if f_score:
+        nbest = 500
+        all_X = all_X[f_best.iloc[:nbest]]
+        corr_path = "{}{}_{}.csv".format(sel_dir, correlation_type, nbest)
+    else:
+        corr_path = "{}{}.csv".format(sel_dir, correlation_type)
     if os.path.isfile(corr_path):
         cross_corr = pd.read_csv(corr_path, index_col="Features")
     else:
-        cross_corr = all_X[kbest_cols].corr(method=correlation_type)
+        cross_corr = all_X.corr(method=correlation_type)
         cross_corr.to_csv(corr_path, index=True, index_label="Features")
     feat_step_list = (
         (correlation_type, 250, 0, 0.95),
@@ -362,31 +374,27 @@ def main(
     feat_step_list = (
         {
             "threshold": 0.95,
-            "n_feats": 250,
-            "method_name": correlation_type,
+            "n_feats": 1,
+            "record_score": correlation_type,
             "cross_corr": cross_corr,
         },
         {
-            "method_name": "stoch-vif",
+            "record_score": "stoch-vif",
             "n_feats": 200,
-            "step_size": 1,
-            "threshold": 25,
-            "model_name": "hubb",
+            "rounds": 100,
+            "step_size": 3,
+            "threshold": 10,
+            "model_size": 8,
+            "model_name": "ransac",
         },
         {
-            "method_name": "rfe",
+            "record_score": "rfe",
             "n_feats": 150,
             "step_size": 5,
             "model": get_importance_model("brf")[0],
         },
         {
-            "method_name": "stoch-vif",
-            "n_feats": 125,
-            "threshold": 15,
-            "model_name": "hubb",
-        },
-        {
-            "method_name": "dummy_rfe",
+            "record_score": "dummy_rfe",
             "n_feats": 50,
             "model": get_importance_model("brf")[0],
             "model_name": "brf",
@@ -397,7 +405,7 @@ def main(
         data=f_kbest.scores_ / max(f_kbest.scores_), index=f_kbest.feature_names_in_
     )
     rfe_features = brute_force_with_collinear(
-        all_X[kbest_cols], all_y, feat_step_list, importance, elimination_dir
+        all_X, all_y, feat_step_list, importance, elimination_dir
     )[-1]["feats_out_"]
     rfe_path = "{}final_features_selected.csv".format(elimination_dir, data_set)
     rfe_features.to_csv(rfe_path)  # , index=True, index_label="Features")
@@ -466,7 +474,8 @@ if __name__ == "__main__":
         ]
     )
     train_y = train_labels[train_df.index]
-    selected_feats = main(data_set=(train_df, train_y))
+    print(train_df.shape)
+    selected_feats = main(data_set=(train_df, train_y), correlation_type="pearson")
     print(selected_feats)
 
 """
