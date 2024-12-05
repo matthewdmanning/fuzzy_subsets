@@ -1,5 +1,5 @@
 import copy
-import copy
+import itertools
 import os
 import pprint
 from functools import partial
@@ -8,9 +8,9 @@ import numpy as np
 import pandas as pd
 import scipy
 import sklearn.utils
+from scipy.stats import bayes_mvs
 from sklearn.linear_model import (
     ElasticNetCV,
-    LassoCV,
     LinearRegression,
     Ridge,
     SGDRegressor,
@@ -19,36 +19,31 @@ from sklearn.pipeline import clone as clone_model
 from sklearn.preprocessing import RobustScaler
 
 from feature_selection.importance import logger
-from utils.features import compute_gram
 from utils.parallel_subsets import train_model_subsets
-
-
-# from features import compute_gram
 
 
 def calculate_vif(
     feature_df,
     model,
     subset=None,
-    parallelize=False,
+    parallelize=True,
     sample_wts=None,
     generalized=False,
     verbose=0,
     **fit_kwargs
 ):
+    sklearn.set_config(enable_metadata_routing=True)
     predictors = list()
     if subset is None:
         for col in feature_df.columns:
             predictors.append((feature_df.columns.drop(col), col))
     else:
-        if all(c in feature_df.columns for c in subset.columns):
-            for col, target in subset.items():
-                predictors.append((feature_df.columns.drop(subset.columns), col))
-        else:
-            for col, target in subset.items():
-                predictors.append((feature_df.columns.drop(col), col))
-
-    # print('\n\nVIF length: {}\n\n'.format(len(vif_dict.keys())))
+        # if all(c in feature_df.columns for c in subset.columns):
+        #    for col, target in subset.items():
+        #        predictors.append((feature_df.columns.drop(subset.columns), col))
+        # else:
+        for col, target in subset.items():
+            predictors.append((feature_df.columns.drop(col), col))
     if parallelize:
         vif_models = train_model_subsets(
             feature_df,
@@ -63,18 +58,20 @@ def calculate_vif(
                 X=feature_df[p[0]], y=feature_df[p[1]], sample_weight=sample_wts
             )
             for p in predictors
+            if p[0].size > 0 and len(p[1]) > 0
         ]
-    vif_dict = dict(
-        [
-            (
-                p[1],
-                model.score(
-                    X=feature_df[p[0]], y=feature_df[p[1]], sample_weight=sample_wts
-                ),
-            )
-            for p, model in zip(predictors, vif_models)
-        ]
-    )
+    try:
+        vif_dict = dict(
+            [
+                (
+                    p[1],
+                    1 / (1 - model.score(X=feature_df[p[0]], y=feature_df[p[1]])),
+                )
+                for p, model in zip(predictors, vif_models)
+            ]
+        )
+    except:
+        vif_dict = dict([(p, 99999) for p in predictors])
     if generalized:
         vif_ser = pd.DataFrame.from_dict(
             vif_dict, orient="index", columns=["VIF", "GVIF"]
@@ -82,12 +79,12 @@ def calculate_vif(
     else:
         vif_ser = pd.Series(vif_dict)
     # if verbose > 0:
-    logger.info(pprint.pformat(vif_ser.sort_values(ascending=False), compact=True))
+    # logger.info(pprint.pformat(vif_ser.sort_values(ascending=False), compact=True))
     assert not vif_ser.empty
     return vif_ser
 
 
-def get_vif_model(model, n_jobs, uncentered=True):
+def get_vif_model(model, n_jobs, uncentered=False):
     parallelize = False
     if type(model) is str:
         if "elastic" in model:
@@ -169,7 +166,7 @@ def repeated_stochastic_vif(
     feature_df,
     importance_ser=None,
     threshold=10.0,
-    model_name="ransac",
+    model_name="OLS",
     model_size="auto",
     feat_wts="auto",
     min_feat_out=1,
@@ -208,41 +205,39 @@ def repeated_stochastic_vif(
     -------
 
     """
-    df = (
-        RobustScaler(with_centering=True, quantile_range=(15, 85), unit_variance=True)
-        .set_output(transform="pandas")
-        .fit_transform(feature_df)
+    df = feature_df.copy()
+    df = df[~df.index.duplicated(keep="first")]
+    rsvif_results = dict(
+        list(
+            zip(
+                [
+                    "vif_list",
+                    "cut_score_list",
+                    "vif_score_df_list",
+                    "vif_stats_list",
+                    "votes_list",
+                    "feat_score",
+                ],
+                ([list(), list(), list(), list(), list(), dict()]),
+            )
+        )
     )
     if model_size == "auto":
-        model_size = -1
-        while model_size < 10:
-            model_size += os.cpu_count()
+        model_size = 10
+    model_size = min(model_size, feature_df.columns.size - 2)
     if importance_ser is None:
-        importance_ser = (
-            pd.Series(
-                1,
-                index=feature_df.columns,
-            )
-            .squeeze()
-            .sort_values(ascending=False)
-        )
-    print(
-        "Number of features for CV Stochastic VIF selections: {}".format(
-            importance_ser.size
-        )
-    )
-    vif_list, cut_score_list, vif_score_df_list, vif_stats_list, votes_list = (
-        list(),
-        list(),
-        list(),
-        list(),
-        list(),
-    )
-    feat_score = dict()
+        importance_ser = pd.Series(
+            1,
+            index=feature_df.columns,
+        ).squeeze()
+    else:
+        importance_ser = importance_ser[df.columns.intersection(importance_ser.index)]
+        importance_ser = importance_ser[~importance_ser.index.duplicated(keep="first")]
+
     if all([type(rounds) is not t for t in [list, set, tuple]]):
         rounds = (int(np.ceil((df.shape[1] - min_feat_out) // step_size)), int(rounds))
     # Start with 0.5 to avoid division by 0 later. Chosen to agree with no-info Bayesian prior.
-    votes_list.append(
+    rsvif_results["votes_list"].append(
         pd.DataFrame(
             np.zeros((importance_ser.index.size, 2), dtype=np.float32),
             index=importance_ser.index,
@@ -250,95 +245,181 @@ def repeated_stochastic_vif(
         ).add(0.5)
     )
     parallelize, vif_model = get_vif_model(model_name, n_jobs, uncentered=False)
-    print(
-        "Running {}rounds of {} batches of {}".format(rounds[0], rounds[1], model_size)
-    )
-
-    for i in list(range(rounds[0])):
-        if df.shape[1] <= min_feat_out:
-            break
-        importance_ser = importance_ser[df.columns]
-        if feat_wts == "uniform":
-            feat_wts = importance_ser.replace(value=1)
-        elif feat_wts == "auto":
-            feat_wts = 0.5 - pd.Series(
-                scipy.linalg.norm(df.corr(method="pearson").to_numpy()),
-                index=df.columns,
-            ).squeeze().sort_values(ascending=False)
-        for j in list(range(rounds[1])):
-            # print('Selected: {}'.format(len(select_set)))
-            if len(feat_wts.shape) == 2:
-                feats = importance_ser.sample(
-                    weights=scipy.special.softmax(feat_wts, axis=1).sum(axis=0),
-                    n=model_size,
-                ).index
+    if verbose:
+        print(
+            "Running {} rounds of {} models with {} of {} features".format(
+                rounds[0], rounds[1], model_size, feature_df.shape[1]
+            )
+        )
+    if feat_wts is None or (type(feat_wts) is str and feat_wts == "auto"):
+        corr = df.corr(method="pearson")
+        corr.dropna(how="all", axis=0).dropna(how="all", axis=1, inplace=True)
+        fweights = 0.5 - pd.Series(
+            scipy.linalg.norm(corr, axis=1), index=corr.columns
+        ).squeeze().sort_values(ascending=False)
+    elif type(feat_wts) is pd.Series:
+        fweights = feat_wts
+    elif importance_ser is not None and type(importance_ser) is pd.Series:
+        fweights = pd.Series(data=1, index=importance_ser.index)
+    else:
+        fweights = pd.Series(data=1, index=df.index)
+    if df.shape[1] <= min_feat_out:
+        i = rounds[0]
+    df = df.T[~df.columns.duplicated()].T
+    importance_ser = importance_ser[~importance_ser.index.duplicated()]
+    assert not any(df.columns.duplicated())
+    assert not any(importance_ser.index.duplicated())
+    fweights = fweights[df.columns]
+    prior_groups_ix = list()
+    for i in list(range(1)):
+        round_fwts, round_imp_wts = copy.deepcopy(fweights), copy.deepcopy(
+            importance_ser
+        )
+        round_imp_wts = round_imp_wts[~round_imp_wts.index.duplicated()]
+        for j in list(range(max(30, rounds[1]))):
+            feats = get_features_weighted(
+                round_fwts.copy(),
+                round_imp_wts.copy(),
+                model_size,
+                prior_groups=prior_groups_ix,
+            )
+            # if all([type(f) is str for f in feats]):
+            prior_groups_ix.append(feats)
+            rsvif_results["votes_list"][-1].loc[feats, "Appearances"].add(1)
+            if len(feats) > 3:
+                subset = df[feats].copy()
             else:
-                feats = importance_ser.sample(
-                    weights=scipy.special.softmax(feat_wts), n=model_size
-                ).index
-            # iterative_feats = vif_subset_iterative(feat_wts, importance_ser, model_size)
-            votes_list[-1].loc[feats, "Appearances"].add(1)
+                subset = None
             vif_ser = calculate_vif(
-                feature_df=df,
+                feature_df=df.copy(),
                 model=vif_model,
-                subset=df[feats],
+                subset=subset,
                 parallelize=parallelize,
                 sample_wts=sample_wts,
                 verbose=verbose,
                 **kwargs
             )
-            vif_list.append(vif_ser)
-            votes_list[-1].loc[
-                vif_ser[vif_ser > threshold]
-                .sort_values(ascending=False)
-                .index[:step_size],
-                "Cuts",
-            ] += 1
-        cut_score_list.append(
-            importance_ser.multiply(
-                votes_list[-1]["Cuts"][importance_ser.index].divide(
-                    votes_list[-1]["Appearances"][importance_ser.index]
-                )
-            )
+            rsvif_results["vif_list"].append(vif_ser)
+            overthresh = vif_ser[vif_ser > threshold].sort_values(ascending=False)
+            if overthresh.size > 0:
+                rsvif_results["votes_list"][-1].loc[
+                    overthresh.index[0],
+                    "Cuts",
+                ] += 1
+            else:
+                continue
+        vif_combined = dict(
+            [
+                (c, [d[c] for d in rsvif_results["vif_list"] if c in d.index])
+                for c in feats
+            ]
         )
-        vif_score_df_list.append(
+        vif_means = pd.Series(dict([(k, np.max(v)) for k, v in vif_combined.items()]))
+        vif_stds = pd.Series(dict([(k, np.std(v)) for k, v in vif_combined.items()]))
+        rsvif_results["vif_stats_list"].append(pd.concat([vif_means, vif_stds], axis=1))
+        if save_dir is not None:
+            rsvif_results["vif_score_df_list"][-1].to_csv(
+                "{}vif_scores_{}.csv".format(save_dir, i)
+            )
+            rsvif_results["vif_stats_list"][-1].to_csv(
+                "{}vif_stats_{}.csv".format(save_dir, i)
+            )
+        """        
+        rsvif_results["vif_score_df_list"].append(
             pd.concat(
-                vif_list,
+                rsvif_results["vif_list"],
                 axis=1,
                 keys=["VIF-{}_{}".format(i, j) for j in list(range(rounds[1]))],
             )
         )
-
-        vif_stats_list.append(
+        rsvif_results["vif_stats_list"].append(
             pd.DataFrame(
                 data=pd.concat(
                     (
-                        vif_score_df_list[-1].mean(axis=1),
-                        vif_score_df_list[-1].std(axis=1),
+                        rsvif_results["vif_score_df_list"][-1].mean(axis=1),
+                        rsvif_results["vif_score_df_list"][-1].std(axis=1),
                     ),
                     axis=1,
                 )
             )
         )
-        vif_stats_list[-1].columns = ["Mean", "StdDev"]
-        vif_stats_list[-1].sort_values(by="Mean", ascending=False, inplace=True)
-        if save_dir is not None:
-            vif_score_df_list[-1].to_csv("{}vif_scores_{}.csv".format(save_dir, i))
-            vif_stats_list[-1].to_csv("{}vif_stats_{}.csv".format(save_dir, i))
-        print("VIF Stats")
-        pprint.pp(vif_stats_list[-1].sort_values(by="StdDev", ascending=False))
+        """
+        rsvif_results["vif_stats_list"][-1].columns = ["Max", "SD"]
+        rsvif_results["vif_stats_list"][-1].sort_values(
+            by="Max", ascending=False, inplace=True
+        )
+
+        # print("VIF Stats")
+        # pprint.pp(rsvif_results["vif_stats_list"][-1].sort_values(by="StdDev", ascending=False))
         dropped_cols = dict(
             [
-                (c, rounds[0] - i)
-                for c in cut_score_list[-1].iloc[
-                    : min(step_size, df.shape[1]) - min_feat_out
+                (c, rounds[1] - j)
+                for c in rsvif_results["votes_list"][-1].index[
+                    : min(step_size, df.shape[1] - min_feat_out)
                 ]
             ]
         )
-        feat_score.update(dropped_cols)
-        df.drop(columns=dropped_cols.keys(), inplace=True)
-    feat_score_df = pd.DataFrame.from_dict(feat_score)
-    return feat_score_df, cut_score_list, vif_score_df_list, vif_stats_list, votes_list
+        rsvif_results["feat_score"].update(dropped_cols)
+        # Reactive for repeated VIF
+        # df.drop(columns=dropped_cols.keys(), inplace=True)
+    try:
+        rsvif_results["feat_scores"] = pd.Series(rsvif_results["feat_score"])
+    except ValueError:
+        print("\nError with feature scores: {}".format(rsvif_results["feat_score"]))
+        rsvif_results["feat_scores"] = pd.Series()
+    rsvif_results.pop("feat_score")
+    return rsvif_results
+
+
+def posterior_vif_cut(results_dict, k_highest=1):
+    raise NotImplementedError
+    vifs_df = pd.concat(results_dict["vif_list"])
+    print(vifs_df.head())
+    bayes_ser = pd.DataFrame(columns=["Mean", "Lower", "Upper"]).sort_values(
+        by="Mean", ascending=False
+    )
+    for col, data in vifs_df.iterrows():
+        baye = bayes_mvs(data)[0]
+    return None
+
+
+def get_features_weighted(fweights, importance_ser, model_size, prior_groups=None):
+    if len(fweights.shape) == 2:
+        fweighting = pd.Series(
+            np.sum(scipy.special.softmax(fweights, axis=1), axis=0),
+            index=fweights.index,
+        )
+    elif type(fweights) is pd.Series:
+        fweighting = fweights.apply(scipy.special.softmax)
+    else:
+        fweighting = pd.Series(
+            scipy.special.softmax(fweights), index=importance_ser.index
+        )
+    fweighting = pd.Series(fweighting, index=fweights.index)
+    if prior_groups is not None and len(prior_groups) > 0:
+        counts = pd.Series(
+            data=[c for c in itertools.chain.from_iterable(prior_groups)]
+        ).value_counts(sort=False)
+        for col in fweights.index:
+            if col not in counts.index:
+                counts[col] = 0
+        cweighting = np.divide(1, (counts.add(0.25) ** 2))
+        cols = fweights.index  # .intersection(cweighting.index)
+        weighting = fweighting[cols] * cweighting[cols]
+    else:
+        weighting = pd.Series(1, index=importance_ser.index)
+    # print("VIF model weightings: {}".format(weighting))
+    try:
+        feats = importance_ser.sample(weights=weighting, n=model_size).index.tolist()
+    except ValueError:
+        print("Duplicated indices!!")
+        feats = importance_ser.sample(n=model_size).index.tolist()
+
+    while any(
+        [len([c for c in feats if c in fl]) > len(fl) - 2 for fl in prior_groups]
+    ):
+        feats = importance_ser.sample(weights=weighting, n=model_size).index.tolist()
+    return feats
 
 
 def vif_subset_iterative(feat_wts, importance_ser, cross_corr, model_size):
@@ -346,7 +427,7 @@ def vif_subset_iterative(feat_wts, importance_ser, cross_corr, model_size):
     feats = list()
     while len(feats) < model_size:
         next_feats = importance_ser.sample(
-            weights=scipy.special.softmax(feat_wts, axis=1).sum(axis=0),
+            weights=np.sum(scipy.special.softmax(feat_wts, axis=1), axis=0),
             n=selection_trials,
         ).index
         next_feats.sample()
@@ -462,49 +543,6 @@ def corr_sampler(
         feature_df.drop(columns=subset_list).sample(n=1, weights=)
         pd.DataFrame.sample(weights=prob_func())
 """
-
-
-def vif_bad_apples(
-    feature_df,
-    target,
-    model="ols",
-    sample_wts=None,
-    class_wts=None,
-    generalized=False,
-    n_jobs=1,
-    verbose=0,
-    kernel="laplacian",
-):
-    # In progress function to remove features causing multicollinearity with several other functions.
-    coefs_list, r_two_list = list(), list()
-    if model == "lasso":
-        gram, normed_weights = compute_gram(
-            feature_df, target, sample_weights=sample_wts
-        )
-        reg = LassoCV(
-            n_jobs=n_jobs, tol=5e-2, max_iter=5000, random_state=0, selection="random"
-        )
-        print(reg.coef_)
-    weak_list = list()
-    y = feature_df[target]
-    while True:
-        training = feature_df.drop(columns=target)
-        if model == "ols":
-            reg = LinearRegression(n_jobs=n_jobs).fit(
-                X=training, y=y, sample_weight=sample_wts
-            )
-            coefs = pd.Series(data=reg.coef_, index=training.index)
-            weak_one = coefs.idxmin()
-            r_squared = reg.score(X=training, y=y, sample_weight=sample_wts)
-            if r_squared != 1.0:
-                vif_i = 1.0 / (1.0 - r_squared)
-            else:
-                logger.error(
-                    "Feature had OOB OLS R2 score of 0!!!! Feature name: {}".format(
-                        target
-                    )
-                )
-                vif_i = 1000000
 
 
 def stochastic_vif(
