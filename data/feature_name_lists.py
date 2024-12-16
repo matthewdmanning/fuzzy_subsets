@@ -156,7 +156,11 @@ def get_count_descriptors():
     padel_names["atom"] = padel_list[padel_list["Type"].isin(atom_names)]
     padel_names["bond"] = padel_list[padel_list["Type"].isin(bond_names)]
     padel_names["group"] = padel_list[padel_list["Type"].isin(group_names)]
-    padel_names["hbond"] = padel_list[padel_list["Description"].isin([c for c in padel_list["Description"] if "hydrogen bond" in c])]
+    padel_names["hbond"] = padel_list[
+        padel_list["Description"].isin(
+            [c for c in padel_list["Description"] if "hydrogen bond" in c]
+        )
+    ]
     padel_names["ring"] = padel_list[padel_list["Type"] == "RingCountDescriptor"]
     estates = get_estate_counts(padel_list["Description"].to_list())
     padel_names["estate"] = padel_list[padel_list["Description"].isin(estates)]
