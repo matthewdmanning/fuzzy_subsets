@@ -48,9 +48,14 @@ def is_low_cardinal(features, single_thresh=None):
 
 
 def ks_feature_tests(feature_dfs, dist_stat="ks"):
-    from scipy.stats import hmean
-
-    assert [(a.shape[1] == b.shape[1]) for a, b in itertools.combinations(feature_dfs)]
+    assert all(
+        [
+            (a.shape[1] == b.shape[1] and a.shape[1] > 0)
+            for a, b in itertools.combinations(feature_dfs, r=2)
+        ]
+    )
+    assert all([a.shape[0] > 10 for a in feature_dfs])
+    print([a.shape for a in feature_dfs])
     if type(dist_stat) is str:
         if dist_stat == "ks":
             from scipy.stats import ks_2samp
@@ -60,13 +65,14 @@ def ks_feature_tests(feature_dfs, dist_stat="ks"):
             from scipy.spatial.distance import jensenshannon
 
             dist_stat = jensenshannon
-    for df in feature_dfs[1:]:
-        df = df[feature_dfs[0].columns]
     ks_dict = OrderedDict([(c, list()) for c in feature_dfs[0].columns])
     mean_dict = dict()
-    for c, stat_l in ks_dict.items():
-        for df_one, df_two in itertools.combinations(feature_dfs):
-            stat_l.append(dist_stat(df_one[c], df_two[c]))
-        mean_dict[c] = hmean(stat_l)
+    for c in feature_dfs[0].columns:
+        # if dist_stat == "ks":
+        ks_results = ks_2samp(
+            feature_dfs[0][c].to_numpy(), feature_dfs[0][c].to_numpy()
+        ).statistic
+        print(ks_results)
+        mean_dict[c] = ks_results
     stat_means = pd.Series(mean_dict).sort_values()
     return stat_means
