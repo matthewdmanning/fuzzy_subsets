@@ -36,14 +36,13 @@ def calculate_vif(
     predictors = list()
     if subset is None:
         for col in feature_df.columns:
-            predictors.append((feature_df.columns.drop(col), col))
+            predictors.append((feature_df.columns.drop(col).tolist(), col))
     else:
         # if all(c in feature_df.columns for c in subset.columns):
         #    for col, target in subset.items():
         #        predictors.append((feature_df.columns.drop(subset.columns), col))
-        # else:
         for col, target in subset.items():
-            predictors.append((feature_df.columns.drop(col), col))
+            predictors.append((feature_df.columns.drop(col).tolist(), col))
     if parallelize:
         vif_models = train_model_subsets(
             feature_df,
@@ -58,20 +57,20 @@ def calculate_vif(
                 X=feature_df[p[0]], y=feature_df[p[1]], sample_weight=sample_wts
             )
             for p in predictors
-            if p[0].size > 0 and len(p[1]) > 0
+            if len(p[0]) > 0 and len(p[1]) > 0
         ]
     try:
         vif_dict = dict(
             [
                 (
-                    p[1],
+                    p[-1],
                     1 / (1 - model.score(X=feature_df[p[0]], y=feature_df[p[1]])),
                 )
                 for p, model in zip(predictors, vif_models)
             ]
         )
     except:
-        vif_dict = dict([(p, 99999) for p in predictors])
+        vif_dict = dict([(tuple(p[-1]), 99999) for p in predictors])
     if generalized:
         vif_ser = pd.DataFrame.from_dict(
             vif_dict, orient="index", columns=["VIF", "GVIF"]
@@ -276,7 +275,7 @@ def repeated_stochastic_vif(
             importance_ser
         )
         round_imp_wts = round_imp_wts[~round_imp_wts.index.duplicated()]
-        for j in list(range(max(30, rounds[1]))):
+        for j in list(range(rounds[1])):
             feats = get_features_weighted(
                 round_fwts.copy(),
                 round_imp_wts.copy(),
@@ -414,11 +413,13 @@ def get_features_weighted(fweights, importance_ser, model_size, prior_groups=Non
     except ValueError:
         print("Duplicated indices!!")
         feats = importance_ser.sample(n=model_size).index.tolist()
-
-    while any(
-        [len([c for c in feats if c in fl]) > len(fl) - 2 for fl in prior_groups]
+    i = 0
+    while (
+        any([len([c for c in feats if c in fl]) > len(fl) - 2 for fl in prior_groups])
+        and i < 50
     ):
         feats = importance_ser.sample(weights=weighting, n=model_size).index.tolist()
+        i += 1
     return feats
 
 
