@@ -4,6 +4,30 @@ from sklearn.utils import compute_sample_weight
 from data_handling import data_tools
 
 
+def model_prediction_distance(feature_df, model_subsets, metric, response="predict"):
+    predictions = list()
+    for m, s in model_subsets:
+        if response == "predict":
+            predictions.append(m.predict(feature_df[s]))
+        else:
+            predictions.append(m.predict_proba(feature_df[s]))
+    distance_df = pd.DataFrame(predictions).corr(method=metric)
+    return distance_df
+
+
+def compare_models_to_predictions(
+    feature_df, model_subsets, metric, predictions=None, response="predict"
+):
+    new_predicts = list()
+    for m, s in model_subsets:
+        if response == "predict":
+            new_predicts.append(m.predict(feature_df[s]))
+        else:
+            new_predicts.append(m.predict_proba(feature_df[s]))
+    distances = pd.concat([np.corrwith(other=predictions, axis=1, method=metric) for np in new_predicts], keys=[model_subsets.keys()])
+    return distances
+
+
 def get_sample_info(inchi_keys, source=None, labels=None, drop_dupes=False):
     # Returns QSAR-ready SMILES and INCHI strings for list of INCHI keys.
     prop_list = ["SMILES_QSAR", "INCHI"]
