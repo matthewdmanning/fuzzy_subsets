@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+from collections import defaultdict
+
+import padel_categorization
+
 
 def get_features_dict(feature_list):
     mol_wt = [c for c in feature_list if "molecular weight" in c.lower()]
@@ -126,5 +130,34 @@ def get_atom_numbers(feature_list):
 
 def get_estate_counts(feature_list):
     in_kws = ["count", "atom-type", "e-state"]
-    out_kws = ["h e-state"]
+    out_kws = ["h e-state", "sum", "maximum", "minimum"]
     return get_descriptor_list(feature_list, include=in_kws, exclude=out_kws)
+
+
+def get_count_descriptors():
+    padel_list = padel_categorization.get_two_dim_only()
+    padel_names = defaultdict()
+    atom_names = [
+        "CarbonTypesDescriptor",
+        "AtomCountDescriptor",
+        "AromaticAtomsCountDescriptor",
+    ]
+    bond_names = [
+        "BondCountDescriptor",
+        "RotatableBondsCountDescriptor",
+        "AromaticBondsCountDescriptor",
+    ]
+    group_names = [
+        "AcidicGroupCountDescriptor",
+        "BasicGroupCountDescriptor",
+        "HBondAcceptorCountDescriptor",
+        "HBondDonorCountDescriptor",
+    ]
+    padel_names["atom"] = padel_list[padel_list["Type"].isin(atom_names)]
+    padel_names["bond"] = padel_list[padel_list["Type"].isin(bond_names)]
+    padel_names["group"] = padel_list[padel_list["Type"].isin(group_names)]
+    padel_names["hbond"] = padel_list[padel_list["Description"].isin([c for c in padel_list["Description"] if "hydrogen bond" in c])]
+    padel_names["ring"] = padel_list[padel_list["Type"] == "RingCountDescriptor"]
+    estates = get_estate_counts(padel_list["Description"].to_list())
+    padel_names["estate"] = padel_list[padel_list["Description"].isin(estates)]
+    return padel_names
