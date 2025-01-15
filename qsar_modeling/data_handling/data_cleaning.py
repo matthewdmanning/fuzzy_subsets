@@ -61,6 +61,7 @@ def clean_and_check(feature_df, labels, y_dtype=None, var_thresh=0, verbose=Fals
     if len(invalid_idx) > 0:
         raise UserWarning
         print("INCHI keys are not valid: {}".format(invalid_idx))
+    """
     y_ser = remove_duplicate_idx(labels)
     if type(y_ser.index) is pd.RangeIndex:
         X_df = X_df.loc[y_ser]
@@ -68,7 +69,8 @@ def clean_and_check(feature_df, labels, y_dtype=None, var_thresh=0, verbose=Fals
         X_df = X_df.loc[y_ser.index]
     if y_dtype is not None:
         y_ser = y_ser.astype(y_dtype)
-    zero_var_cols = X_df[X_df.var(axis=1) <= var_thresh].columns
+    """
+    zero_var_cols = X_df[X_df.nunique(axis=1) < var_thresh].columns
     if verbose:
         print(feature_df.shape)
         print(
@@ -79,11 +81,11 @@ def clean_and_check(feature_df, labels, y_dtype=None, var_thresh=0, verbose=Fals
     if zero_var_cols.size == 0:
         X_df.drop(columns=zero_var_cols, inplace=True)
     feature_arr, labels_arr = checker(X_df, y=y_ser)
-    X_out = pd.DataFrame(data=feature_arr, index=X_df.index, columns=X_df.columns)
-    y_out = pd.Series(data=labels_arr, index=y_ser.index)
-    assert not X_out.empty
-    assert not y_out.empty
-    return X_out, y_out
+    Xt = pd.DataFrame(data=feature_arr, index=X_df.index, columns=X_df.columns)
+    yt = pd.Series(data=labels_arr, index=y_ser.index)
+    assert not Xt.empty
+    assert not yt.empty
+    return Xt, yt
 
 
 def data_check():
