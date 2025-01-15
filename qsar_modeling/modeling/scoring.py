@@ -151,7 +151,7 @@ def score_model(
     labels,
     scorer_tuple=None,
     scalar_only=True,
-    check_bounds=True,
+    check_bounds=False,
 ):
     # Returns a dictionary of scores for a model, given the ground truth.
     cv_score_dict = defaultdict()
@@ -162,10 +162,10 @@ def score_model(
         scorer_tuple = ("Balanced Accuracy", balanced_accuracy_score)
         # scorer_tuple = ("MCC", matthews_corrcoef)
         # for score_name, score_obj in scorer_tuple:
-        score_name, score_obj = scorer_tuple
-        score = score_obj(labels, preds)
-        if (not scalar_only or np.isscalar(score)) and np.real(score):
-            cv_score_dict[score_name] = score
+    score_name, score_obj = scorer_tuple
+    score = score_obj(labels, preds)
+    if (not scalar_only or np.isscalar(score)) and np.real(score):
+        cv_score_dict[score_name] = score
     if check_bounds:
         check_model_bounds(cv_score_dict)
     return cv_score_dict

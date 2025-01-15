@@ -22,8 +22,8 @@ def separate_floats_and_strs(mixed_list):
     return float_list, str_list
 
 
-def get_selection_scores(feature_dir, score_path, repeat_size=None):
-    if os.path.isdir(feature_dir) and os.path.isfile(score_path):
+def get_selection_scores(score_path, repeat_size=None):
+    if os.path.isfile(score_path):
         with open(score_path, encoding="utf-8") as f:
             best_list = f.readlines()
     else:
@@ -236,7 +236,7 @@ def grab_selection_results(feature_dir, best_only=True, repeat_size=None):
     if not os.path.isdir(feature_dir) or not os.path.isfile(score_path):
         return None, None, None, None, None
     score_feat_df, feature_subsets, raw_score_subset_df = get_selection_scores(
-        feature_dir, score_path, repeat_size=repeat_size
+        score_path, repeat_size=repeat_size
     )
     if score_feat_df is None:
         return None, None, None, None, None

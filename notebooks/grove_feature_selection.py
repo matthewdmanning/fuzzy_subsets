@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 import scipy
 import sklearn
-from sklearn.ensemble import (ExtraTreesClassifier, RandomForestClassifier)
+from sklearn.ensemble import ExtraTreesClassifier, RandomForestClassifier
 from sklearn.feature_selection import SequentialFeatureSelector
 from sklearn.inspection import permutation_importance
 from sklearn.linear_model import LogisticRegressionCV
@@ -80,7 +80,16 @@ def _permutation_removal(
     return feature_list, dropped_dict, fails
 
 
-def _vif_elimination(train_df, feature_list, best_corrs, cross_corr, dropped_dict, fails, select_params, verbose=False):
+def _vif_elimination(
+    train_df,
+    feature_list,
+    best_corrs,
+    cross_corr,
+    dropped_dict,
+    fails,
+    select_params,
+    verbose=False,
+):
     model_size = 10
     vif_rounds = int(len(feature_list) * (len(feature_list) + 1) / model_size)
     # fweights = 0.5 - pd.Series(scipy.linalg.norm(cross_corr.loc[feature_list, feature_list], axis=1), index=feature_list).squeeze().sort_values(ascending=False)
@@ -109,7 +118,10 @@ def _vif_elimination(train_df, feature_list, best_corrs, cross_corr, dropped_dic
         all_vif_sd = vif_results["vif_stats_list"][0]["SD"]
     vif_dropped = all_vif_mean.index[0]
     # [print(c, [d.loc[c] for d in vif_results["vif_stats_list"] if c in d.index]) for c in vif]
-    if vif_dropped in feature_list and all_vif_mean[vif_dropped] > select_params["thresh_vif"]:
+    if (
+        vif_dropped in feature_list
+        and all_vif_mean[vif_dropped] > select_params["thresh_vif"]
+    ):
         feature_list.remove(vif_dropped)
         dropped_dict.update([(vif_dropped, "VIF")])
         fails -= 1
@@ -134,7 +146,9 @@ def _vif_elimination(train_df, feature_list, best_corrs, cross_corr, dropped_dic
     return feature_list, dropped_dict, fails
 
 
-def grove_features_loop(feature_df, labels, grove_model, member_col=None, save_dir=None):
+def grove_features_loop(
+    feature_df, labels, grove_model, member_col=None, save_dir=None
+):
     select_params = {
         "max_features_out": 30,
         "fails_min_vif": 3,
@@ -146,7 +160,7 @@ def grove_features_loop(feature_df, labels, grove_model, member_col=None, save_d
         "thresh_vif": 15,
         "thresh_perm": 0,
         "thresh_sfs": -0.005,
-        "permutate": True
+        "permutate": True,
     }
     with open("{}selection_params.txt".format(save_dir), "w") as f:
         for k, v in select_params.items():
@@ -232,8 +246,15 @@ def grove_features_loop(feature_df, labels, grove_model, member_col=None, save_d
             fails >= select_params["fails_min_vif"]
             and len(feature_list) >= select_params["features_min_vif"]
         ):
-            feature_list, dropped_dict, fails = _vif_elimination(train_df, feature_list, best_corrs, cross_corr,
-                                                                 dropped_dict, fails, select_params)
+            feature_list, dropped_dict, fails = _vif_elimination(
+                train_df,
+                feature_list,
+                best_corrs,
+                cross_corr,
+                dropped_dict,
+                fails,
+                select_params,
+            )
             while (
                 fails >= select_params["features_min_perm"]
                 and select_params["features_min_perm"]
@@ -389,7 +410,7 @@ def record_score(
     return best_features, score_dict, top_score, last_best, fails
 
 
-def get_model(model_name):
+def get_clf_model(model_name):
     if "log" in model_name:
         grove_model = LogisticRegressionCV(
             scoring=mcc,
@@ -516,10 +537,13 @@ def main():
     os.makedirs(search_dir, exist_ok=True)
     # members_dict = membership(feature_df, labels, grove_cols, search_dir)
     search_features = get_search_features(feature_df, included=grove_cols)
-    model_dict, score_dict, dropped_dict, best_features = grove_features_loop(feature_df[search_features], labels,
-                                                                              grove_model=get_model(model_name),
-                                                                              member_col="All Data",
-                                                                              save_dir=search_dir)
+    model_dict, score_dict, dropped_dict, best_features = grove_features_loop(
+        feature_df[search_features],
+        labels,
+        grove_model=get_clf_model(model_name),
+        member_col="All Data",
+        save_dir=search_dir,
+    )
     return None
     for i, (col, members) in enumerate(list(members_dict.items())):
         if (
@@ -533,8 +557,13 @@ def main():
             enable_metadata_routing=True, transform_output="pandas"
         ):
             model_dict[col], score_dict[col], dropped_dict, best_features = (
-                grove_features_loop(feature_df.loc[members][search_features], labels[members],
-                                    grove_model=get_model(model_name), member_col=col, save_dir=col_dir)
+                grove_features_loop(
+                    feature_df.loc[members][search_features],
+                    labels[members],
+                    grove_model=get_clf_model(model_name),
+                    member_col=col,
+                    save_dir=col_dir,
+                )
             )
 
 

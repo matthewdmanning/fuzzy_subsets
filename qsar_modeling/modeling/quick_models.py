@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 from imblearn.ensemble import BalancedRandomForestClassifier
 from imblearn.under_sampling import RandomUnderSampler
+from sklearn import clone
 from sklearn.linear_model import LogisticRegressionCV
 from sklearn.metrics import make_scorer, matthews_corrcoef
 
@@ -95,6 +96,10 @@ def cv_model_documented(
     sweight=None,
     **splitter_kw
 ):
+    if model_params is None:
+        cv_model = clone(cv_model())
+    else:
+        cv_model = clone(cv_model()).set_params(**model_params)
     cv = 0
     dev_score_list, eva_score_list = list(), list()
     for dev_X, dev_y, eva_X, eva_y in cv_tools.split_df(
@@ -114,11 +119,7 @@ def cv_model_documented(
         cv_eva_pred_path = "{}eval_pred.csv".format(model_dir)
         dev_y.to_csv(cv_dev_path)
         eva_y.to_csv(cv_eva_path)
-        if model_params is None:
-            model_inst = cv_model()
-        else:
-            model_inst = cv_model().set_params(**model_params)
-        model_inst.fit(dev_X, dev_y, sample_weight=sweight)
+        model_inst = clone(cv_model).fit(dev_X, dev_y, sample_weight=sweight)
         with open(model_obj_path, "wb") as f:
             pickle.dump(model_inst, f)
         dev_pred = pd.Series(data=model_inst.predict(dev_X), index=dev_y.index)
