@@ -14,6 +14,15 @@ checker = partial(
 )
 
 
+def get_epa_mapper(index_col="DTXSID", data_cols=("DTXSID", "INCHI_KEY")):
+    epa_map = pd.read_csv(
+        os.environ.get("EPA_MAPPER"),
+        index_col=index_col,
+        usecols=data_cols,
+    ).squeeze()
+    return epa_map
+
+
 def load_all_descriptors():
     raise DeprecationWarning
     with open(
@@ -38,6 +47,8 @@ def load_combo_data(source_label_combos="all"):
     ) as f:
         data_df = pickle.load(f)
     idx_dict = dict()
+    print(data_df.columns)
+    # print(data_df["id"])
     en_idx = data_df[data_df["DATA_SOURCE"] == "ENAMINE"].index
     epa_idx = data_df[data_df["DATA_SOURCE"] == "EPA"].index
     sol_idx = data_df[data_df["DMSO_SOLUBILITY"] == 1].index
