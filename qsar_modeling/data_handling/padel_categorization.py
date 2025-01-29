@@ -3,6 +3,7 @@ from __future__ import annotations
 import itertools
 import os
 from dataclasses import dataclass
+from functools import cache
 
 import pandas as pd
 
@@ -155,6 +156,7 @@ def group_padel_descriptors_manual(desc_names):
     return desc_dict
 
 
+@cache
 def get_two_dim_only(long_names=False, short_names=False):
     # Returns only one and two-dimensional descriptors from PaDeL.
     padel_names = get_full_padel_df()
@@ -168,6 +170,7 @@ def get_two_dim_only(long_names=False, short_names=False):
     return two_d
 
 
+@cache
 def get_full_padel_names(two_d=True):
     # Returns long padel names.
     if two_d:
@@ -178,6 +181,7 @@ def get_full_padel_names(two_d=True):
     return long_padel
 
 
+@cache
 def get_short_padel_names(two_d=True):
     # Return short PaDeL codes.
     full_padel = get_full_padel_df()
@@ -189,8 +193,25 @@ def get_short_padel_names(two_d=True):
     return short_padel
 
 
+@cache
 def get_full_padel_df():
     # Returns full CSV files of PaDeL descriptors in DataFrame format.
     return pd.read_excel(
         "{}data/padel_all_descriptor_names.xlsx".format(os.environ.get("PROJECT_DIR"))
     )
+
+
+@cache
+def padel_short_to_long():
+    padel_df = get_full_padel_df()
+    convert_df = padel_df[["Descriptor name", "Description"]]
+    convert_df.set_index(keys="Descriptor name", inplace=True)
+    return convert_df.squeeze()
+
+
+@cache
+def padel_short_to_long():
+    padel_df = get_full_padel_df()
+    convert_df = padel_df[["Description", "Descriptor name"]]
+    convert_df.set_index(keys="Descriptor name", inplace=True)
+    return convert_df.squeeze()
