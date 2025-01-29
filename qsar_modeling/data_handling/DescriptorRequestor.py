@@ -130,7 +130,7 @@ class ApiGrabber:
                 attempts += 1
         if response is None:
             self.logger.warning("No response received for {}".format(payload_input))
-            result = dict(("smiles", payload_input))
+            result = dict((self.input_type, payload_input))
         else:
             result = self.parse_api_response(response, payload_input)
         return result, payload_input
@@ -171,7 +171,7 @@ class ApiGrabber:
                 unpacked = self.flatten(response)
             elif type(response) is dict and len(response.values()) > 0:
                 unpacked = self.flatten(response)
-        except:
+        except ValueError:
             self.logger.warning(
                 "Exception: {} for {}, {}".format(sys.exception(), api_input, response)
             )
@@ -219,23 +219,91 @@ class ApiGrabber:
 
 
 class QsarStdizer(ApiGrabber):
+    _qsar_schema = {
+        "filesInfo": [
+            {
+                "fileName": "string",
+                "idField": "string",
+                "strField": "string",
+                "actField": "string",
+            }
+        ],
+        "options": {"workflow": "string", "run": "string", "recordId": "string"},
+    }
 
     # def __init__(self, api_url="https://hcd.rtpnc.epa.gov/api/stdizer/qsar-ready_08232023", payload=None):
-    def __init__(self, api_url="https://hcd.rtpnc.epa.gov/api/stdizer", payload=None):
-        super().__init__(api_url=api_url, payload=payload)
+    def __init__(
+        self,
+        api_url="https://hcd.rtpnc.epa.gov/api/stdizer",
+        payload=None,
+        *args,
+        **kwargs
+    ):
+        # def __init__(self, api_url="https://ccte-cced-cheminformatics.epa.gov/api/stdizer", payload=None, *args, **kwargs):
+        super().__init__(api_url=api_url, payload=payload, *args, **kwargs)
         if self.default_payload is None:
-            self.default_payload = {"workflow": "qsar-ready_08232023"}
+            self.default_payload = {"workflow": "qsar-ready"}  # _08232023"}
 
-    # ?type=padel&smiles=ccff
 
+class ChemicalSearch(ApiGrabber):
+
+    # def __init__(self, api_url="https://hcd.rtpnc.epa.gov/api/stdizer/qsar-ready_08232023", payload=None):
+    def __init__(
+        self,
+        api_url="https://ccte-cced-cheminformatics.epa.gov/api/stdizer",
+        payload=None,
+        input_type="sid",
+        *args,
+        **kwargs
+    ):
+
+        # def __init__(self, api_url="https://ccte-cced-cheminformatics.epa.gov/api/stdizer", payload=None, *args, **kwargs):
+        super().__init__(api_url=api_url, payload=payload, *args, **kwargs)
+        if self.default_payload is None:
+            self.default_payload = {
+                  "ids": [
+                    {
+                      "sim": 0
+                    }
+                  ],
+                  "format": input_type
+            }
+        else:
+            self.payload = payload
 
 class DescriptorGrabber(ApiGrabber):
     SET_LIST = ["padel", "rdkit", "mordred", "toxprints"]
+    # ?type=padel&smiles=ccff
+    """
+    {
+      "options": {
+        "workflow": "string",
+        "run": "string",
+        "recordId": "string"
+      },
+      "chemicals": [
+        {
+          "chemId": "string",
+          "cid": "string",
+          "sid": "string",
+          "casrn": "string",
+          "name": "string",
+          "smiles": "string",
+          "canonicalSmiles": "string",
+          "inchi": "string",
+          "inchiKey": "string",
+          "mol": "string"
+        }
+      ],
+      "full": true
+    }
+    """
 
     def __init__(
         self,
         desc_set,
-        api_url="https://hcd.rtpnc.epa.gov/api/descriptors",
+        # api_url="https://hcd.rtpnc.epa.gov/api/descriptors",
+        api_url="https://ccte-cced-cheminformatics.epa.gov/api/descriptors",
         *args,
         **kwargs
     ):
