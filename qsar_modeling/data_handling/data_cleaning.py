@@ -1,6 +1,26 @@
 import pandas as pd
 from sklearn.utils import check_X_y as checker
 
+from data.element_lists import DISALLOWED, WITH_SALTS
+
+
+def qsar_readiness(smiles_list, allow_salts=True):
+    not_ready, ready = list(), list()
+    if allow_salts:
+        forbidden = WITH_SALTS
+    else:
+        forbidden = DISALLOWED
+    for smi in smiles_list:
+        if not isinstance(smi, str):
+            print(smi)
+            raise ValueError
+        for e in forbidden:
+            if e in smi:
+                not_ready.append(smi)
+                break
+        ready.append(smi)
+    return ready, not_ready
+
 
 def remove_duplicate_idx(df):
     # Reliably removes duplicated rows in a DataFrame.
