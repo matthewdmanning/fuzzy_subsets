@@ -126,8 +126,12 @@ ATYPICAL = list(["B", "Si", "Se", "Te"])
 HALOGENS = list(["F", "Cl", "Br", "I"])
 GROUP_ONES = list(["Li", "Na", "K", "Rb", "Cs", "Fr"])
 GROUP_TWOS = list(["Be", "Mg", "Ca", "Sr", "Ba", "Ra"])
-ALLOWED = [*NONMETALS, *HALOGENS, *NONMETALS_LOWER, "H"]
-DISALLOWED = list([e for e in ALL_ELEMENTS if e not in ALLOWED])
+ALLOWED = [*NONMETALS, *HALOGENS, *NONMETALS_LOWER, *ATYPICAL, "H"]
+PLUS_SALTS = ALLOWED.copy()
+PLUS_SALTS.extend(GROUP_ONES)
+PLUS_SALTS.extend(GROUP_TWOS)
+DISALLOWED = [e for e in ALL_ELEMENTS if e not in ALLOWED]
+WITH_SALTS = [e for e in ALL_ELEMENTS if e not in PLUS_SALTS]
 QSAR_COLUMNS = {
     "id": "FOREIGN_KEY",
     "cid": "CID",
