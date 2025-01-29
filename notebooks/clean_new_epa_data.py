@@ -49,7 +49,7 @@ def rand_index(x_i, x_j, C=None):
 def get_query_data():
     data_dir = "{}db_queries_12_2024/".format(os.environ.get("DATA_DIR"))
     insol_path = "{}chemtrack_dmso_insoluble_03DEC2024.csv".format(data_dir)
-    sol100_path = "{}chemtrack_dmso_max_solubility_03DEC2024.csv".format(data_dir)
+    sol100_path = "{}chemtrack_dmso_max_solubility_17DEC2024.csv".format(data_dir)
     maxed_sol_path = "{}chemtrack_dmso_solubility_03DEC2024.csv".format(data_dir)
     columns = [
         "dtxsid",
@@ -61,12 +61,16 @@ def get_query_data():
     insol_df = pd.read_csv(
         insol_path, names=["dtxsid", "Insoluble", "Sparingly"]
     ).set_index(keys="dtxsid")
-    maxed_sol_df = pd.read_csv(maxed_sol_path, names=columns).set_index(keys="dtxsid")[
-        ["target_concentration", "sample_concentration"]
-    ]
-    sol100_df = pd.read_csv(sol100_path, names=columns).set_index(keys="dtxsid")[
-        ["target_concentration", "sample_concentration"]
-    ]
+    maxed_sol_df = pd.read_csv(
+        maxed_sol_path,
+        names=columns,
+        usecols=("dtxsid", "target_concentration", "sample_concentration"),
+    ).set_index(keys="dtxsid")
+    sol100_df = pd.read_csv(
+        sol100_path,
+        names=columns,
+        usecols=("dtxsid", "target_concentration", "sample_concentration"),
+    ).set_index(keys="dtxsid")
     [
         df.drop(index="dtxsid", inplace=True)
         for df in [insol_df, maxed_sol_df, sol100_df]
@@ -321,51 +325,26 @@ def main():
     epa_label_path = "{}epa_labels.csv".format(exp_path)
     transformer_path = "{}transformer.pkl".format(exp_path)
     if os.path.isfile("{}train_df.pkl".format(exp_path)) and os.path.isfile(
-        "{}epa_labels.csv".format(exp_path)
+        epa_label_path
     ):
         epa_df = pd.read_pickle("{}train_df.pkl".format(exp_path))
-        epa_labels = pd.read_csv("{}epa_labels.csv".format(exp_path))
+        epa_labels = pd.read_csv(epa_label_path)
         epa_labels = epa_labels.set_index(keys=epa_labels.columns[0]).squeeze()
     else:
-        insol_labels, maxed_sol_labels, sol100_labels = get_query_data()
-        insol_labels, maxed_sol_labels, sol100_labels = report_overlaps(
-            insol_labels, maxed_sol_labels, sol100_labels
+        train_df, epa_labels, insol_labels, sol100_labels, max_sol_labels = (
+            get_new_epa_data(desc_path, epa_label_path, exp_path, std_path)
         )
-        if "dtxsid" in insol_labels.index:
-            insol_labels.set_index(keys="dtxsid", inplace=True)
-        if "dtxsid" in sol100_labels.index:
-            sol100_labels.set_index(keys="dtxsid", inplace=True)
-        epa_map = get_epa_mapper(data_cols=("DTXSID", "SMILES"))
-        if os.path.isfile("{}pkl".format(desc_path)) and os.path.isfile(epa_label_path):
-            train_df = pd.read_pickle("{}pkl".format(desc_path))
-            epa_labels = pd.read_csv("{}epa_labels.csv".format(exp_path))
-        else:
-            stdizer = QsarStdizer()
-            desc_list, smi_list = list(), list()
-            for labels in [insol_labels, sol100_labels]:
-                api_ser = epa_map.loc[labels.index.intersection(epa_map.index.dropna())]
-                results, returned_input = stdizer.grab_data(api_ser.to_list())
-                results.drop(columns="mol", inplace=True)
-                smi_list.append(results)
-                desc_list.append(
-                    descriptor_processing.get_api_desc(
-                        desc_path="{}.csv".format(desc_path),
-                        id_ser=api_ser,
-                        d_set="padel",
-                    )
-                )
-            pd.concat(smi_list).dropna().to_csv(std_path)
-            train_df = pd.concat([df.dropna() for df in desc_list])
-            if not os.path.isfile("{}csv".format(desc_path)):
-                train_df.to_csv("{}csv".format(desc_path), sep="\t")
-            if not os.path.isfile("{}pkl".format(desc_path)):
-                train_df.to_pickle("{}pkl".format(desc_path))
+        if not os.path.isfile("{}csv".format(desc_path)):
+            train_df.to_csv("{}csv".format(desc_path), sep="\t")
+        if not os.path.isfile("{}pkl".format(desc_path)):
+            train_df.to_pickle("{}pkl".format(desc_path))
         labels_insol = pd.Series(
             np.zeros(insol_labels.shape[0]), index=insol_labels.index
         )
         labels_sol = pd.Series(
             np.ones(sol100_labels.shape[0]), index=sol100_labels.index
         )
+
         epa_labels = pd.concat([labels_insol, labels_sol])
         new_index = epa_labels.index.map(mapper=epa_map.to_dict())
         epa_labels.index = new_index
@@ -375,8 +354,8 @@ def main():
         train_df.drop(index=df_diff, inplace=True)
         label_diff = epa_labels.index.difference(train_df.index)
         epa_labels.drop(index=label_diff, inplace=True)
-        pd.Series(label_diff).to_csv("{}dropped_compounds.csv".format(exp_path))
         epa_df = train_df.loc[epa_labels.index.intersection(train_df.index)]
+        pd.Series(label_diff).to_csv("{}dropped_compounds.csv".format(exp_path))
         epa_labels.to_csv("{}epa_labels.csv".format(exp_path))
         epa_df.to_pickle("{}train_df.pkl".format(exp_path))
         print("Processing Done:")
@@ -433,6 +412,71 @@ def main():
         proba_dict[mod_name] = epa_results[1]
         # proba_list.append(epa_results[1])
     print(pd.DataFrame.from_records(score_dict))
+
+
+def max_min_epa_query(padel_path, desc_path, epa_label_path, std_path, label_list=None):
+    if os.path.isfile(padel_path):
+        descriptor_df = pd.read_pickle("{}.pkl".format(desc_path))
+    else:
+        descriptor_df, smiles_df = process_epa_data(label_list, desc_path, std_path)
+    if os.path.isfile(epa_label_path):
+        epa_labels = pd.read_csv(epa_label_path)
+    else:
+        epa_labels = None
+    return descriptor_df, epa_labels
+
+
+def get_new_epa_data(desc_path, epa_label_path, exp_path, std_path, exact_max=True):
+    insol_labels, maxed_sol_labels, sol100_labels = get_query_data()
+    insol_labels, maxed_sol_labels, sol100_labels = report_overlaps(
+        insol_labels, maxed_sol_labels, sol100_labels
+    )
+    for labs in [insol_labels, maxed_sol_labels, sol100_labels]:
+        if "dtxsid" in labs.index:
+            labs.set_index(keys="dtxsid", inplace=True)
+    padel_path = "{}pkl".format(desc_path)
+    if exact_max:
+        label_list = [maxed_sol_labels]
+    else:
+        label_list = [insol_labels, sol100_labels]
+    train_df, epa_labels = max_min_epa_query(
+        padel_path=padel_path,
+        desc_path=desc_path,
+        epa_label_path=epa_label_path,
+        std_path=std_path,
+        label_list=label_list,
+    )
+    return train_df, epa_labels, insol_labels, sol100_labels, maxed_sol_labels
+
+
+def process_epa_data(label_list, desc_path, std_path):
+    stdizer = QsarStdizer()
+    desc_list, smi_list = list(), list()
+    epa_map = get_epa_mapper(data_cols=("DTXSID", "SMILES"))
+    if os.path.isfile(std_path):
+        smi_df = pd.read_csv(std_path)
+    else:
+        for labels in label_list:
+            api_ser = epa_map.loc[labels.index.intersection(epa_map.index.dropna())]
+            results, returned_input = stdizer.grab_data(api_ser.to_list())
+            print(results)
+            results.drop(columns="mol", inplace=True)
+            smi_list.append(results)
+        smi_df = pd.concat(smi_list).dropna()
+        smi_df.to_csv(std_path)
+    print(smi_df)
+    if os.path.isfile(desc_path):
+        descriptor_df = pd.read_pickle(desc_path)
+    else:
+        descriptor_df = descriptor_processing.get_api_desc(
+            desc_path="{}.csv".format(desc_path),
+            id_ser=smi_df["smiles"],
+            d_set="padel",
+        )
+        descriptor_df.index = smi_df["smiles"]
+        with open(desc_path, "wb") as f:
+            pickle.dump(descriptor_df, f)
+    return descriptor_df, smi_df
 
 
 if __name__ == "__main__":
