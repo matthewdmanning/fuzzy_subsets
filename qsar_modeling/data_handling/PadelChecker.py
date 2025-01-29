@@ -1,10 +1,10 @@
 import pandas as pd
-from sklearn.base import OneToOneFeatureMixin, TransformerMixin
+from sklearn.base import BaseEstimator, OneToOneFeatureMixin, TransformerMixin
 
 from data_cleaning import rename_duplicate_features
 
 
-class PadelCheck(TransformerMixin, OneToOneFeatureMixin):
+class PadelCheck(BaseEstimator, TransformerMixin, OneToOneFeatureMixin):
 
     def __init__(self):
         self.feature_names_in = list()
@@ -26,11 +26,10 @@ class PadelCheck(TransformerMixin, OneToOneFeatureMixin):
         Xt = X.copy()
         Xt.columns = Xt.columns.map(self.rename_dict)
         return Xt
-    """
+
     def get_feature_names_out(self, input_features=None):
         converted = [
             self.rename_dict[c] for c in input_features if c in self.rename_dict.keys()
         ]
         remain = [c for c in input_features if c not in self.rename_dict.keys()]
         return converted.extend(remain)
-    """
