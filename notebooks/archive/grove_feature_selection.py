@@ -147,20 +147,20 @@ def _vif_elimination(
 
 
 def grove_features_loop(
-    feature_df, labels, grove_model, member_col=None, save_dir=None
+    feature_df, labels, grove_model, member_col=None, cv=None, save_dir=None
 ):
     select_params = {
-        "max_features_out": 30,
+        "max_features_out": 15,
         "fails_min_vif": 3,
         "fails_min_perm": 3,
         "fails_min_sfs": 4,
-        "features_min_vif": 13,
-        "features_min_perm": 16,
+        "features_min_vif": 5,
+        "features_min_perm": 20,
         "features_min_sfs": 15,
-        "thresh_vif": 15,
+        "thresh_vif": 10,
         "thresh_perm": 0,
         "thresh_sfs": -0.005,
-        "permutate": True,
+        "permutate": False,
     }
     with open("{}selection_params.txt".format(save_dir), "w") as f:
         for k, v in select_params.items():
@@ -176,8 +176,9 @@ def grove_features_loop(
     train_df.to_pickle("{}preprocessed_feature_df.pkl".format(save_dir))
     labels.to_csv("{}member_labels.csv".format(save_dir))
     print("Training Size: {}".format(train_df.shape))
-    if labels[labels == 1].size < 10 or labels[labels == 0].size < 10:
-        return None
+    for n in labels.unique():
+        if labels[labels == n].shape[0] < 10:
+            return None
     """    
     pc = PCA(n_components="mle").fit(train_df)
     print("PCA Results: Noise Variance and Number of Components to Reach 0.9 EVR:")
@@ -486,41 +487,68 @@ def membership(feature_df, labels, grove_cols, search_dir):
     return member_dict
 
 
-def get_search_features(feature_df, included=None):
+def get_search_features(feature_df, short=True, included=None):
     all_features = padel_categorization.get_two_dim_only()
+    if included is None:
+        included = [
+            "eta",
+            "shape",
+            "geary",
+            "chain",
+            "donor",
+            "acceptor",
+            "hydrogen bond",
+        ]
+    if short:
+        padel_col = "Descriptor name"
+    else:
+        padel_col = "Description"
+    # RingCountDescriptor",
     eta_feats = all_features[
-        all_features["Type"] == "ExtendedTopochemicalAtomDescriptor"
-    ]["Description"].to_list()
+        all_features["Type"].isin(["ExtendedTopochemicalAtomDescriptor"])
+    ][padel_col].to_list()
+    typed_feats = all_features[
+        all_features["Type"].isin(
+            [
+                "ExtendedTopochemicalAtomDescriptor",
+                "BCUTDescriptor",
+                "BondCountDescriptor",
+                "Geary AutocorrelationDescriptor",
+                "AcidicGroupCountDescriptor",
+                "CarbonTypesDescriptor",
+                "ConstitutionalDescriptor",
+                "ElectrotopologicalStateAtomTypeDescriptor",
+                "HBondDonorCountDescriptor",
+                "Kappa descriptors",
+                "MLFERDescriptor",
+                "RotatableBondsCountDescriptor",
+                "TPSADescriptor",
+            ]
+        )
+    ][padel_col].to_list()
     const_feats = all_features[
         all_features["Extended class"] == "Constitutional descriptors"
-    ]["Description"].to_list()
+    ][padel_col].to_list()
     topo_feats = all_features[
         all_features["Extended class"] == "Topological descriptors"
-    ]["Description"].to_list()
+    ][padel_col].to_list()
     if included is None:
         included = ()
-    search_feature = list(
+    search_features = list(
         set(
             [
                 c
                 for c in feature_df
                 if (
-                    "eta" in c.lower()
-                    or "shape" in c.lower()
-                    or "geary" in c.lower()
-                    or "chain" in c.lower()
-                    or "donor" in c.lower()
-                    or "acceptor" in c.lower()
-                    or "hydrogen bond" in c.lower()
-                    or c in const_feats
-                    or c in eta_feats
-                    or c in included
+                    any([s in c.lower() for s in included])
+                    or any([c in g for g in [const_feats, eta_feats, topo_feats]])
                 )
                 and "reference alkane" not in c
             ]
         )
     )
-    return search_feature
+    typed_feats.extend(eta_feats)
+    return typed_feats
 
 
 def main():
@@ -533,7 +561,7 @@ def main():
     search_dir = "{}{}_all_samples_2/".format(os.environ.get("MODEL_DIR"), model_name)
     os.makedirs(search_dir, exist_ok=True)
     # members_dict = membership(feature_df, labels, grove_cols, search_dir)
-    search_features = get_search_features(feature_df, included=grove_cols)
+    search_features = get_search_features(feature_df)
     model_dict, score_dict, dropped_dict, best_features = grove_features_loop(
         feature_df[search_features],
         labels,
@@ -541,7 +569,7 @@ def main():
         member_col="All Data",
         save_dir=search_dir,
     )
-    return None
+    return model_dict, score_dict, dropped_dict, best_features
     for i, (col, members) in enumerate(list(members_dict.items())):
         if (
             labels[members][labels[members] == 0].size < 15
@@ -550,9 +578,7 @@ def main():
             continue
         col_dir = "{}/{}/".format(search_dir, i)
         os.makedirs(col_dir, exist_ok=True)
-        with sklearn.config_context(
-            enable_metadata_routing=True, transform_output="pandas"
-        ):
+        with sklearn.config_context(transform_output="pandas"):
             model_dict[col], score_dict[col], dropped_dict, best_features = (
                 grove_features_loop(
                     feature_df.loc[members][search_features],
