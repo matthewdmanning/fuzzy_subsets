@@ -1,18 +1,28 @@
 import itertools
 import logging
 import os
+import pickle
+import pprint
+import warnings
+from copy import deepcopy
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import requests
 import seaborn as sns
+import sklearn
 from sklearn import linear_model
 from sklearn.ensemble import ExtraTreesClassifier, RandomForestClassifier
 from sklearn.linear_model import LogisticRegressionCV
-from sklearn.metrics import balanced_accuracy_score, ConfusionMatrixDisplay, make_scorer
+from sklearn.metrics import (
+    balanced_accuracy_score,
+    confusion_matrix,
+    make_scorer,
+)
 from sklearn.model_selection import (
     GridSearchCV,
+    RepeatedStratifiedKFold,
     train_test_split,
 )
 from sklearn.multiclass import OneVsOneClassifier, OneVsRestClassifier
@@ -91,13 +101,13 @@ def main():
         "features_min_vif": 5,
         "features_min_perm": 8,
         "features_min_sfs": 10,
-        "thresh_reset": 0.025,
+        "thresh_reset": 0.035,
         "thresh_vif": 10,
         "thresh_perm": 0.0025,
         "thresh_sfs": -0.005,
         "thresh_xc": 0.95,
-        "max_trials": 25,
-        "cv": 5,
+        "max_trials": 40,
+        "cv": RepeatedStratifiedKFold(n_repeats=3, random_state=0),
         "importance": False,
         "scoring": make_scorer(three_class_solubility),
         "W_confusion": get_confusion_weights(),
@@ -105,8 +115,7 @@ def main():
     # epa_scorer = make_scorer(balanced_accuracy_score)
     epa_scorer = make_scorer(three_class_solubility)
     # Paths.
-    parent_dir = "{}multiclass_trial/".format(os.environ.get("MODEL_DIR"))
-    std_path = "{}stdizer_epa_query.csv".format(parent_dir)
+    parent_dir = "{}weighted_multiclass/".format(os.environ.get("MODEL_DIR"))
     std_pkl = "{}stdizer_epa_query.pkl".format(parent_dir)
     lookup_path = "{}lookup.csv".format(parent_dir)
     desc_path = "{}padel_features_output_max_sol.pkl".format(parent_dir)
@@ -502,13 +511,19 @@ def label_solubility_clusters(labels, exp_dir, algo=False):
         """
         epa_labels = agg_clusters
     else:
-        epa_labels = labels.copy()
-        epa_labels[epa_labels < 8.5] = 0
-        epa_labels[(8.5 <= epa_labels) & (epa_labels < 45.0)] = 1
-        epa_labels[(45.0 <= epa_labels) & (epa_labels < 90.0)] = 2
-        epa_labels[90.0 <= epa_labels] = 3
+        epa_labels = labels.astype(np.float32).sort_values()
+        print(epa_labels.describe())
+        splits = (9.5, 95.0)
+        epa_labels[epa_labels < splits[0]] = 0
+        epa_labels[(splits[0] <= epa_labels) & (epa_labels < splits[1])] = 1
+        epa_labels[splits[1] <= epa_labels] = 2
+        epa_labels.astype(dtype=np.int8)
+        print(splits)
+    # from sklearn.preprocessing import MultiLabelBinarizer
+    # epa_labels = MultiLabelBinarizer(classes=epa_labels).fit_transform(epa_labels)
+
     print("Cluster-assigned labels")
-    print(np.sort(epa_labels.value_counts()), flush=True)
+    print(epa_labels.value_counts(sort=False), flush=True)
     return epa_labels
 
 
