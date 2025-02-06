@@ -33,32 +33,35 @@ def calculate_vif(
     **fit_kwargs
 ):
     sklearn.set_config(enable_metadata_routing=True)
-    predictors = list()
+    predictor_list = list()
     if subset is None:
         for col in feature_df.columns:
-            predictors.append((feature_df.columns.drop(col).tolist(), col))
+            predictor_list.append((feature_df.columns.drop(col).tolist(), col))
     else:
         # if all(c in feature_df.columns for c in subset.columns):
         #    for col, target in subset.items():
-        #        predictors.append((feature_df.columns.drop(subset.columns), col))
+        #        predictor_list.append((feature_df.columns.drop(subset.columns), col))
         for col, target in subset.items():
-            predictors.append((feature_df.columns.drop(col).tolist(), col))
-    if parallelize:
+            predictor_list.append((feature_df.columns.drop(col).tolist(), col))
+    if parallelize and len(predictor_list[0]) > 1:
         vif_models = train_model_subsets(
             feature_df,
-            predictor_list=predictors,
+            predictor_list=predictor_list,
             model=model,
             mem_dir=os.environ.get("JOBLIB_TMP"),
             sample_weights=sample_wts,
         )
-    else:
+    elif not parallelize and len(predictor_list[0]) > 1:
         vif_models = [
             clone_model(model).fit(
                 X=feature_df[p[0]], y=feature_df[p[1]], sample_weight=sample_wts
             )
-            for p in predictors
+            for p in predictor_list
             if len(p[0]) > 0 and len(p[1]) > 0
         ]
+    else:
+        print(predictor_list)
+        raise ValueError
     try:
         vif_dict = dict(
             [
@@ -66,11 +69,11 @@ def calculate_vif(
                     p[-1],
                     1 / (1 - model.score(X=feature_df[p[0]], y=feature_df[p[1]])),
                 )
-                for p, model in zip(predictors, vif_models)
+                for p, model in zip(predictor_list, vif_models)
             ]
         )
     except:
-        vif_dict = dict([(tuple(p[-1]), 99999) for p in predictors])
+        vif_dict = dict([(tuple(p[-1]), 99999) for p in predictor_list])
     if generalized:
         vif_ser = pd.DataFrame.from_dict(
             vif_dict, orient="index", columns=["VIF", "GVIF"]
