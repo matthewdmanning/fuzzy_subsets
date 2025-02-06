@@ -1,10 +1,10 @@
 import pandas as pd
-from sklearn.base import TransformerMixin
+from sklearn.base import BaseEstimator, TransformerMixin
 
 from correlation_filter import find_correlation
 
 
-class XCorrFilter(TransformerMixin):
+class XCorrFilter(BaseEstimator, TransformerMixin):
 
     def __init__(self, max_features, thresh_xc, method_corr=None, method_xc=None):
         self.target_corr_ = pd.Series([])
