@@ -236,9 +236,56 @@ def main():
                 )
             ]
         )
-        print(cv_results)
-        test_df = preprocessor.transform(test_raw_df, test_labels)
-        return train_df, epa_labels, cv_results
+        model_subsets_dict[n], model_scores_dict[n], subset_predicts[n] = (
+            list(),
+            list(),
+            list(),
+        )
+        for i in np.arange(n_subsets):
+            subset_dir = "{}/subset{}/".format(model_dir, i)
+            os.makedirs(subset_dir, exist_ok=True)
+            dev_data = (dev_df[remaining_features], dev_labels)
+            eval_data = (eval_df[remaining_features], eval_labels)
+            os.makedirs(model_dir, exist_ok=True)
+            cv_results, cv_predicts, best_features = train_multilabel_models(
+                dev_data,
+                eval_data,
+                model=m,
+                model_name=n,
+                best_corrs=best_corrs[remaining_features],
+                cross_corr=cross_corr[remaining_features].loc[remaining_features],
+                select_params=select_params,
+                save_dir=subset_dir,
+            )
+            model_subsets_dict[n].append(best_features)
+            model_scores_dict[n].append(cv_results)
+            subset_predicts[n].append(cv_predicts)
+            [remaining_features.remove(f) for f in best_features]
+    cv_scores = pd.DataFrame.from_dict(
+        model_scores_dict, orient="index", columns=np.arange(n_subsets)
+    )
+    # cv_scores.mean().sort_values(ascending=False)
+    print(cv_scores, flush=True)
+    ax = sns.catplot(cv_scores)
+    ax.figure.set_title(n)
+    ax.set_axis_labels(x_var="Subset No.", y_var="Model-Subset Score (Adjusted BAC)")
+    ax.savefig("{}test_scores.png".format(exp_dir))
+    plt.show()
+
+    # cmd = ConfusionMatrixDisplay.from_predictions(y_true=train_labels, y_pred=subset_predicts[n])
+    # cmd.plot()
+    # cmd.figure_.savefig("{}confusion_matrix_cv.png".format(exp_dir))
+
+    for n in name_list:
+        pprint.pprint(list(zip(model_subsets_dict[n], model_scores_dict[n])))
+    # test_df = preprocessor.transform(test_raw_df, test_labels)
+    return (
+        (train_df, test_df),
+        (train_labels, test_labels),
+        preprocessor,
+        model_subsets_dict,
+        model_scores_dict,
+    )
 
 
 def fetch_padel(smiles_df, desc_path, exp_dir):
@@ -348,6 +395,28 @@ def train_multilabel_models(feature_df, labels, epa_scorer, select_params):
             max_iter=5000,
             random_state=0,
         )
+
+
+def get_correlations(dev_df, dev_labels, corr_path, xc_path, select_params):
+    if os.path.isfile(corr_path):
+        best_corrs = pd.read_pickle(corr_path)
+        print("Target correlation retrieved from disk.")
+        print(best_corrs)
+    else:
+        print("Target correlation calculated.")
+        best_corrs = dev_df.corrwith(dev_labels, method=select_params["corr_method"])
+        best_corrs.to_pickle(corr_path)
+    if os.path.isfile(xc_path):
+        print("Cross-correlation retrieved from disk.")
+        cross_corr = pd.read_pickle(xc_path)
+    else:
+        print("Cross-correlation calculated.")
+        cross_corr = dev_df.corr(method=select_params["xc_method"])
+        cross_corr.to_pickle(xc_path)
+    print("Cross-correlation:\n{}".format(cross_corr))
+    return best_corrs, cross_corr
+
+
         model_list = [best_tree, lrcv, xtra_tree]
         name_list = ["RandomForest", "Logistic", "ExtraTrees"]
     else:
