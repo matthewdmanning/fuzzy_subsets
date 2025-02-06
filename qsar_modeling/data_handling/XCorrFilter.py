@@ -47,6 +47,7 @@ class XCorrFilter(TransformerMixin):
         return xcorr_deleted
 
     def get_corrs(self, X, y):
+        X = self.convert_inputs(X, y)
         if self.method_corr is not None:
             self.target_corr_ = X.corrwith(
                 y, method=self.method_corr
@@ -60,3 +61,10 @@ class XCorrFilter(TransformerMixin):
 
     def get_feature_names_out(self, *args, **params):
         return self.feature_names_out_
+
+    def convert_inputs(self, X, y=None):
+        if not isinstance(X, pd.DataFrame):
+            Xt = pd.DataFrame(X)
+        else:
+            Xt = X
+        return Xt
