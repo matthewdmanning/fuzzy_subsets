@@ -371,30 +371,54 @@ def get_conversions(maxed_sol_labels, lookup_path):
     return combo_labels, convert_df
 
 
-def train_multilabel_models(feature_df, labels, epa_scorer, select_params):
-    if True:
-        best_tree = RandomForestClassifier(
-            bootstrap=False,
-            max_leaf_nodes=100,
-            min_impurity_decrease=0.005,
-            class_weight="balanced",
-            n_jobs=-1,
-            random_state=0,
+def train_multilabel_models(
+    dev_data,
+    eval_data,
+    model,
+    model_name,
+    best_corrs,
+    cross_corr,
+    select_params,
+    save_dir,
+):
+    dev_df, dev_labels = dev_data
+    eval_df, eval_labels = eval_data
+    selection_models = {
+        "predict": model,
+        "permutation": model,
+        "importance": model,
+        "vif": linear_model.LinearRegression(),
+    }
+    model_dict, score_dict, dropped_dict, best_features = (
+        vapor_pressure_selection.select_feature_subset(
+            dev_df,
+            dev_labels,
+            target_corr=best_corrs,
+            cross_corr=cross_corr,
+            select_params=select_params,
+            selection_models=selection_models,
+            hidden_test=(eval_df, eval_labels),
+            save_dir=save_dir,
         )
-        xtra_tree = ExtraTreesClassifier(
-            max_leaf_nodes=100,
-            min_impurity_decrease=0.005,
-            class_weight="balanced",
-            n_jobs=-1,
-            random_state=0,
-        )
-        lrcv = LogisticRegressionCV(
-            scoring=epa_scorer,
-            class_weight="balanced",
-            n_jobs=-1,
-            max_iter=5000,
-            random_state=0,
-        )
+    )
+    print("Best features!")
+    short_to_long = padel_categorization.padel_short_to_long()
+    best_features_long = short_to_long[best_features].tolist()
+    print("\n".join(best_features_long))
+    pd.Series(best_features_long).to_csv(
+        "{}best_features_{}.csv".format(save_dir, model_name)
+    )
+    from sklearn.model_selection import cross_val_predict
+
+    with sklearn.config_context(
+        enable_metadata_routing=False, transform_output="pandas"
+    ):
+        cv_predicts = cross_val_predict(model, dev_df[best_features], dev_labels)
+    cv_results = balanced_accuracy_score(
+        y_true=dev_labels, y_pred=cv_predicts, adjusted=True
+    )
+    # model.fit(train, cmd_train_labels)
+    return cv_results, cv_predicts, best_features
 
 
 def get_correlations(dev_df, dev_labels, corr_path, xc_path, select_params):
@@ -444,90 +468,6 @@ def get_multilabel_models(scorer, meta_est=False):
         ovr_lr = OneVsRestClassifier(estimator=lrcv)
         model_list = [ovo_tree, ovo_lr, ovr_tree, ovr_lr]
         name_list = ["ovo_tree", "ovo_logit", "ovr_tree", "ovr_logit"]
-
-    # intersect_final = labels.index.intersection(feature_df.index)
-    # labels = labels[intersect_final]
-    # feature_df = feature_df.loc[intersect_final]
-    # print(labels)
-    print(feature_df.shape)
-    print(labels)
-    candidate_features = vapor_pressure_selection.get_search_features(feature_df)
-    search_features = feature_df.columns[feature_df.columns.isin(candidate_features)].tolist()
-    print("{} features to select from.".format(len(search_features)))
-    feature_df = feature_df[search_features]
-    dev_labels, eval_labels = train_test_split(
-        labels, test_size=0.2, random_state=0, shuffle=True, stratify=labels
-    )
-    dev_df = feature_df.loc[dev_labels.index]
-    eval_df = feature_df.loc[eval_labels.index]
-    print("{} features to select from.".format(len(search_features)))
-    best_corrs = dev_df[search_features].corrwith(dev_labels, method=select_params["xc_method"])
-    cross_corr = dev_df[search_features].corr(method=select_params["corr_method"])
-    cv_dict = dict()
-    for m, n in zip(model_list, name_list):
-        selection_models = {
-            "predict": m,
-            "permutation": m,
-            "importance": m,
-            "vif": linear_model.LinearRegression(n_jobs=-2),
-        }
-        model_dir = "{}feature_selection_metaestimator_trial/{}/".format(exp_dir, n)
-        os.makedirs(model_dir, exist_ok=True)
-        model_dict, score_dict, dropped_dict, best_features = (
-            vapor_pressure_selection.grove_features_loop(
-                dev_df[search_features],
-                dev_labels,
-                target_corr=best_corrs,
-                cross_corr=cross_corr,
-                select_params=select_params,
-                selection_models=selection_models,
-                hidden_test=(eval_df, eval_labels),
-                save_dir=model_dir,
-            )
-        )
-        print("Best features!")
-        short_to_long = padel_categorization.padel_short_to_long()
-        best_features_long = short_to_long[best_features].tolist()
-        print("\n".join(best_features_long))
-        pd.Series(best_features_long).to_csv(
-            "{}best_features_{}.csv".format(model_dir, n)
-        )
-        """        
-        with sklearn.config_context(enable_metadata_routing=False) as f:
-            cv_dict[n] = cross_validate(
-                m,
-                dev_df[best_features],
-                dev_labels,
-                scoring=epa_scorer,
-                cv=RepeatedStratifiedKFold(n_repeats=3, random_state=0),
-                n_jobs=-1,
-                return_train_score=True,
-                return_indices=True,
-            )["test_score"]
-            """
-        train_idx, test_idx = train_test_split(
-            train_df, test_size=0.2, random_state=0, stratify=train_labels
-        )
-        cmd_train_df, cmd_train_labels = (
-            train_df.loc[train_idx.index],
-            train_labels[train_idx.index],
-        )
-        cmd_test_df, cmd_test_labels = (
-            train_df.loc[test_idx.index],
-            train_labels[test_idx.index],
-        )
-        m.fit(cmd_train_df, cmd_train_labels)
-        cmd = ConfusionMatrixDisplay.from_estimator(
-            m, X=cmd_test_df[best_features], y=cmd_test_labels
-        )
-        cmd.plot()
-        cmd.figure_.savefig("{}confusion_matrix.png".format(model_dir))
-    cv_results = pd.DataFrame.from_dict(cv_dict)
-    print(cv_results, flush=True)
-    ax = sns.catplot(cv_results)
-    ax.savefig("{}test_scores.png".format(exp_dir))
-    plt.show()
-    return cv_results
     return model_list, name_list
 
 
