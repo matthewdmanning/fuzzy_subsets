@@ -22,6 +22,29 @@ import vapor_pressure_selection
 from clean_new_epa_data import get_query_data
 
 
+def get_confusion_weights():
+    return np.array([[1.0, 0.0, -0.5], [0.25, 1.0, 0.0], [0.0, 0.25, 1.0]])
+
+
+def three_class_solubility(y_true, y_pred, sample_weight=None, **kwargs):
+    W = get_confusion_weights()
+    try:
+        C = confusion_matrix(y_true, y_pred, sample_weight=sample_weight) * W
+    except UserWarning:
+        print("True, Predicted, and Confusion Weighting")
+        pprint.pprint(y_true.unique())
+        pprint.pprint(y_pred.unique())
+        pprint.pprint(W)
+        C = confusion_matrix(y_true, y_pred, sample_weight=sample_weight)
+    with np.errstate(divide="ignore", invalid="ignore"):
+        per_class = np.diag(C * W) / C.sum(axis=1)
+    if np.any(np.isnan(per_class)):
+        warnings.warn("y_pred contains classes not in y_true")
+        per_class = per_class[~np.isnan(per_class)]
+    score = np.mean(per_class)
+    return score
+
+
 def optimize_tree(feature_df, labels, model, scoring, cv):
     param_grid = {
         "max_depth": [None, 25, 20, 15],
