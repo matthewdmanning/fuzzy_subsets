@@ -417,6 +417,24 @@ def get_correlations(dev_df, dev_labels, corr_path, xc_path, select_params):
     return best_corrs, cross_corr
 
 
+def get_multilabel_models(scorer, meta_est=False):
+    best_tree = RandomForestClassifier(
+        bootstrap=False,
+        max_leaf_nodes=200,
+        min_impurity_decrease=0.005,
+        class_weight="balanced",
+        random_state=0,
+    )
+    xtra_tree = ExtraTreesClassifier(
+        max_leaf_nodes=200,
+        min_impurity_decrease=0.005,
+        class_weight="balanced_subsample",
+        random_state=0,
+    )
+    lrcv = LogisticRegressionCV(
+        scoring=scorer, class_weight="balanced", max_iter=5000, random_state=0
+    )
+    if not meta_est:
         model_list = [best_tree, lrcv, xtra_tree]
         name_list = ["RandomForest", "Logistic", "ExtraTrees"]
     else:
@@ -510,6 +528,7 @@ def get_correlations(dev_df, dev_labels, corr_path, xc_path, select_params):
     ax.savefig("{}test_scores.png".format(exp_dir))
     plt.show()
     return cv_results
+    return model_list, name_list
 
 
 def label_solubility_clusters(labels, exp_dir, algo=False):
