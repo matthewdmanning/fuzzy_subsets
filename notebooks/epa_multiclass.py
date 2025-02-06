@@ -377,13 +377,11 @@ def train_multilabel_models(epa_df, epa_labels, epa_scorer, mc_path):
         max_leaf_nodes=100,
         min_impurity_decrease=0.005,
         class_weight="balanced",
-        n_jobs=-1,
         random_state=0,
     )
     lrcv = LogisticRegressionCV(
         scoring=epa_scorer,
         class_weight="balanced",
-        n_jobs=-1,
         max_iter=5000,
         random_state=0,
     )
@@ -440,12 +438,12 @@ def train_multilabel_models(epa_df, epa_labels, epa_scorer, mc_path):
             "predict": m,
             "permutation": m,
             "importance": m,
-            "vif": linear_model.LinearRegression(n_jobs=-2),
+            "vif": linear_model.LinearRegression(),
         }
         model_dir = "{}feature_selection_metaestimator_trial/{}/".format(mc_path, n)
         os.makedirs(model_dir, exist_ok=True)
         model_dict, score_dict, dropped_dict, best_features = (
-            vapor_pressure_selection.grove_features_loop(
+            vapor_pressure_selection.select_feature_subset(
                 train_df[search_features],
                 train_labels,
                 target_corr=best_corrs,
@@ -520,7 +518,7 @@ def cluster_labels(labels, mc_path):
     return epa_labels
 
 
-def standardize_smiles(feature_df, combo_labels, maxed_sol_labels, std_pkl):
+def standardize_smiles(feature_df, combo_labels, maxed_sol_labels, std_pkl=None):
     if os.path.isfile(std_pkl):
         smiles_df = pd.read_pickle(std_pkl)
         if False:
@@ -538,7 +536,8 @@ def standardize_smiles(feature_df, combo_labels, maxed_sol_labels, std_pkl):
             if not failed_df.empty:
                 failed_df.to_csv("{}failed_standardizer.csv".format(failed_df))
             assert not smiles_df.empty
-            smiles_df.to_pickle(std_pkl)
+            if std_pkl is not None:
+                smiles_df.to_pickle(std_pkl)
             smiles_df.to_csv(std_path)
             if not os.path.isfile("{}failed_standardizer.csv".format(failed_df)):
                 # TODO: Extract failed compounds by difference of inputs and outputs.
@@ -549,7 +548,8 @@ def standardize_smiles(feature_df, combo_labels, maxed_sol_labels, std_pkl):
         if not failed_df.empty:
             failed_df.to_csv("{}failed_standardizer.csv".format(failed_df))
         assert not smiles_df.empty
-        smiles_df.to_pickle(std_pkl)
+        if std_pkl is not None:
+            smiles_df.to_pickle(std_pkl)
     smiles_df.drop(
         columns=[
             "cid",

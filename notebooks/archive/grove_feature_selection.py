@@ -419,11 +419,9 @@ def get_clf_model(model_name):
             cv=5,
             max_iter=10000,
             class_weight="balanced",
-            n_jobs=-1,
         )
     elif "xtra" in model_name:
         grove_model = ExtraTreesClassifier(
-            n_jobs=-1,
             max_leaf_nodes=250,
             min_impurity_decrease=0.05,
             max_depth=16,
@@ -439,7 +437,6 @@ def get_clf_model(model_name):
         )
     else:
         grove_model = RandomForestClassifier(
-            n_jobs=-1,
             max_leaf_nodes=200,
             min_impurity_decrease=0.005,
             max_depth=30,
