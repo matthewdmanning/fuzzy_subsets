@@ -99,9 +99,11 @@ def main():
         "max_trials": 25,
         "cv": 5,
         "importance": False,
-        "scoring": make_scorer(balanced_accuracy_score),
+        "scoring": make_scorer(three_class_solubility),
+        "W_confusion": get_confusion_weights(),
     }
-    epa_scorer = make_scorer(balanced_accuracy_score)
+    # epa_scorer = make_scorer(balanced_accuracy_score)
+    epa_scorer = make_scorer(three_class_solubility)
     # Paths.
     parent_dir = "{}multiclass_trial/".format(os.environ.get("MODEL_DIR"))
     std_path = "{}stdizer_epa_query.csv".format(parent_dir)
@@ -110,58 +112,129 @@ def main():
     desc_path = "{}padel_features_output_max_sol.pkl".format(parent_dir)
     transformer_path = "{}transformer.pkl".format(parent_dir)
     transformed_df_path = "{}transformed_epa_exact_sol_data.pkl".format(parent_dir)
-    exp_dir = "{}model_selection/".format(parent_dir)
-    epa_label_path = "{}epa_labels.csv".format(exp_dir)
-    asinh_path = "{}epa_transformed.csv".format(parent_dir)
+    # exp_dir = "{}multi_subsets/".format(parent_dir)
+    exp_dir = parent_dir
+    prepped_train_df_path = "{}prepped_train_df.pkl".format(exp_dir)
+    prepped_test_df_path = "{}prepped_test_df.pkl".format(exp_dir)
+    prepped_train_labels = "{}prepped_train_labels.pkl".format(exp_dir)
+    prepped_test_labels = "{}prepped_test_labels.pkl".format(exp_dir)
+    train_label_path = "{}train_labels.csv".format(exp_dir)
+    test_label_path = "{}test_labels.csv".format(exp_dir)
+    search_features_path = "{}search_features.csv".format(exp_dir)
+    corr_path = "{}corr_df.pkl".format(exp_dir)
+    xc_path = "{}xc_df.pkl".format(exp_dir)
+    os.makedirs(parent_dir, exist_ok=True)
     os.makedirs(exp_dir, exist_ok=True)
-    # Get data
-    insol_labels, maxed_sol_labels, sol100_labels = get_query_data()
-    combo_labels, convert_df = get_conversions(maxed_sol_labels, lookup_path)
-    smiles_df, sid_to_key = standardize_smiles(
-        convert_df, combo_labels, maxed_sol_labels, std_pkl
-    )
-    max_conc = combo_labels.set_index(keys="inchiKey", drop=True)[
-        "sample_concentration"
-    ].astype(np.float32)
-    max_conc.index = max_conc.index.map(
-        lambda x: safe_mapper(x, sid_to_key), na_action="ignore"
-    )
-    if os.path.isfile(transformed_df_path):
-        transformed_df = pd.read_pickle(transformed_df_path)
-        raw_df = pd.read_pickle(desc_path).loc[transformed_df.index]
-        epa_labels = label_solubility_clusters(max_conc[transformed_df.index], exp_dir)
-
-        train_raw_df, test_raw_df = train_test_split(
-            raw_df, test_size=0.2, stratify=epa_labels.squeeze()
+    if all(
+        [
+            os.path.isfile(f)
+            for f in [
+                prepped_train_df_path,
+                prepped_test_df_path,
+                train_label_path,
+                test_label_path,
+            ]
+        ]
+    ):
+        train_df = pd.read_pickle(prepped_train_df_path)
+        test_df = pd.read_pickle(prepped_test_df_path)
+        train_labels = pd.read_csv(train_label_path)
+        test_labels = pd.read_csv(test_label_path)
+        # epa_labels = pd.read_pickle(train_label_path)
+        with open(transformer_path, "wb") as f:
+            preprocessor = pickle.load(f)
+    else:
+        # Get data
+        insol_labels, maxed_sol_labels, sol100_labels = get_query_data()
+        combo_labels, convert_df = get_conversions(maxed_sol_labels, lookup_path)
+        smiles_df, sid_to_key = standardize_smiles(
+            convert_df, combo_labels, maxed_sol_labels, std_pkl
         )
-        print(train_raw_df)
+        max_conc = combo_labels.set_index(keys="inchiKey", drop=True)[
+            "sample_concentration"
+        ].astype(np.float32)
+        max_conc.index = max_conc.index.map(
+            lambda x: safe_mapper(x, sid_to_key), na_action="ignore"
+        )
+        # transformed_df = pd.read_pickle(transformed_df_path)
+        # print(transformed_df)
+        raw_df = pd.read_pickle(desc_path).dropna()  # .loc[transformed_df.index]
+        raw_df = raw_df.loc[raw_df.index.dropna()]
+        print("Missing labels")
+        print(max_conc[~max_conc.index.isin(raw_df.index)])
+        epa_labels = label_solubility_clusters(max_conc[raw_df.index], exp_dir)
+        print(epa_labels.value_counts())
+        train_raw_df, test_raw_df = train_test_split(
+            raw_df, test_size=0.2, stratify=epa_labels.squeeze(), random_state=0
+        )
+
         train_labels = epa_labels[train_raw_df.index]
-        test_labels = max_conc[test_raw_df.index]
+        test_labels = epa_labels[test_raw_df.index]
+        print(train_labels.value_counts())
+        print(test_labels.value_counts())
+        train_labels.to_csv(train_label_path)
+        test_labels.to_csv(test_label_path)
         preprocessor, p = vapor_pressure_selection.get_standard_preprocessor(
             transform_func="asinh", corr_params=select_params
         )
+        with open(transformer_path, "wb") as f:
+            pickle.dump(preprocessor, f)
         train_df = preprocessor.fit_transform(train_raw_df, train_labels)
-        # epa_labels = pd.read_csv(epa_label_path, index_col="index").squeeze()
-        # Save cleaned solubility data.
-        # max_conc[train_df.index].to_csv("{}epa_max_conc_cleaned.csv".format(parent_dir))
-        # assert epa_labels.shape[0] > 0
-        # pd.concat([epa_labels, max_conc]).to_csv(epa_label_path, index_label="index")
-        """
-        tree_search = optimize_tree(
-            train_df,
-            epa_labels,
-            model=RandomForestClassifier(
-                bootstrap=False, class_weight="balanced", random_state=0
-            ),
-            scoring=epa_scorer,
-            cv=RepeatedStratifiedKFold(n_repeats=3, random_state=0),
-        )
-        print(tree_search.best_params_)
-        print(tree_search.best_score_)
-        best_tree = tree_search.best_estimator_
-        """
-        cv_results = train_multilabel_models(
-            train_df, train_labels, epa_scorer, select_params
+        test_df = preprocessor.transform(test_raw_df)
+        train_df.to_pickle(transformed_df_path)
+        test_df.to_pickle(transformed_df_path)
+    """
+    tree_search = optimize_tree(
+        train_df,
+        epa_labels,
+        model=RandomForestClassifier(
+            bootstrap=False, class_weight="balanced", random_state=0
+        ),
+        scoring=epa_scorer,
+        cv=RepeatedStratifiedKFold(n_repeats=3, random_state=0),
+    )
+    print(tree_search.best_params_)
+    print(tree_search.best_score_)
+    best_tree = tree_search.best_estimator_
+    """
+    print(train_df.drop(index=train_df.dropna().index))
+    # Get Candidate Features and Models.
+    candidate_features = vapor_pressure_selection.get_search_features(train_df)
+    search_features = train_df.columns[train_df.columns.isin(candidate_features)]
+    try:
+        search_features.drop(["SsSH"])
+    except KeyError:
+        print("# of -SH not present in feature set.")
+    print("{} features to select from.".format(len(search_features)))
+    search_features.to_series().to_csv(search_features_path)
+    model_list, name_list = get_multilabel_models(epa_scorer)
+
+    model_subsets_dict, model_scores_dict, subset_predicts = dict(), dict(), dict()
+
+    dev_labels, eval_labels = train_test_split(
+        train_labels,
+        test_size=0.2,
+        random_state=0,
+        shuffle=True,
+        stratify=train_labels,
+    )
+    dev_df = train_df.loc[dev_labels.index]
+    eval_df = train_df.loc[eval_labels.index]
+    best_corrs, cross_corr = get_correlations(
+        dev_df, dev_labels, corr_path, xc_path, select_params
+    )
+    n_subsets = 10
+    for m, n in zip(model_list, name_list):
+        model_dir = "{}/{}/".format(exp_dir, n)
+        os.makedirs(model_dir, exist_ok=True)
+        remaining_features = deepcopy(
+            [
+                x
+                for x in search_features
+                if all(
+                    [x in a.index.tolist() for a in [dev_df.T, best_corrs, cross_corr]]
+                )
+            ]
         )
         print(cv_results)
         test_df = preprocessor.transform(test_raw_df, test_labels)
