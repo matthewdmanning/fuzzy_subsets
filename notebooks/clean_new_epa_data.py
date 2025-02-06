@@ -19,6 +19,7 @@ import descriptor_processing
 import padel_categorization
 from data_tools import get_epa_mapper, load_training_data
 from DescriptorRequestor import QsarStdizer
+from epa_multiclass import get_conversions, safe_mapper, standardize_smiles
 
 
 def bulk_rand(subset_list, jaccard=False):
@@ -450,9 +451,22 @@ def get_new_epa_data(desc_path, epa_label_path, exp_path, std_path, exact_max=Tr
 
 
 def process_epa_data(label_list, desc_path, std_path):
+    lookup_path = "{}multiclass_trial/lookup.csv".format(os.environ.get("MODEL_DIR"))
+    std_pkl = "{}stdizer_epa_query.pkl".format(mc_path)
     stdizer = QsarStdizer()
     desc_list, smi_list = list(), list()
-    epa_map = get_epa_mapper(data_cols=("DTXSID", "SMILES"))
+    epa_map = get_epa_mapper()  # Get data
+    insol_labels, maxed_sol_labels, sol100_labels = get_query_data()
+    combo_labels, convert_df = get_conversions(maxed_sol_labels, lookup_path)
+    smiles_df, sid_to_key = standardize_smiles(
+        convert_df, combo_labels, maxed_sol_labels, std_pkl
+    )
+    max_conc = combo_labels.set_index(keys="inchiKey", drop=True)[
+        "sample_concentration"
+    ].astype(np.float32)
+    max_conc.index = max_conc.index.map(
+        lambda x: safe_mapper(x, sid_to_key), na_action="ignore"
+    )
     if os.path.isfile(std_path):
         smi_df = pd.read_csv(std_path)
     else:
