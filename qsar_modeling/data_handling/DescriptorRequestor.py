@@ -260,16 +260,10 @@ class ChemicalSearch(ApiGrabber):
         # def __init__(self, api_url="https://ccte-cced-cheminformatics.epa.gov/api/stdizer", payload=None, *args, **kwargs):
         super().__init__(api_url=api_url, payload=payload, *args, **kwargs)
         if self.default_payload is None:
-            self.default_payload = {
-                  "ids": [
-                    {
-                      "sim": 0
-                    }
-                  ],
-                  "format": input_type
-            }
+            self.default_payload = {"ids": [{"sim": 0}], "format": input_type}
         else:
             self.payload = payload
+
 
 class DescriptorGrabber(ApiGrabber):
     SET_LIST = ["padel", "rdkit", "mordred", "toxprints"]

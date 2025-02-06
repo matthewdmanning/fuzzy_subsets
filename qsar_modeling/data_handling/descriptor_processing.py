@@ -4,7 +4,6 @@ import os
 import pandas as pd
 
 import DescriptorRequestor
-import padel_categorization
 
 
 # import qsar_readiness
@@ -18,15 +17,15 @@ import padel_categorization
 # TODO: Feature selection
 
 
-def get_api_descriptors(qsar_df, desc_path, desc_set="padel"):
+def get_api_descriptors(smiles_ser, desc_path, desc_set="padel"):
     # Wrapper function that gets descriptors for many compounds.
     desc_grabber = DescriptorRequestor.DescriptorGrabber(
         desc_set=desc_set, timeout=(30, 600)
     )
     desc_list = list()
-    inchi_dict = pd.Series(qsar_df.index.values, index=qsar_df["SMILES_QSAR"]).to_dict()
+    inchi_dict = pd.Series(smiles_ser.index.values, index=smiles_ser.to_dict())
     with open(desc_path, "a"):
-        for desc, smile in desc_grabber.bulk_epa_call(qsar_df["SMILES_QSAR"].tolist()):
+        for desc, smile in desc_grabber.bulk_epa_call(smiles_ser.tolist()):
             if not isinstance(desc, dict):
                 exit()
             else:
@@ -94,13 +93,9 @@ def extract_cached_desc(qsar_ready_df, cached_df):
         )
 
 
-def get_api_desc(desc_path, id_ser, d_set, *args, **kwargs):
+def get_api_desc(desc_path, id_ser, d_set, verbose=False, *args, **kwargs):
     # Hits API to obtain descriptor (d_set).
-    grabber, desc_names = None, None
-    # TODO: Sketch descriptor name getter.
-    desc_names = padel_categorization.get_short_padel_names(two_d=False)
     last_ind = 0
-    print(desc_path)
     inchi_dict = id_ser.to_dict()
     desc_dict = dict()
     ser_list = list()
@@ -110,22 +105,24 @@ def get_api_desc(desc_path, id_ser, d_set, *args, **kwargs):
     else:
         desc_mode = "w"
     with open(desc_path, desc_mode) as fo:
-        for response, api_input in grabber.bulk_epa_call(
-            id_ser.tolist()[last_ind:]
-        ):
+        for response, api_input in grabber.bulk_epa_call(id_ser.tolist()[last_ind:]):
             if isinstance(response, dict) and "descriptors" in response.keys():
-                print(api_input)
-                print(response.items())
+                if verbose:
+                    print("API Input: {}".format(api_input))
+                    print("Response: {}".format(response.items()))
                 ikey = id_ser[id_ser == api_input].index[0]
                 desc_dict[ikey] = response["descriptors"]
                 fo.write("{}\n".format("\t".join([str(s) for s in response.values()])))
-                temp_srs = pd.Series(data=response["descriptors"], name=inchi_dict[ikey])
+                temp_srs = pd.Series(
+                    data=response["descriptors"], name=inchi_dict[ikey]
+                )
                 # temp_srs = pd.Series(data=response['descriptors'], index=desc_names, name=inchi_dict[api_input])
                 ser_list.append(temp_srs)
             else:
-                print(api_input, response)
+                print("Featurizer failed for: ", api_input, response)
                 fo.write("{}\n".format("\t".join([str(s) for s in response.values()])))
-    desc_df = pd.concat(ser_list, axis=1).T
+    # desc_df = pd.concat(ser_list, axis=1).T
+    desc_df = pd.DataFrame.from_dict(desc_dict, orient="index")
     return desc_df
 
 
@@ -169,7 +166,11 @@ def main(
         )
         qsar_df.drop(index=intermetallics_df.index, inplace=True)
     """
-    if desc_cache is not None and type(desc_cache) is pd.DataFrame and not desc_cache.empty:
+    if (
+        desc_cache is not None
+        and type(desc_cache) is pd.DataFrame
+        and not desc_cache.empty
+    ):
         cached_values, qsar_col_name = extract_cached_desc(qsar_df, desc_cache)
         missing_desc = qsar_df.loc[qsar_df.index.difference(cached_values.index)]
     else:

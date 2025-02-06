@@ -20,13 +20,17 @@ class XCorrFilter(BaseEstimator, TransformerMixin):
     def fit(self, X, y, **fit_params):
         self.feature_names_in = X.columns.tolist()
         self.get_corrs(X, y)
-        xcorr_dropped = self.xcorr_filter(X)
+        xcorr_dropped = self.xcorr_filter(X).index
         self.feature_names_out_ = X.drop(columns=xcorr_dropped).columns.tolist()
         return self
 
     def transform(self, X, y=None, **kwargs):
-        Xt = X.drop(columns=self.dropped_features_.keys())
-        return Xt.to_numpy()
+        Xt = X.drop(
+            columns=[
+                c for c in pd.Index(self.dropped_features_.keys()) if c in X.columns
+            ]
+        )
+        return Xt
 
     def xcorr_filter(self, X):
         if self.max_features is None:
@@ -37,8 +41,12 @@ class XCorrFilter(BaseEstimator, TransformerMixin):
             n_drop=max(1, X.shape[1] - self.max_features),
         )
         self.target_corr_.drop(xcorr_deleted.index, inplace=True)
-        self.xcorr_ = self.xcorr_.drop(columns=xcorr_deleted.index).drop(index=xcorr_deleted.index)
-        self.dropped_features_.update([(c, "Cross-correlation") for c in xcorr_deleted.index])
+        self.xcorr_ = self.xcorr_.drop(columns=xcorr_deleted.index).drop(
+            index=xcorr_deleted.index
+        )
+        self.dropped_features_.update(
+            [(c, "Cross-correlation") for c in xcorr_deleted.index]
+        )
         # na_corrs = best_corrs.index[best_corrs.isna()]
         # [dropped_dict.update([(c, "NA Correlation")]) for c in na_corrs]
         # best_corrs.drop(na_corrs, inplace=True)
@@ -49,9 +57,9 @@ class XCorrFilter(BaseEstimator, TransformerMixin):
     def get_corrs(self, X, y):
         X = self.convert_inputs(X, y)
         if self.method_corr is not None:
-            self.target_corr_ = X.corrwith(
-                y, method=self.method_corr
-            ).sort_values(ascending=False)
+            self.target_corr_ = X.corrwith(y, method=self.method_corr).sort_values(
+                ascending=False
+            )
         else:
             self.target_corr_ = X.corrwith(y).sort_values(ascending=False)
         if self.method_xc is not None:
