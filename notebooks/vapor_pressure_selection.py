@@ -32,12 +32,13 @@ from sklearn.preprocessing import RobustScaler, StandardScaler
 
 import PadelChecker
 import sample_clusters
-from grove_feature_selection import get_search_features
+from archive.grove_feature_selection import get_search_features
 from RingSimplifier import RingSimplifer
 from vif import calculate_vif, repeated_stochastic_vif
 from XCorrFilter import XCorrFilter
 
 mcc = make_scorer(balanced_accuracy_score)
+logger = logging.getLogger(name="selection")
 
 
 def _permutation_removal(train_df, labels, estimator, select_params, selection_state):
@@ -83,7 +84,7 @@ def _permutation_removal(train_df, labels, estimator, select_params, selection_s
             break
             # [selection_state["current_features"].remove(c) for c in low_feats]
         selection_state["current_features"].remove(low_feats)
-        selection_state["best_score_adj"].update([(low_feats, "Importance")])
+        selection_state[""].update([(low_feats, "Importance")])
         print(
             "Permutation drop: \n{}: {} {}".format(
                 low_feats,
@@ -137,7 +138,7 @@ def _vif_elimination(
         and all_vif_mean[vif_dropped] > select_params["thresh_vif"]
     ):
         selection_state["current_features"].remove(vif_dropped)
-        selection_state["best_score_adj"].update([(vif_dropped, "VIF")])
+        # selection_state["best_score_adj"].update([(vif_dropped, "VIF")])
         selection_state["fails"] -= 1
         if False:
             print("VIF Scores")
@@ -160,7 +161,7 @@ def _vif_elimination(
     return selection_state
 
 
-def grove_features_loop(
+def select_feature_subset(
     train_df,
     labels,
     target_corr,
@@ -172,7 +173,9 @@ def grove_features_loop(
     selection_models=None,
 ):
     if select_params["cv"] is None:
-        select_params["cv"] = RepeatedStratifiedKFold(random_state=0, n_repeats=5)
+        select_params["cv"] = RepeatedStratifiedKFold(random_state=0, n_repeats=3)
+    if select_params["scoring"] is None:
+        select_params["scoring"] = make_scorer(balanced_accuracy_score)
     with open("{}selection_params.txt".format(save_dir), "w") as f:
         for k, v in select_params.items():
             f.write("{}: {}\n".format(k, v))
@@ -196,7 +199,7 @@ def grove_features_loop(
     ):
         raise ValueError
     # PCA
-    calculate_pca(save_dir, train_df)
+    # calculate_pca(save_dir, train_df)
 
     pprint.pp(selection_state["rejected_features"].items())
     sqcc_df = cross_corr * cross_corr
@@ -212,23 +215,40 @@ def grove_features_loop(
             print("Out of features to pick")
             break
         clean_up = False
+        try:
+            sqcc_df_choices = sqcc_df.drop(
+                index=selection_state["rejected_features"]
+            ).drop(columns=selection_state["rejected_features"])
+        except KeyError:
+            print("Key Error in sqcc_df")
+            sqcc_df_choices = (
+                sqcc_df[train_df.columns.intersection(sqcc_df.index)]
+                .loc[train_df.columns.intersection(sqcc_df.index)]
+                .drop(index=selection_state["rejected_features"])
+                .drop(columns=selection_state["rejected_features"])
+            )
+        target_corr_choices = target_corr[
+            train_df.columns.intersection(target_corr.index)
+        ].drop(selection_state["rejected_features"])
         new_feat = choose_next_feature(
             train_df,
-            selection_state["current_features"],
-            target_corr,
-            sqcc_df,
-            selection_models,
+            feature_list=selection_state["current_features"],
+            target_corr=target_corr_choices,
+            sq_xcorr=sqcc_df_choices,
+            selection_models=selection_models,
             selection_state=selection_state,
         )
+        if new_feat is None:
+            break
         selection_state["current_features"].append(new_feat)
         selection_state, scores = score_subset(
             train_df,
             labels,
-            selection_models,
-            selection_state,
-            select_params,
-            save_dir,
-            hidden_test,
+            selection_models=selection_models,
+            selection_state=selection_state,
+            select_params=select_params,
+            save_dir=save_dir,
+            hidden_test=hidden_test,
             record_results=True,
         )
         # Variance Inflation Factor: Now implemented in feature selection phase
@@ -271,7 +291,6 @@ def grove_features_loop(
                     max_features=len(selection_state["current_features"]) - 1,
                 ).set_output(transform="pandas")
                 rfe.fit(train_df[selection_state["current_features"]], labels)
-                # print("RFECV Mean Test Score: {}".format(rfe.cv_results_["mean_test_score"]))
                 if True:  # any(~rfe.support_):
                     dropped = [
                         c
@@ -312,6 +331,7 @@ def grove_features_loop(
                 save_dir,
             )
             if score_drop_exceeded(subset_scores, select_params, selection_state):
+                select_params["current_features"] = selection_state["best_subset"]
                 continue
             else:
                 selection_state["fails"] = max(0, selection_state["fails"] - 1)
@@ -368,21 +388,23 @@ def sequential_elimination(
             tol=sfs_tol,
             n_features_to_select=len(selection_state["current_features"]) - 1,
             scoring=select_params["scoring"],
-            n_jobs=-1,
+            n_jobs=-2,
         )
         .set_output(transform="pandas")
         .fit(train_df[selection_state["current_features"]], y=labels)
     )
-    new_features = list(sfs.get_feature_names_out(selection_state["current_features"]))
+    new_features = sorted(
+        sfs.get_feature_names_out(selection_state["current_features"]).tolist()
+    )
     selection_state["current_features"] = new_features
     selection_state, subset_scores = score_subset(
         train_df,
-        labels,
-        selection_models,
-        selection_state,
-        select_params,
-        save_dir,
-        hidden_test,
+        labels=labels,
+        selection_models=selection_models,
+        selection_state=selection_state,
+        select_params=select_params,
+        save_dir=save_dir,
+        hidden_test=hidden_test,
         record_results=True,
     )
     if (
@@ -412,22 +434,35 @@ def score_subset(
     hidden_test=None,
     record_results=False,
 ):
-    # print(selection_state["current_features"])
+    if (
+        isinstance(selection_state["current_features"], str)
+        or len(selection_state["current_features"]) == 1
+    ):
+        current_features = [selection_state["current_features"]]
+    else:
+        current_features = selection_state["current_features"]
+    for subset in selection_state["subset_scores"].keys():
+        if len(set(current_features).symmetric_difference(subset)) == 0:
+            return (
+                selection_state,
+                selection_state["subset_scores"][tuple(sorted(current_features))],
+            )
     scores = cross_val_score(
         estimator=clone(selection_models["predict"]),
-        X=train_df[selection_state["current_features"]],
+        X=train_df[current_features],
         y=labels,
         scoring=select_params["scoring"],
         cv=select_params["cv"],
-        n_jobs=-1,
+        # n_jobs=-1,
         error_score="raise",
+        params={},
     )
     if hidden_test is not None:
         trained_model = clone(selection_models["predict"]).fit(
-            train_df[selection_state["current_features"]], labels
+            train_df[current_features], labels
         )
         test_score = trained_model.score(
-            hidden_test[0][selection_state["current_features"]], hidden_test[1]
+            hidden_test[0][current_features], hidden_test[1]
         )
         print("Test Score: {}".format(test_score))
     else:
@@ -451,34 +486,60 @@ def choose_next_feature(
     vif_choice=5,
     selection_state=None,
 ):
+    print(feature_list)
     feat_corrs = target_corr.drop(
         [
             c
             for c in target_corr.index
-            if c in selection_state["rejected_features"].keys()
-            or c in selection_state["current_features"]
+            if c in selection_state["rejected_features"].keys() or c in feature_list
         ]
     )
-    sum_sqcc = (1 - sq_xcorr[feature_list].loc[feat_corrs.index]).sum(axis=1)
-    feat_probs = scipy.special.softmax(np.abs(feat_corrs) * sum_sqcc)
+    if len(feature_list) == 0:
+        sum_sqcc = pd.Series(1 / feat_corrs.index.size, index=feat_corrs.index)
+    else:
+        ones = pd.DataFrame(
+            data=np.ones(
+                shape=(feat_corrs.index.size, len(feature_list)), dtype=np.float32
+            ),
+            index=feat_corrs.index,
+            columns=feature_list,
+        )
+        sum_sqcc = ones.subtract(sq_xcorr[feature_list].loc[feat_corrs.index]).sum(
+            axis=1
+        )
+    x = sum_sqcc.multiply(other=np.abs(feat_corrs), fill_value=0.0)
+    feat_probs = pd.Series(scipy.special.softmax(x), index=x.index).sort_values(
+        ascending=False
+    )
     # feature_list = list(set(feature_list))
     # noinspection PyTypeChecker
+    if len(feature_list) <= 1:
+        vif_choice = None
     new_feat = np.random.choice(
         a=feat_corrs.index.to_numpy(), size=vif_choice, replace=False, p=feat_probs
     )
-    if np.size(new_feat) > 1:
+
+    if isinstance(new_feat, str):
+        if new_feat in sq_xcorr.columns.tolist():
+            new_feat = new_feat
+        else:
+            print("{} not in cross_corr".format(new_feat))
+            raise RuntimeWarning("New feature is not in cross-correlation matrix")
+            new_feat = None
+    elif np.size(new_feat) > 1 and all(
+        [x in sq_xcorr.columns.tolist() for x in new_feat]
+    ):
         vifs = dict()
         for nf in new_feat:
+            predictors = copy.deepcopy(feature_list)
+            predictors.append(nf)
             vifs = calculate_vif(
-                feature_df=feature_df[feature_list + [nf]],
+                feature_df=feature_df[predictors],
                 model=clone(selection_models["vif"]),
                 subset=feature_df[[nf]],
             )
         vifs = dict(sorted(vifs.items(), key=lambda x: x[1]))
         new_feat = list(vifs.keys())[0]
-    if new_feat not in sq_xcorr.columns:
-        print("{} not in cross_corr".format(new_feat))
-        raise RuntimeWarning("New feature is not in cross-correlation matrix")
     return new_feat
 
 
@@ -556,7 +617,9 @@ def process_selection_data(
         feature_df, labels = sample_clusters.grab_enamine_data()
     if dropped_dict is None:
         dropped_dict = dict()
-    combo_transform, scaler = get_standard_preprocessor(scaler, transform, select_params)
+    combo_transform, scaler = get_standard_preprocessor(
+        scaler, transform, select_params
+    )
     combo_transform.fit(X=feature_df, y=labels)
     with open("{}transformer.pkl".format(save_dir), "wb") as f:
         pickle.dump(combo_transform, f)
@@ -627,10 +690,13 @@ def get_standard_preprocessor(scaler=None, transform_func=None, corr_params=None
     padel_transform = ("padel", PadelChecker.PadelCheck())
     var_thresh = ("var", VarianceThreshold())
     pipe_list = [ring_tranform, padel_transform, var_thresh]
+    pipe_list = [padel_transform, var_thresh]
     if transform_func is not None:
         smooth_transform = FunctionTransformer(
-            func=transform_func, inverse_func=inv_transform
-        )
+            func=transform_func,
+            inverse_func=inv_transform,
+            feature_names_out="one-to-one",
+        ).set_output(transform="pandas")
         pipe_list.append(("smooth", smooth_transform))
     if corr_params is not None:
         xcorr_filter = XCorrFilter(
@@ -640,11 +706,8 @@ def get_standard_preprocessor(scaler=None, transform_func=None, corr_params=None
             method_xc=corr_params["xc_method"],
         )
         pipe_list.append(("xcorr", xcorr_filter))
-
     # combo_transform = Pipeline(steps=[("rings", ring_tranform), ("padel", padel_transform), ("var", var_thresh), ("scale", smooth_transform), ("xcorr", xcorr_filter)]).set_output(transform="pandas")
-    combo_transform = Pipeline(
-        steps=pipe_list
-    ).set_output(transform="pandas")
+    combo_transform = Pipeline(steps=pipe_list).set_output(transform="pandas")
     return combo_transform, scaler
 
 
@@ -665,11 +728,11 @@ def record_score(selection_state, scores, save_dir, test_score=None):
                 )
             )
     selection_state["subset_scores"][
-        tuple(selection_state["current_features"])
+        tuple(sorted(selection_state["current_features"]))
     ] = scores
     if np.mean(scores) - np.std(scores) > selection_state["best_score_adj"]:
         logger.info(
-            "New top results for {} feature model: {:.4f}, {:.4f}".format(
+            "New top results for {} feature model: Mean: {:.4f}, Std {:.4f}".format(
                 len(selection_state["current_features"]),
                 np.mean(scores),
                 np.std(scores),
@@ -697,7 +760,6 @@ def get_clf_model(model_name):
             cv=5,
             max_iter=10000,
             class_weight="balanced",
-            n_jobs=-1,
         )
     elif "ridge" in model_name:
         from sklearn.linear_model import RidgeClassifierCV
@@ -718,11 +780,10 @@ def get_clf_model(model_name):
         from sklearn.linear_model import PassiveAggressiveClassifier
 
         grove_model = PassiveAggressiveClassifier(
-            C=5.0, class_weight="balanced", n_jobs=-1, random_state=0
+            C=5.0, class_weight="balanced", random_state=0
         )
     elif "xtra" in model_name:
         grove_model = ExtraTreesClassifier(
-            n_jobs=-1,
             max_leaf_nodes=200,
             min_impurity_decrease=0.005,
             max_depth=30,
@@ -731,7 +792,6 @@ def get_clf_model(model_name):
         )
     else:
         grove_model = RandomForestClassifier(
-            n_jobs=-1,
             max_leaf_nodes=200,
             min_impurity_decrease=0.005,
             max_depth=30,
@@ -745,7 +805,7 @@ def get_regression_model(model_name):
     if "line" in model_name:
         from sklearn.linear_model import LinearRegression
 
-        grove_model = LinearRegression(n_jobs=-1)
+        grove_model = LinearRegression()
     elif "elastic" in model_name:
         from sklearn.linear_model import ElasticNetCV
 
@@ -753,7 +813,6 @@ def get_regression_model(model_name):
             l1_ratio=[0.25, 0.5, 0.75, 0.9],
             tol=1e-4,
             max_iter=10000,
-            n_jobs=-1,
             selection="random",
         )
     elif "hub" in model_name:
@@ -771,7 +830,7 @@ def get_regression_model(model_name):
     elif "lasso" in model_name:
         from sklearn.linear_model import LassoCV
 
-        grove_model = LassoCV(n_jobs=-1, random_state=0)
+        grove_model = LassoCV(random_state=0)
     elif "xtra" in model_name:
         grove_model = ExtraTreesRegressor(
             max_leaf_nodes=300,
@@ -800,7 +859,6 @@ def get_regression_model(model_name):
         ).set_output(transform="pandas")
     else:
         grove_model = RandomForestRegressor(
-            n_jobs=-1,
             max_leaf_nodes=200,
             min_impurity_decrease=0.005,
             max_depth=30,
@@ -815,7 +873,7 @@ def score_drop_exceeded(
     new_score = np.mean(new_scores) - np.std(new_scores)
     if new_score < selection_state["best_score_adj"] - selection_params["thresh_reset"]:
         print(
-            "Score drop exceeded: {} {}".format(
+            "Score (adjusted) drop exceeded: {:.4f} {:.4f}".format(
                 selection_state["best_score_adj"], new_score
             )
         )
@@ -848,13 +906,7 @@ def main(model_name, importance_name):
     logger.info(train_data.head())
     logger.info(train_data.shape)
     """
-    data_transform = "asinh"
-    data_dir = "{}enamine_transform_test/".format(os.environ.get("MODEL_DIR"))
-    opera_dir = data_dir
-    search_dir = "{}test_train_split/{}_1/".format(
-        opera_dir, "_".join([model_name, data_transform])
-    )
-    os.makedirs(search_dir, exist_ok=True)
+    raise DeprecationWarning
     select_params = {
         "corr_method": "kendall",
         "xc_method": "kendall",
@@ -875,26 +927,32 @@ def main(model_name, importance_name):
         "importance": True,
         "scoring": None,
     }
+    data_transform = "asinh"
+    data_dir = "{}enamine_transform_test/".format(os.environ.get("MODEL_DIR"))
+    opera_dir = data_dir
+    search_dir = "{}test_train_split/{}_1/".format(
+        opera_dir, "_".join([model_name, data_transform])
+    )
+    os.makedirs(search_dir, exist_ok=True)
     train_data, labels, best_corrs, cross_corr, scaler = process_selection_data(
         save_dir=data_dir,
         select_params=select_params,
         transform=data_transform,
     )
-    exit()
     search_features = get_search_features(train_data)
     if labels.nunique() > 2:
         selection_models = {
             "predict": get_regression_model(model_name),
             "permutation": get_regression_model(model_name),
             "importance": get_regression_model(importance_name),
-            "vif": LinearRegression(n_jobs=-1),
+            "vif": LinearRegression(),
         }
     else:
         selection_models = {
             "predict": get_clf_model(model_name),
             "permutation": get_clf_model(model_name),
             "importance": get_clf_model(importance_name),
-            "vif": LinearRegression(n_jobs=-1),
+            "vif": LinearRegression(),
         }
     trained_model = get_clf_model(model_name).fit(train_data, labels)
     with open("{}best_model.pkl".format(search_dir), "wb") as f:
@@ -910,7 +968,7 @@ def main(model_name, importance_name):
     dev_labels = labels[dev_data.index]
     eval_data = train_data.iloc[eval_idx]
     eval_labels = labels[eval_data.index]
-    model_dict, score_dict, dropped_dict, best_features = grove_features_loop(
+    model_dict, score_dict, dropped_dict, best_features = select_feature_subset(
         train_df=dev_data,
         labels=dev_labels,
         target_corr=best_corrs,
@@ -950,7 +1008,7 @@ def main(model_name, importance_name):
             enable_metadata_routing=True, transform_output="pandas"
         ):
             model_dict[col], score_dict[col], dropped_dict, best_features = (
-                grove_features_loop(
+                select_feature_subset(
                     feature_df.loc[members][search_features],
                     labels[members],
                     None,
