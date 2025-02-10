@@ -205,9 +205,9 @@ def select_feature_subset(
     sqcc_df = cross_corr * cross_corr
     # Start feature loop
     for i in np.arange(select_params["max_trials"]):
-        if not (
-            len(selection_state["current_features"]) < select_params["max_features_out"]
-            and target_corr.shape[0]
+        if (
+            len(selection_state["current_features"]) > select_params["max_features_out"]
+            or train_df.shape[1]
             - len([selection_state["rejected_features"].keys()])
             - len(selection_state["current_features"])
             > 2
