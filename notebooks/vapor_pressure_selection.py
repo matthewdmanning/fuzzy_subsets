@@ -557,50 +557,6 @@ def calculate_pca(save_dir, train_df):
         [print(n, v) for n, v in enumerate(evr) if v < 0.99 and n <= 10]
 
 
-def double_scaler(X, y=None, type_transformer_dict=None, **kwargs):
-    new_df = X.copy()
-    for fn_type, scaler in type_transformer_dict.items():
-        if fn_type == "apply":
-            new_df = new_df.apply(func=scaler, axis=1)
-        elif "learn" in fn_type or "scikit" in fn_type:
-            new_df = scaler.set_output(transform="pandas").transform(new_df)
-    return new_df
-
-
-def data_grabber(save_dir):
-    data_df_path = "{}preprocessed_feature_df.pkl".format(save_dir)
-    label_path = "{}member_labels.csv".format(save_dir)
-    scaler_path = "{}scaler.pkl".format(save_dir)
-    xc_path = "{}cross_corr.csv".format(save_dir)
-    corr_path = "{}target_corr.csv".format(save_dir)
-    if os.path.isfile(data_df_path) and os.path.isfile(label_path):
-        train_df = pd.read_pickle(data_df_path)
-        drop_corr = False
-        labels = pd.read_csv(label_path, index_col=0).squeeze()
-        preloaded = True
-    else:
-        train_df, labels, grove_cols, kurtosis_stats = sample_clusters.main()
-        preloaded = False
-    if os.path.isfile(corr_path):
-        best_corrs = pd.read_csv(corr_path)
-        best_corrs = best_corrs.set_index(keys=best_corrs.columns[0]).squeeze().copy()
-    else:
-        best_corrs = None
-    if os.path.isfile(xc_path):
-        cross_corr = pd.read_csv(corr_path)
-        cross_corr = cross_corr.set_index(keys=cross_corr.columns[0]).squeeze().copy()
-    else:
-        cross_corr = None
-
-
-def get_transform_func(func, X):
-
-    def get_func(X):
-        return X.transform(func)
-
-    return get_func
-
-
 def process_selection_data(
     feature_df=None,
     labels=None,
