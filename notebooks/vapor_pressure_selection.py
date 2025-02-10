@@ -377,8 +377,11 @@ def sequential_elimination(
 ):
     sfs_tol = select_params["thresh_sfs"]
     if clean_up:
-        sfs_tol = 2 * select_params["thresh_sfs"]
-
+        if "thresh_sfs_cleanup" not in select_params.keys():
+            sfs_tol = 2 * select_params["thresh_sfs"]
+        else:
+            sfs_tol = select_params["thresh_sfs_cleanup"]
+    # TODO: Manual SFS for duplicated fitting and over-subscribing.
     # TODO: Implement configurable predict function for boosting.
     # TODO: Eliminate duplicated scoring.
     sfs = (
