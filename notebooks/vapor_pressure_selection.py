@@ -450,19 +450,23 @@ def score_subset(
                 selection_state,
                 selection_state["subset_scores"][tuple(sorted(current_features))],
             )
-    scores = cross_val_score(
-        estimator=clone(selection_models["predict"]),
-        X=train_df[current_features],
-        y=labels,
-        scoring=select_params["scoring"],
-        cv=select_params["cv"],
-        # n_jobs=-1,
-        error_score="raise",
-        params={},
-    )
+    scores = list()
+    for dev_df, dev_labels, eval_df, eval_labels in cv_tools.split_df(
+        train_df[current_features], labels, splitter=select_params["cv"]
+    ):
+        fitted_est = clone(selection_models["predict"]).fit(
+            X=dev_df[current_features], y=dev_labels
+        )
+        scores.append(
+            select_params["scoring"](
+                estimator=fitted_est, X=eval_df, y_true=eval_labels
+            )
+        )
     if hidden_test is not None:
-        trained_model = clone(selection_models["predict"]).fit(
-            train_df[current_features], labels
+        test_score = select_params["scoring"](
+            estimator=fitted_est,
+            X=hidden_test[0][current_features],
+            y_true=hidden_test[1],
         )
         test_score = trained_model.score(
             hidden_test[0][current_features], hidden_test[1]
