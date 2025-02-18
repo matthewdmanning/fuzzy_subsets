@@ -26,12 +26,11 @@ class XCorrFilter(BaseEstimator, TransformerMixin):
         self.feature_names_out_ = None
         self.max_features = max_features
         self.thresh_xc = thresh_xc
-        self.method_corr = method_corr
         self.method_xc = method_xc
 
-    def fit(self, X, y, **fit_params):
+    def fit(self, X, y=None, **fit_params):
         self.feature_names_in = X.columns.tolist()
-        self.get_corrs(X, y)
+        self.xcorr_ = correlation_filter.calculate_correlation(X, method=self.method_xc)
         xcorr_dropped = self.xcorr_filter(X).index
         self.feature_names_out_ = X.drop(columns=xcorr_dropped).columns.tolist()
         return self

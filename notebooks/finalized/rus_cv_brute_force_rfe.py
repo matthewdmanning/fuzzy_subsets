@@ -492,7 +492,7 @@ summary_df = pd.DataFrame.from_dict(
 )
 summary_df.to_csv("{}{}_alldata_score_summary.csv".format(exp_dir, model_name))
 exit()
-# dev_summary, eva_summary, dev_dict, eva_dict = scoring.fit_score_model_cv(clf, rus_X, rus_y, score_dir="{}logit/".format(rus_dir), scaler=RobustScaler())
+# dev_summary, eva_summary, dev_dict, eva_dict = scoring.cv_model_generalized(clf, rus_X, rus_y, score_dir="{}logit/".format(rus_dir), scaler=RobustScaler())
 # print(dev_summary)
 # print(eva_summary)
 # check_consistent_length(rus_y, rus_X)
@@ -598,7 +598,7 @@ for i in [0]:
     )
 
     continue
-    # fit_score_model_cv(best, X=rus_X, y=rus_y, cv_inst=PredefinedSplit(group_folds), score_dir=rus_dir)
+    # cv_model_generalized(best, X=rus_X, y=rus_y, cv_inst=PredefinedSplit(group_folds), score_dir=rus_dir)
     std_scaler = StandardScaler().fit(rus_X)
     fit_dev_X = std_scaler.fit_transform(rus_X)
     fit_eva_X = std_scaler.transform(rus_eva_X)

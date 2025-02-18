@@ -3,7 +3,7 @@ import os
 import pandas as pd
 from imblearn.ensemble import BalancedRandomForestClassifier
 
-import feature_selection_script
+from archive import feature_selection_script
 from balancing import random_test_train_by_group
 from data import feature_name_lists
 from data_handling.balancing import data_by_groups
