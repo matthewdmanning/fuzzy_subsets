@@ -12,7 +12,9 @@ def train_model_subsets(
     logging.debug(predictor_list)
     with joblib.parallel_config(temp_folder=os.environ.get("JOBLIB_TMP")):
         fit_models = Parallel(
-            n_jobs=joblib.parallel.cpu_count()-3, prefer="processes", temp_folder=mem_dir
+            n_jobs=joblib.parallel.cpu_count() - 3,
+            prefer="processes",
+            temp_folder=mem_dir,
         )(
             delayed(clone_model(model).fit)(
                 X=feature_df[predictors[0]],
