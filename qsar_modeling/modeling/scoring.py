@@ -1,12 +1,15 @@
 import numbers
 import pickle
+import pprint
 from collections import defaultdict
 from functools import partial
 
 import numpy as np
 import pandas as pd
+import sklearn.model_selection
 from matplotlib import pyplot as plt
 from scipy.stats import gmean
+from sklearn import clone, metrics
 from sklearn.metrics import (
     average_precision_score,
     balanced_accuracy_score,
@@ -23,8 +26,23 @@ from sklearn.model_selection import LearningCurveDisplay, StratifiedKFold
 
 from qsar_modeling.utils import cv_tools
 
+# TODO: Implement sample weight. Will probably need to be a separate function for cv_model_generalized that selects after the split.
 
-def get_pred_score_funcs(scalar_only=True):
+learning_curve = ("Learning Curve", partial(LearningCurveDisplay.from_estimator))
+
+
+def get_displays():
+    displays = [
+        ("Confusion Matrix", partial(metrics.ConfusionMatrixDisplay.from_estimator)),
+        ("ROC", partial(metrics.RocCurveDisplay.from_estimator)),
+        ("DET", partial(metrics.DetCurveDisplay.from_estimator)),
+        ("Precision-Recall", partial(metrics.PrecisionRecallDisplay.from_estimator)),
+        ("Prediction Error", metrics.PredictionErrorDisplay.from_estimator),
+    ]
+    return displays
+
+
+def get_pred_score_funcs():
     # Returns tuples of scoring metric names and their callable functions. Option for one that only return scalar values.
     pred_scores = [
         ("Balanced Accuracy", balanced_accuracy_score),
@@ -38,7 +56,10 @@ def get_pred_score_funcs(scalar_only=True):
     ]
     # ('Classification Report', partial(classification_report, target_names=['Insoluble', 'Soluble'])),
     # ('Classification Report - Weighted', partial(classification_report, target_names=['Insoluble', 'Soluble']))
-    return pred_scores
+    score_list = [
+        (name, make_scorer(f, response_method="predict")) for name, f in pred_scores
+    ]
+    return score_list
 
 
 def get_score_bounds():
@@ -81,26 +102,120 @@ def get_prob_scores_dict(pos_label=0):
             # ('ROC Score', partial(roc_curve, pos_label=pos_label))
         ]
     )
-    return prob_scores
+    score_list = [
+        (name, make_scorer(f, response_method="predict_proba"))
+        for name, f in prob_scores
+    ]
+    return score_list
 
 
-def fit_score_model_cv(
+def score_randomized_classes(
     estimator,
     feature_df,
     labels,
     cv=StratifiedKFold,
-    score_dir=None,
-    save_model=True,
-    scaler=None,
+    scorer_tups=None,
+    label_seed=0,
+    return_train=True,
+    **splitter_kws
 ):
+    random_labels = labels.copy()
+    scrambled_labels = pd.Series(
+        data=random_labels.sample(frac=1.0, random_state=label_seed).to_list(),
+        index=labels.index,
+    )
+    results = cv_model_generalized(
+        estimator,
+        feature_df,
+        labels=scrambled_labels,
+        cv=cv,
+        scorer_tups=scorer_tups,
+        return_train=return_train,
+    )
+    return results
+
+
+def cv_model_generalized(
+    estimator,
+    feature_df,
+    labels,
+    cv=StratifiedKFold,
+    preprocessor=None,
+    scorer_tups=None,
+    return_train=False,
+    **splitter_kws
+):
+    """
+    Generalized, all-in-one wrapper for cross-validated models. Desired outputs are given as nested tuples of name, callable.
+    Results are returned as a dictionary of dictionaries of lists.
+    Commonly used functions are given as
+
+    Parameters
+    ----------
+
+    estimator: BaseEstimator, Unfit estimator or pipeline
+    feature_df: DataFrame, features
+    labels: Series, labels for supervised training
+    cv: Cross-Validator, default=StratifiedKFolds
+    preprocessor: TransformerMixin or implements "fit" and "transform"
+    return_train: bool, whether to also calculate and return results for training data
+    scorer_tups: Iterable[Iterable[str, callable]], nested iterables of function name and callable with signature (fitted estimator, X, y_train)
+    splitter_kws
+
+    Returns
+    -------
+
+    results: dict[str, dict[str, list()]], nested dictionary of callable name["test"[, "train"], list[Any]], where the list contain results from callable over all CV folds.
+
+    """
     # Fits, predicts, and scores a model using cross-validation.
-    if score_dir is not None:
-        dev_score_path = "{}dev_score_summary.csv"
-        eva_score_path = "{}eva_score_summary.csv"
+    assert not feature_df.empty
+    if return_train:
+        splits_dict = {"train": list(), "test": list()}
+        results = dict([(k[0], {"train": list(), "test": list()}) for k in scorer_tups])
     else:
-        dev_score_path, eva_score_path = None, None
-    cv_dev_score_dict, cv_eval_score_dict = dict(), dict()
-    dev_score_summary, eva_score_summary = dict(), dict()
+        results = dict([(k[0], {"test": list()}) for k in scorer_tups])
+    # results = dict([(k[0], splits_dictcopy()) for k in scorer_tups])
+    i = 0
+    for train_X, train_y, test_X, test_y in cv_tools.split_df(
+        feature_df, labels, splitter=cv, **splitter_kws
+    ):
+        split_X, split_y = {"train": train_X, "test": test_X}, {
+            "train": train_y,
+            "test": test_y,
+        }
+        if preprocessor is not None:
+            preprocessor.fit(train_X)
+            split_X["train"] = preprocessor.transform(train_X)
+            split_X["test"] = preprocessor.transform(test_X)
+        else:
+            split_X["train"] = train_X
+            split_X["test"] = test_X
+        assert not split_X["train"].empty
+        fit_est = clone(estimator).fit(split_X["train"], split_y["train"])
+        for fname, func in scorer_tups:
+            for split_set, score_list in results[fname].items():
+                score_list.append(func(fit_est, split_X[split_set], split_y[split_set]))
+        i += 1
+    # print("Results for model: {}".format(estimator))
+    # print(pd.json_normalize(results).T.explode(column=[0]).T)
+    # [print(splits, fun, results[fun][splits]) for fun, splits in zip([f for f, fn in scorer_tups], splits_dict.keys())]
+    return results
+
+    """    
+        dev_score_df, eva_score_df = combine_scores(
+        cv_dev_score_dict,
+        cv_eval_score_dict,
+        dev_score_summary,
+        eva_score_summary,
+        score_name_list,
+    )
+    if score_dir is not None:
+        dev_score_path = "{}dev_score_summary.csv".format(score_dir)
+        eva_score_path = "{}eval_score_summary.csv".format(score_dir)
+        dev_score_df.to_csv(dev_score_path)
+        eva_score_df.to_csv(eva_score_path)
+    """
 
     for score_name, score_obj in get_pred_score_funcs():
         cv_dev_score_dict[score_name] = list()
