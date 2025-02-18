@@ -91,73 +91,130 @@ def safe_mapper(x, map):
 
 
 def main():
-    select_params = {
-        "corr_method": "kendall",
-        "xc_method": "kendall",
-        "max_features_out": 15,
-        "fails_min_vif": 0,
-        "fails_min_perm": 6,
-        "fails_min_sfs": 0,
-        "features_min_vif": 5,
-        "features_min_perm": 8,
-        "features_min_sfs": 10,
-        "thresh_reset": 0.035,
-        "thresh_vif": 10,
-        "thresh_perm": 0.0025,
-        "thresh_sfs": -0.005,
-        "thresh_xc": 0.95,
-        "max_trials": 40,
-        "cv": RepeatedStratifiedKFold(n_repeats=3, random_state=0),
-        "importance": False,
-        "scoring": make_scorer(three_class_solubility),
-        "W_confusion": get_confusion_weights(),
-    }
-    # epa_scorer = make_scorer(balanced_accuracy_score)
-    epa_scorer = make_scorer(three_class_solubility)
-    # Paths.
-    parent_dir = "{}weighted_multiclass/".format(os.environ.get("MODEL_DIR"))
-    std_pkl = "{}stdizer_epa_query.pkl".format(parent_dir)
-    lookup_path = "{}lookup.csv".format(parent_dir)
-    desc_path = "{}padel_features_output_max_sol.pkl".format(parent_dir)
-    transformer_path = "{}transformer.pkl".format(parent_dir)
-    transformed_df_path = "{}transformed_epa_exact_sol_data.pkl".format(parent_dir)
-    # exp_dir = "{}multi_subsets/".format(parent_dir)
-    exp_dir = parent_dir
-    prepped_train_df_path = "{}prepped_train_df.pkl".format(exp_dir)
-    prepped_test_df_path = "{}prepped_test_df.pkl".format(exp_dir)
-    prepped_train_labels = "{}prepped_train_labels.pkl".format(exp_dir)
-    prepped_test_labels = "{}prepped_test_labels.pkl".format(exp_dir)
-    train_label_path = "{}train_labels.csv".format(exp_dir)
-    test_label_path = "{}test_labels.csv".format(exp_dir)
-    search_features_path = "{}search_features.csv".format(exp_dir)
-    corr_path = "{}corr_df.pkl".format(exp_dir)
-    xc_path = "{}xc_df.pkl".format(exp_dir)
-    os.makedirs(parent_dir, exist_ok=True)
-    os.makedirs(exp_dir, exist_ok=True)
-    if all(
+    select_params = _set_params()
+    path_dict = _set_paths()
+    path_dict["xc_path"].replace(".pkl", "_{}.pkl".format(select_params["xc_method"]))
+    path_dict["corr_path"].replace(
+        ".pkl", "_{}.pkl".format(select_params["corr_method"])
+    )
+    train_df, train_labels, test_df, test_labels, best_corrs, cross_corr = (
+        _get_solubility_data(path_dict, select_params, conc_splits=(9.9))
+    )
+    print(
+        "Discretized Labels: Value Counts:\n{}".format(
+            pprint.pformat(train_labels.value_counts())
+        )
+    )
+    print("Ring descriptors: \n{}".format(c for c in train_df.columns if "Ring" in c))
+    # Get Candidate Features and Models.
+    # if os.path.isfile(path_dict["search_features_path"]):
+    #    search_features = pd.read_csv(path_dict["search_features_path"]).index.tolist()
+    candidate_features = vapor_pressure_selection.get_search_features(train_df)
+    candidate_features = candidate_features + ["nG8Ring", "nG8HeteroRing"]
+    search_features = train_df.columns[train_df.columns.isin(candidate_features)]
+    search_features = search_features.drop(["SsSH"], errors="ignore")
+    print("Ring features: {}".format([f for f in search_features if "Ring" in f]))
+    # Phosphorus is over-represented in EPA data and may bias results if organophosphates tested were more/less soluble.
+    print("Dropping phosphorus and flourine features")
+    for f in search_features:
+        if "sP" in f or "nP" == f:
+            print(f)
+            search_features.drop(f)
+        elif "nf" == f or "sf" in f:
+            print(f)
+            search_features.drop(f)
+    search_features = train_df.columns
+    print("{} features to select from.".format(len(search_features)))
+    best_corrs, cross_corr = get_correlations(
+        train_df[search_features],
+        train_labels,
+        path_dict["corr_path"],
+        path_dict["xc_path"],
+    )
+    # search_features.to_series().to_csv(path_dict["search_features_path"])
+    name_model_dict = get_multilabel_models(select_params["scoring"])
+    print(name_model_dict)
+    # Get subsetes from training loop
+    print("Print Cross_corrs")
+    print(cross_corr)
+    n_subsets = 5
+    model_scores_dict, model_subsets_dict = select_subsets_from_model(
+        train_df[search_features],
+        train_labels,
+        n_subsets,
+        name_model_dict,
+        best_corrs,
+        cross_corr,
+        path_dict["exp_dir"],
+        select_params,
+    )
+    cv_scores = pd.DataFrame.from_dict(model_scores_dict, orient="index")
+    print(cv_scores, flush=True)
+    # Get randomized label scores.
+    # random_dev_scores = dict().fromkeys(name_model_dict.keys(), list())
+    # random_eval_scores = dict().fromkeys(name_model_dict.keys(), list())
+    score_tups = (
+        ("MCC", make_scorer(matthews_corrcoef)),
+        ("Balanced Acc", make_scorer(balanced_accuracy_score)),
+    )
+    # ("Confusion Matrix", ConfusionMatrixDisplay.from_estimator), ("Det", DetCurveDisplay.from_estimator), ("ROC", RocCurveDisplay.from_estimator))
+    score_tup_dict = dict([(k[0], dict()) for k in score_tups])
+    # results_dict = {"Feature Selection": list(), "Randomized Label": score_tup_dict}
+    # results_dict = dict().fromkeys(name_model_dict.keys(), score_tup_dict) # {"Feature Selection": list(), "Randomized Label": score_tup_dict}
+    results_dict = dict()
+    plot_dict = dict()
+    for n, m in name_model_dict.items():
+        results_dict[n], plot_dict[n] = plot_model_scores(
+            train_df,
+            train_labels,
+            score_tups,
+            name_model_dict[n],
+            model_subsets_dict[n],
+            path_dict,
+        )
+        # score_plot.figure.set(title="{}".format(model_name), ylabel="Score")
+        plot_dict[n].savefig("{}{}_score_plots.svg".format(path_dict["exp_dir"], n))
+    # print(pd.DataFrame.from_dict(results_dict, orient="index"))
+    exit()
+    return (
+        (train_df, test_df),
+        (train_labels, test_labels),
+        preprocessor,
+        model_subsets_dict,
+        model_scores_dict,
+    )
+
+
+def _get_solubility_data(path_dict, select_params, conc_splits, from_disk=True):
+    if from_disk and all(
         [
             os.path.isfile(f)
             for f in [
-                prepped_train_df_path,
-                prepped_test_df_path,
-                train_label_path,
-                test_label_path,
+                path_dict["prepped_train_df_path"],
+                path_dict["prepped_test_df_path"],
+                path_dict["prepped_train_labels"],
+                path_dict["prepped_test_labels"],
             ]
         ]
     ):
-        train_df = pd.read_pickle(prepped_train_df_path)
-        test_df = pd.read_pickle(prepped_test_df_path)
-        train_labels = pd.read_csv(train_label_path)
-        test_labels = pd.read_csv(test_label_path)
+        train_df = pd.read_pickle(path_dict["prepped_train_df_path"])
+        test_df = pd.read_pickle(path_dict["prepped_test_df_path"])
+        train_labels = pd.read_pickle(path_dict["prepped_train_labels"])
+        test_labels = pd.read_pickle(path_dict["prepped_test_labels"])
+        best_corrs, cross_corr = get_correlations(
+            train_df, train_labels, path_dict["corr_path"], path_dict["xc_path"]
+        )
         # epa_labels = pd.read_pickle(train_label_path)
         with open(transformer_path, "wb") as f:
             preprocessor = pickle.load(f)
     else:
         # Get data
         insol_labels, maxed_sol_labels, sol100_labels = get_query_data()
-        combo_labels, convert_df = get_conversions(maxed_sol_labels, lookup_path)
+        combo_labels, convert_df = get_conversions(
+            maxed_sol_labels, path_dict["lookup_path"]
+        )
         smiles_df, sid_to_key = standardize_smiles(
-            convert_df, combo_labels, maxed_sol_labels, std_pkl
+            convert_df, combo_labels, path_dict["std_pkl"]
         )
         max_conc = combo_labels.set_index(keys="inchiKey", drop=True)[
             "sample_concentration"
@@ -165,7 +222,7 @@ def main():
         max_conc.index = max_conc.index.map(
             lambda x: safe_mapper(x, sid_to_key), na_action="ignore"
         )
-        # transformed_df = pd.read_pickle(transformed_df_path)
+        # transformed_df = pd.read_pickle(path_dict["transformed_df_path"])
         # print(transformed_df)
         raw_df = pd.read_pickle(desc_path).dropna()  # .loc[transformed_df.index]
         raw_df = raw_df.loc[raw_df.index.dropna()]
@@ -201,10 +258,73 @@ def main():
         ),
         scoring=epa_scorer,
         cv=RepeatedStratifiedKFold(n_repeats=3, random_state=0),
+def _set_params():
+    select_params = {
+        "corr_method": "kendall",
+        "xc_method": "pearson",
+        "max_features_out": 40,
+        "min_features_out": 10,
+        "n_vif_choices": 10,
+        "fails_min_vif": 100,
+        "fails_min_perm": 6,
+        "fails_min_sfs": 4,
+        "features_min_vif": 100,
+        "features_min_perm": 8,
+        "features_min_sfs": 15,
+        "thresh_reset": -0.05,
+        "thresh_vif": 20,
+        "thresh_perm": 0.0025,
+        "thresh_sfs": -0.005,
+        "thresh_sfs_cleanup": 0.005,
+        "thresh_xc": 0.95,
+        "max_trials": 100,
+        "cv": StratifiedKFold,
+        "importance": False,
+        # "scoring": make_scorer(three_class_solubility),
+        "scoring": make_scorer(matthews_corrcoef),
+        "score_name": "mcc",
+        "W_confusion": get_confusion_weights(),
+    }
+    return select_params
+
+
+def _set_paths():
+    # Paths.
+    parent_dir = "{}binary_new_epa_data/all_features/".format(os.environ.get("MODEL_DIR"))
+    data_dir = "{}multiclass_weighted_all_preprocess/".format(
+        os.environ.get("MODEL_DIR")
+    )
+    os.makedirs(parent_dir, exist_ok=True)
+    os.makedirs(data_dir, exist_ok=True)
+    path_dict = dict(
+        [
+            ("parent_dir", parent_dir),
+            ("std_pkl", "{}stdizer_epa_query.pkl".format(data_dir)),
+            ("lookup_path", "{}lookup.csv".format(data_dir)),
+            ("desc_path", "{}padel_features_output_max_sol.pkl".format(data_dir)),
+            ("transformer_path", "{}transformer.pkl".format(data_dir)),
+            (
+                "transformed_df_path",
+                "{}transformed_epa_exact_sol_data.pkl".format(data_dir),
+            ),
+            ("prepped_train_df_path", "{}prepped_train_df.pkl".format(data_dir)),
+            ("prepped_test_df_path", "{}prepped_test_df.pkl".format(data_dir)),
+            ("xc_path", "{}xc_df.pkl".format(data_dir)),
+            ("prepped_train_labels", "{}prepped_train_labels.pkl".format(parent_dir)),
+            ("prepped_test_labels", "{}prepped_test_labels.pkl".format(parent_dir)),
+            ("corr_path", "{}corr_df.pkl".format(parent_dir)),
+            # Warning: This file may contain asinh transformed data for clustering algorithm input.
+            # ("epa_labels", "{}epa_transformed.csv".format(parent_dir)),
+            ("test_label_path", "{}test_labels.csv".format(parent_dir)),
+            ("search_features_path", "{}search_features.csv".format(parent_dir)),
+            ("exp_dir", "{}mcc/".format(parent_dir)),
+        ]
     )
     print(tree_search.best_params_)
     print(tree_search.best_score_)
     best_tree = tree_search.best_estimator_
+    os.makedirs(path_dict["exp_dir"], exist_ok=True)
+    return path_dict
     """
     print(train_df.drop(index=train_df.dropna().index))
     # Get Candidate Features and Models.
