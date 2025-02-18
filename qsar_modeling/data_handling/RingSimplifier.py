@@ -21,12 +21,14 @@ class RingSimplifer(BaseEstimator, TransformerMixin):
 
     def __init__(self, large_start=8, short=False):
         self.short = short
-        self.feature_names_out_ = list()
         self.feature_names_in = list()
+        self.nonring_features = list()
+        self.feature_names_out_ = list()
         self.feature_transform_dict = dict()
         self.plain_number_dict = dict()
         self.het_number_dict = dict()
         self.all_names_dict = dict()
+        self.never_keep_dict = dict()
         self.large_start = large_start
         self.large_name = None
         self.large_het_name = None
@@ -50,10 +52,15 @@ class RingSimplifer(BaseEstimator, TransformerMixin):
 
     def fit(self, X, y=None, **kwargs):
         self.feature_names_in = X.columns.tolist()
+        self.set_names()
         self._get_features(X)
+        # self.all_names_dict = name_dict
+        self.feature_names_out_ = X.columns.copy().drop(self._ring_descriptors).tolist()
         for cl in [self.plain_number_dict.values(), self.het_number_dict.values()]:
             [self.feature_names_out_.extend(c) for c in cl]
-        print(self.feature_names_out_)
+        [self.feature_names_out_.remove(f) for f in ["nG12HeteroRing", "nG12Ring"]]
+        self.feature_names_out_.extend([self.large_name, self.large_het_name])
+        self.feature_names_out_ = list(set(self.feature_names_out_))
         return self
 
     def _get_features(self, X):
@@ -100,6 +107,12 @@ class RingSimplifer(BaseEstimator, TransformerMixin):
                 and "hetero" in r.lower()
                 and "fused" not in r.lower()
             ]
+            self.never_keep_dict[k] = [
+                r
+                for r in self.all_names_dict[k]
+                if r not in self.plain_number_dict[k]
+                and r not in self.het_number_dict[k]
+            ]
         self.plain_number_dict[13] = [self._greater_name]
         self.het_number_dict[13] = [self._het_greater_name]
         self.all_names_dict[13] = [self._greater_name, self._het_greater_name]
@@ -110,7 +123,7 @@ class RingSimplifer(BaseEstimator, TransformerMixin):
     # If >= large_start -> Add to combined feature. Delete all features.
     def transform(self, X, y=None, **kwargs):
         Xt = X.copy()
-        self._get_features(X)
+        # self._get_features(Xt)
         for k in np.arange(3, self.large_start):
             if any([c not in Xt.columns for c in self.plain_number_dict[k]]):
                 raise KeyError(
@@ -120,31 +133,30 @@ class RingSimplifer(BaseEstimator, TransformerMixin):
                 raise KeyError(
                     "Missing feature name: {}".format(self.het_number_dict[k])
                 )
-            else:
-                [
-                    Xt.drop(columns=c, inplace=True)
-                    for c in self.all_names_dict[k]
-                    if c not in self.plain_number_dict[k]
-                    and c not in self.het_number_dict[k]
-                ]
         sum_df = pd.DataFrame(
             np.zeros(shape=(Xt.shape[0], 2)),
             columns=[self.large_name, self.large_het_name],
             index=Xt.index,
         )
         for k in np.arange(self.large_start, 13):
-            combo_cols = list(self.plain_number_dict[k])
-            combo_cols.extend(list(self.het_number_dict[k]))
-            if combo_cols is not None and len(combo_cols) > 0:
-                sum_df = sum_df.copy().add(Xt[combo_cols].to_numpy())
-            else:
-                print("Ring size {} has no members".format(k), flush=True)
-                print(combo_cols)
-                # raise RuntimeWarning
-            Xt.drop(columns=self.all_names_dict[k], inplace=True)
-        if self._greater_name in Xt.columns and self._het_greater_name in Xt.columns:
-            sum_df = sum_df.copy().add(Xt[[self._greater_name, self._het_greater_name]])
-        Xt = pd.concat([Xt.copy(), sum_df], axis=1)
+            for p in list(self.plain_number_dict[k]):
+                sum_df[self.large_name] = sum_df[self.large_name].add(Xt[p])
+            for h in list(self.het_number_dict[k]):
+                sum_df[self.large_het_name] = sum_df[self.large_het_name].add(Xt[h])
+        if self._greater_name in Xt.columns:
+            sum_df[self.large_name] = sum_df[self.large_name].add(
+                Xt[self._greater_name]
+            )
+            Xt.drop(columns=self._greater_name, inplace=True)
+        if self._het_greater_name in Xt.columns:
+            sum_df[self.large_het_name] = sum_df[self.large_het_name].add(
+                Xt[self._het_greater_name]
+            )
+            Xt.drop(columns=self._het_greater_name, inplace=True)
+        Xt.drop(columns=Xt.columns.intersection(sum_df.columns), inplace=True)
+        Xt = pd.concat([Xt.copy(), sum_df], axis=1, verify_integrity=True)
+        Xt = Xt[self.feature_names_out_]
+
         """   
         if len(self.ring_number_dict[k]) == 0:
             print("Error with {}-sized rings".format(k))
@@ -164,7 +176,6 @@ class RingSimplifer(BaseEstimator, TransformerMixin):
             """
         # print("Rings shape: {}".format(Xt.shape))
         # print(sum_df[[self.large_name, self.large_het_name]].head())
-        Xt.dropna(axis=0, inplace=True)
         if Xt.isna().any().any():
             print("NA values found in ring descriptors after transformation.")
             na_columns = Xt.columns[Xt.columns.isna()]
@@ -172,7 +183,7 @@ class RingSimplifer(BaseEstimator, TransformerMixin):
             print(Xt.dropna(), flush=True)
             print(Xt.dropna(axis=1))
             raise ValueError
-        self.feature_names_out_ = Xt.columns.astype(str).tolist()
+        # self.feature_names_out_ = Xt.columns.astype(str).tolist()
         return Xt.astype(dtype=np.float32)
 
     def get_feature_names_out(self, input_features=None, *args, **params):
