@@ -20,7 +20,7 @@ import balancing
 import data_tools
 import feature_combination
 from feature_selection import vif
-from feature_selection.correlation_filter import find_correlation
+from feature_selection.correlation_filter import cross_corr_filter
 from feature_selection.importance import (
     brute_force_importance_rf_clf,
     dummy_score_elimination,
@@ -240,7 +240,7 @@ def feature_correlation_filter(
     results = dict()
     n_drop = X_selected.shape[1] - filter_kws["n_feats"]
     assert n_drop > 0
-    results["scores_"] = find_correlation(
+    results["scores_"] = cross_corr_filter(
         corr=filter_kws["cross_corr"],
         cutoff=filter_kws["threshold"],
         n_drop=filter_kws["n_feats"],
@@ -520,7 +520,7 @@ def feature_mi(
         feat_corr.index = X_selected.columns
         feat_corr.to_csv(cross_mi_path, index_label=True)
         feat_corr.to_csv(cross_mi_path, index_label="Features", index=True)
-    drop_list = find_correlation(corr=feat_corr, cutoff=corr_cut, n_drop=n_drop)
+    drop_list = cross_corr_filter(corr=feat_corr, cutoff=corr_cut, n_drop=n_drop)
     X_selected.drop(columns=drop_list, inplace=True)
     feats = X_selected.columns.to_series()
     return feats, feature_path
