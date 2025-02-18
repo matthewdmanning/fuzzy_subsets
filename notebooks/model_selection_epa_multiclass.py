@@ -442,22 +442,6 @@ def select_subsets_from_model(
     model_subsets_dict: dict[str, list[str]], list of names of chosen features for each estimator.
     """
     model_subsets_dict, model_scores_dict, subset_predicts = dict(), dict(), dict()
-
-    dev_labels, eval_labels = train_test_split(
-        train_labels,
-        test_size=0.2,
-        random_state=0,
-        shuffle=True,
-        stratify=train_labels,
-    )
-    dev_df = train_df.loc[dev_labels.index]
-    eval_df = train_df.loc[eval_labels.index]
-    best_corrs, cross_corr = get_correlations(
-        dev_df, dev_labels, corr_path, xc_path, select_params
-    )
-    n_subsets = 10
-    for m, n in zip(model_list, name_list):
-        model_dir = "{}/{}/".format(exp_dir, n)
     search_features = feature_df.columns.tolist()
     for n, m in name_model_dict.items():
         model_dir = "{}{}/".format(exp_dir, n)
@@ -467,7 +451,6 @@ def select_subsets_from_model(
                 x
                 for x in search_features
                 if all(
-                    [x in a.index.tolist() for a in [dev_df.T, best_corrs, cross_corr]]
                     [
                         x in a.index.tolist()
                         for a in [feature_df.T, label_corr, cross_corr]
@@ -511,28 +494,6 @@ def select_subsets_from_model(
                 subset_predicts[n].append(cv_predicts)
             model_subsets_dict[n].append(best_features)
             model_scores_dict[n].append(cv_results)
-    # cv_scores.mean().sort_values(ascending=False)
-    print(cv_scores, flush=True)
-    ax = sns.catplot(cv_scores)
-    ax.figure.set_title(n)
-    ax.set_axis_labels(x_var="Subset No.", y_var="Model-Subset Score (Adjusted BAC)")
-    ax.savefig("{}test_scores.png".format(exp_dir))
-    plt.show()
-
-    # cmd = ConfusionMatrixDisplay.from_predictions(y_true=train_labels, y_pred=subset_predicts[n])
-    # cmd.plot()
-    # cmd.figure_.savefig("{}confusion_matrix_cv.png".format(exp_dir))
-
-    for n in name_list:
-        pprint.pprint(list(zip(model_subsets_dict[n], model_scores_dict[n])))
-    # test_df = preprocessor.transform(test_raw_df, test_labels)
-    return (
-        (train_df, test_df),
-        (train_labels, test_labels),
-        preprocessor,
-        model_subsets_dict,
-        model_scores_dict,
-    )
             [
                 remaining_features.remove(f)
                 for f in best_features
@@ -553,7 +514,9 @@ def get_conversions(maxed_sol_labels, lookup_path):
             convert_df.drop(columns="mol", inplace=True, errors="ignore")
             convert_df.to_csv(lookup_path)
     else:
-        convert_df = lookup_chem(comlist=maxed_sol_labels.index.tolist())
+        print(lookup_path)
+        raise IOError
+        convert_df = epa_chem_lookup_api(comlist=maxed_sol_labels.index.tolist())
         convert_df.drop(columns="mol", inplace=True, errors="ignore")
         convert_df.to_csv(lookup_path)
         convert_df.drop(
@@ -574,8 +537,8 @@ def get_conversions(maxed_sol_labels, lookup_path):
 
 
 def train_multilabel_models(
-    dev_data,
-    eval_data,
+    feature_df,
+    labels,
     model,
     model_name,
     best_corrs,
@@ -583,8 +546,8 @@ def train_multilabel_models(
     select_params,
     save_dir,
 ):
-    dev_df, dev_labels = dev_data
-    eval_df, eval_labels = eval_data
+    # if "n_jobs" in model.get_params():
+    #    model.set_params(**{"n_jobs": 1})
     selection_models = {
         "predict": model,
         "permutation": model,
@@ -593,13 +556,13 @@ def train_multilabel_models(
     }
     model_dict, score_dict, dropped_dict, best_features = (
         vapor_pressure_selection.select_feature_subset(
-            dev_df,
-            dev_labels,
+            feature_df,
+            labels,
             target_corr=best_corrs,
             cross_corr=cross_corr,
             select_params=select_params,
             selection_models=selection_models,
-            hidden_test=(eval_df, eval_labels),
+            hidden_test=None,
             save_dir=save_dir,
         )
     )
@@ -643,8 +606,8 @@ def get_multilabel_models(scorer, meta_est=False):
         scoring=scorer, class_weight="balanced", max_iter=5000, random_state=0
     )
     if not meta_est:
-        model_list = [best_tree, lrcv, xtra_tree]
-        name_list = ["RandomForest", "Logistic", "ExtraTrees"]
+        model_list = [best_tree, lrcv]  # , xtra_tree]
+        name_list = ["RandomForest", "Logistic"]  # , "ExtraTrees"]
     else:
         ovo_tree = OneVsOneClassifier(estimator=best_tree)
         ovo_lr = OneVsOneClassifier(estimator=lrcv)
@@ -662,11 +625,7 @@ def label_solubility_clusters(labels, exp_dir, algo=False):
         trimmed_labels = (
             labels.clip(upper=110.0, lower=4.5).multiply(100).apply(np.asinh)
         )
-        print(
-            "Asinh: {:.4f} {:.4f} {:.4f} {:.4f}".format(
-                np.asinh(5), np.asinh(10), np.asinh(50), np.asinh(100)
-            )
-        )
+        print("Values = asinh(Solubility * 100)")
         print(trimmed_labels.describe())
         # agg_clusters = AgglomerativeClustering(linkage="ward", metric="euclidean", n_clusters=3).fit_predict(trimmed_labels.to_frame())
         agg_clusters = BisectingKMeans(
@@ -702,7 +661,7 @@ def label_solubility_clusters(labels, exp_dir, algo=False):
     return epa_labels
 
 
-def standardize_smiles(feature_df, combo_labels, maxed_sol_labels, std_pkl):
+def standardize_smiles(feature_df, combo_labels, std_pkl):
     if os.path.isfile(std_pkl):
         smiles_df = pd.read_pickle(std_pkl)
         if False:
@@ -802,87 +761,28 @@ def standardize_smiles(feature_df, combo_labels, maxed_sol_labels, std_pkl):
     return smiles_df, sid_to_key
 
 
-
-
-def get_standardizer(comlist, batch_size=100, input_type="smiles"):
-    api_url = "https://ccte-cced-cheminformatics.epa.gov/api/stdizer"
-    response_list, failed_list = list(), list()
-    auth_header = {"x-api-key": os.environ.get("INTERNAL_KEY")}
-    with requests.session() as r:
-        for c in comlist:
-            params = {"workflow": "qsar-ready", input_type: c}
-            response = r.request(
-                method="GET", url=api_url, params=params, headers=auth_header
-            )
-            if isinstance(response.json(), list) and len(response.json()) > 0:
-                response_list.append(response.json()[0])
-            else:  # isinstance(response, (list, str)):
-                failed_list.append(response.content)
-    clean_list = [x for x in response_list if "sid" in x.keys()]
-    unregistered_list = [
-        x for x in response_list if "sid" not in x.keys() and "smiles" in x.keys()
-    ]
-    # failed_list = [x for x in response_list if "smiles" not in x.keys()]
-    clean_df = pd.json_normalize(clean_list)
-    unregistered_df = pd.json_normalize(unregistered_list)
-    response_df = pd.concat([clean_df, unregistered_df], ignore_index=True)
-    failed_df = pd.json_normalize(failed_list)
-    return response_df.drop(columns="mol"), failed_df
-
-
-def get_descriptors(smi_list, batch_size=100, desc_type="padel", input_type="smiles"):
-    # TODO: Add original SMILES/identifier to info_df to link original data and descriptor data through info_df.
-    # stdizer = DescriptorRequestor.QsarStdizer(input_type="dtxsid")
-    api_url = "https://ccte-cced-cheminformatics.epa.gov/api/padel"
-    """
-    {
-        "chemicals": ["string"],
-        "options": {
-            "headers": true,
-            "timeout": 0,
-            "compute2D": true,
-            "compute3D": true,
-            "computeFingerprints": true,
-            "descriptorTypes": ["string"],
-            "removeSalt": true,
-            "standardizeNitro": true,
-            "standardizeTautomers": true,
-        },
-    }
-   """
-    info_list, desc_dict, failed_list = list(), dict(), list()
-    with requests.session() as r:
-        auth_header = {"x-api-key": os.environ.get("INTERNAL_KEY")}
-        req = requests.Request(method="GET", url=api_url, headers=auth_header).prepare()
-        for c in smi_list:
-            params = {"smiles": c, "type": "padel"}
-            req.prepare_url(url=api_url, params=params)
-            response = r.send(req)
-            if response.status_code == 200 and len(response.json()) > 0:
-                single_info_dict = dict(
-                    [
-                        (k, v)
-                        for k, v in response.json()["chemicals"][0].items()
-                        if k != "descriptors"
-                    ]
-                )
-                single_info_dict.update([("SMILES_QSAR", c)])
-                info_list.append(single_info_dict)
-                desc_dict[response.json()["chemicals"][0]["inchiKey"]] = (
-                    response.json()["chemicals"][0]["descriptors"]
-                )
-            else:
-                failed_list.append(response.content)
-    padel_names = padel_categorization.get_short_padel_names()
-    info_df = pd.json_normalize(info_list)
-    info_df.set_index(keys="inchiKey", inplace=True)
-    info_df.drop(columns=padel_names, inplace=True, errors="ignore")
-    desc_df = pd.DataFrame.from_dict(
-        data=desc_dict, orient="index", columns=padel_names
-    )
-    return desc_df, info_df, failed_list
-
-
 if __name__ == "__main__":
     logger = logging.getLogger(name="selection")
-    main()
+    main_dfs, main_labels, preprocessor, subset_dict, scores_dict = main()
+    """
+    name_model_dict = get_multilabel_models(scorer=make_scorer(matthews_corrcoef))
+    forest_params = {
+        "bootstrap": ["False"],
+        "n_estimators": [10, 50, 100, 250],
+        "min_impurity_decrease": [0, 0.0005, 0.001, 0.005, 0.01],
+        "max_features": [3, 5, 6, 7, 9, None],
+        "max_leaf_nodes": [100, 150, 200, 250, None],
+        "random_state": [0],
+    }
+    for m, n in name_model_dict.items():
+        gscv = GridSearchCV(
+            m,
+            param_grid=forest_params,
+            scoring=make_scorer(three_class_solubility),
+            n_jobs=-1,
+            cv=RepeatedStratifiedKFold,
+        )
+        gscv.fit(main_dfs[0], main_labels[0])
+        gs_results = gscv.cv_results_
+        print(gs_results)
+        """
