@@ -69,7 +69,7 @@ def dummy_score_cv(
     sample_kde=True,
     **fit_kwargs
 ):
-    # Calcalates the score of model if one of the feature is replace with a randomly valued feature. Used to benchmark model results.
+    # Calcalates the score of model if one of the features is replaced with a randomly valued feature. Used to benchmark model results.
     dummy_df = feature_df.copy(deep=True)
     if use_noninformative:
         # if sample_kde:
