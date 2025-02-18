@@ -2,8 +2,10 @@ import itertools
 import os
 
 import pandas as pd
+import requests
 
 import DescriptorRequestor
+import padel_categorization
 
 
 # import qsar_readiness
@@ -189,6 +191,7 @@ def main(
         all_desc = api_desc
     return all_desc
 
+
 def epa_chem_lookup_api(comlist, batch_size=100, type="sid", prefix="DTXSID"):
     # stdizer = DescriptorRequestor.QsarStdizer(input_type="dtxsid")
     api_url = "https://ccte-cced-cheminformatics.epa.gov/api/search/download/properties"
@@ -210,3 +213,119 @@ def epa_chem_lookup_api(comlist, batch_size=100, type="sid", prefix="DTXSID"):
             response_list.extend(response.json())
     response_df = pd.json_normalize(response_list)
     return response_df
+
+
+def get_standardizer(comlist, input_type="smiles"):
+    """
+
+    Parameters
+    ----------
+    comlist: Iterable, list of inputs (default: SMILES)
+    input_type: str, keyword for API call input
+
+    Returns
+    -------
+    api_response: DataFrame, normalized output with MOL field removed (for compability)
+    failed_df: DataFrame: response for compounds that did not return a valid Standardizer response
+    """
+    api_url = "https://ccte-cced-cheminformatics.epa.gov/api/stdizer"
+    response_list, failed_list = list(), list()
+    auth_header = {"x-api-key": os.environ.get("INTERNAL_KEY")}
+    with requests.session() as r:
+        for c in comlist:
+            params = {"workflow": "qsar-ready", input_type: c}
+            response = r.request(
+                method="GET", url=api_url, params=params, headers=auth_header
+            )
+            if isinstance(response.json(), list) and len(response.json()) > 0:
+                response_list.append(response.json()[0])
+            else:  # isinstance(response, (list, str)):
+                failed_list.append(response.content)
+    clean_list = [x for x in response_list if "sid" in x.keys()]
+    unregistered_list = [
+        x for x in response_list if "sid" not in x.keys() and "smiles" in x.keys()
+    ]
+    # failed_list = [x for x in response_list if "smiles" not in x.keys()]
+    clean_df = pd.json_normalize(clean_list)
+    unregistered_df = pd.json_normalize(unregistered_list)
+    response_df = pd.concat([clean_df, unregistered_df], ignore_index=True)
+    api_response = response_df.drop(columns="mol")
+    failed_df = pd.json_normalize(failed_list)
+    return api_response, failed_df
+
+
+def get_epa_descriptors(
+    smi_list, desc_type="padel", input_format="smiles", long_names=False
+):
+    """
+    Calls internal API using key and returns DFs of descriptors, full API response, and failed calls.
+    Indices are API provided InChI keys
+    API key is stored in os.environ.get("INTERNAL_KEY")
+
+    Parameters
+    ----------
+    smi_list: Iterable[str], inputs for API calls
+    desc_type: str, Descriptor set name as API keyword
+    input_format: str, default: SMILES
+    long_names: If "padel", whether to use short names or long or DF columns.
+
+    Returns
+    -------
+    desc_df: DataFrame, sklearn-compatible input of descriptors only.
+    info_df: DataFrame, normalized output from API call, without descriptors
+    failed_list: list, inputs that did not return a valid result from API
+
+    API schema
+    {
+        "chemicals": ["string"],
+        "options": {
+            "headers": true,
+            "timeout": 0,
+            "compute2D": true,
+            "compute3D": true,
+            "computeFingerprints": true,
+            "descriptorTypes": ["string"],
+            "removeSalt": true,
+            "standardizeNitro": true,
+            "standardizeTautomers": true,
+        },
+    }
+    """
+    # TODO: Add original SMILES/identifier to info_df to link original data and descriptor data through info_df.
+    api_url = "https://ccte-cced-cheminformatics.epa.gov/api/padel"
+    info_list, desc_dict, failed_list = list(), dict(), list()
+    with requests.session() as r:
+        auth_header = {"x-api-key": os.environ.get("INTERNAL_KEY")}
+        req = requests.Request(method="GET", url=api_url, headers=auth_header).prepare()
+        for c in smi_list:
+            params = {input_format: c, "type": desc_type}
+            req.prepare_url(url=api_url, params=params)
+            response = r.send(req)
+            if response.status_code == 200 and len(response.json()) > 0:
+                single_info_dict = dict(
+                    [
+                        (k, v)
+                        for k, v in response.json()["chemicals"][0].items()
+                        if k != "descriptors"
+                    ]
+                )
+                single_info_dict.update([("SMILES_QSAR", c)])
+                info_list.append(single_info_dict)
+                desc_dict[response.json()["chemicals"][0]["inchiKey"]] = (
+                    response.json()["chemicals"][0]["descriptors"]
+                )
+            else:
+                failed_list.append(response.content)
+    if desc_type == "padel":
+        if long_names:
+            padel_names = padel_categorization.get_full_padel_names()
+        else:
+            padel_names = padel_categorization.get_short_padel_names()
+    info_df = pd.json_normalize(info_list)
+    info_df.set_index(keys="inchiKey", inplace=True)
+    # TODO: Is this drop needed or even valid?
+    # info_df.drop(columns=padel_names, inplace=True, errors="ignore")
+    desc_df = pd.DataFrame.from_dict(
+        data=desc_dict, orient="index", columns=padel_names
+    )
+    return desc_df, info_df, failed_list
