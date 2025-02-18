@@ -7,8 +7,19 @@ from correlation_filter import cross_corr_filter
 
 class XCorrFilter(BaseEstimator, TransformerMixin):
 
-    def __init__(self, max_features, thresh_xc, method_corr=None, method_xc=None):
-        self.target_corr_ = pd.Series([])
+    def __init__(self, max_features, thresh_xc, method_xc=None):
+        """
+
+        Parameters
+        ----------
+        max_features: int, maximum number of features to return
+        thresh_xc: float, only features above cutoff can be eliminated
+        method_xc: str, callable, method for calculating pairwise feature correlations, default="kendall"
+
+        Values for method_corr and xc_corr: "pearson", "spearman", "kendall"
+        NB: "kendall" is implemented as scipy's kendallstau(variant="c"). This version is more robust to ties and different scalings.
+
+        """
         self.xcorr_ = pd.DataFrame([])
         self.feature_names_in = None
         self.dropped_features_ = dict()
@@ -34,6 +45,18 @@ class XCorrFilter(BaseEstimator, TransformerMixin):
         return Xt
 
     def xcorr_filter(self, X):
+        """
+        Eliminates features with the greatest correlation with other features.
+        Ranks features by maximum correlation and sum of squares of all correlations.
+
+        Parameters
+        ----------
+        X: DataFrame,
+
+        Returns
+        -------
+        xcorr_deleted: list, Features eliminated by cross_corr_filter
+        """
         if self.max_features is None:
             self.max_features = X.shape[1]
         if self.xcorr_.empty:

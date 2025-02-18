@@ -32,25 +32,41 @@ def calculate_vif(
     verbose=0,
     **fit_kwargs
 ):
-    sklearn.set_config(enable_metadata_routing=True)
+    """
+    Returns a Series containing the Variance Inflation Factor with each of "subset" as the dependent variable.
+    The index is the feature_df index of the dependent variable
+
+    Parameters
+    ----------
+    feature_df
+    model
+    subset
+    parallelize
+    sample_wts
+    generalized
+    verbose
+    fit_kwargs
+
+    Returns
+    -------
+
+    """
     predictor_list = list()
     if subset is None:
         for col in feature_df.columns:
             predictor_list.append((feature_df.columns.drop(col).tolist(), col))
     else:
-        # if all(c in feature_df.columns for c in subset.columns):
-        #    for col, target in subset.items():
-        #        predictor_list.append((feature_df.columns.drop(subset.columns), col))
         for col, target in subset.items():
             predictor_list.append((feature_df.columns.drop(col).tolist(), col))
     if parallelize and len(predictor_list[0]) > 1:
-        vif_models = train_model_subsets(
-            feature_df,
-            predictor_list=predictor_list,
-            model=model,
-            mem_dir=os.environ.get("JOBLIB_TMP"),
-            sample_weights=sample_wts,
-        )
+        with sklearn.config_context(enable_metadata_routing=True):
+            vif_models = train_model_subsets(
+                feature_df,
+                predictor_list=predictor_list,
+                model=model,
+                mem_dir=os.environ.get("JOBLIB_TMP"),
+                sample_weights=sample_wts,
+            )
     elif not parallelize and len(predictor_list[0]) > 1:
         vif_models = [
             clone_model(model).fit(
