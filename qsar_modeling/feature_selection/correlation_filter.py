@@ -1,17 +1,18 @@
+import os
 from collections import OrderedDict
 
 import numpy as np
 import pandas as pd
-
+from scipy.stats import kendalltau
 from utils import math_tools
 
 
-def find_correlation(
+def cross_corr_filter(
     corr, cutoff=0.95, n_drop=None, corr_tol=0.0025, exact=True, verbose=False
 ):
     """
     This function is the Python implementation of the R function
-    `find_correlation()`.
+    `cross_corr_filter()`.
 
     Relies on numpy and pandas, so must have them pre-installed.
 
@@ -20,7 +21,7 @@ def find_correlation(
 
     For the documentation of the R function, see
     https://www.rdocumentation.org/packages/caret/topics/findCorrelation
-    and for the source code of `find_correlation()`, see
+    and for the source code of `cross_corr_filter()`, see
     https://github.com/topepo/caret/blob/master/pkg/caret/R/findCorrelation.R
 
     -----------------------------------------------------------------------------
@@ -49,8 +50,8 @@ def find_correlation(
         'x5': [0.85, 0.32, 0.91, 0.36, 1.0]
     }, index=['x1', 'x2', 'x3', 'x4', 'x5'])
 
-    find_correlation(R1, cutoff=0.6, exact=False)  # ['x4', 'x5', 'x1', 'x3']
-    find_correlation(R1, cutoff=0.6, exact=True)   # ['x1', 'x5', 'x4']
+    cross_corr_filter(R1, cutoff=0.6, exact=False)  # ['x4', 'x5', 'x1', 'x3']
+    cross_corr_filter(R1, cutoff=0.6, exact=True)   # ['x1', 'x5', 'x4']
     """
 
     def _find_correlation_fast(corr_df, col_center, thresh):
@@ -129,12 +130,16 @@ def find_correlation(
     elif any(corr.columns != corr.index):
         raise ValueError("Columns aren't equal to indices.")
     """
-    acorr = corr.astype(float).abs()
-    if exact or (exact is None and corr.shape[1] < 100):
+    print(corr)
+    acorr = pd.DataFrame(
+        corr.astype(np.float32).abs(), index=corr.index, columns=corr.columns
+    )
+    if exact or (exact is None and acorr.shape[1] < 100):
+        print(acorr)
         if n_drop is None:
-            n_drop = corr.shape[1]
+            n_drop = acorr.shape[1]
         else:
-            n_drop = min(n_drop, corr.shape[1] - 1)
+            n_drop = min(n_drop, acorr.shape[1] - 1)
         print(
             "Initiating exact correlation search and dropping {} at most.".format(
                 n_drop
@@ -142,5 +147,75 @@ def find_correlation(
         )
         return _find_correlation_exact(acorr, n_drop, cutoff)
     else:
-        avg = np.mean(corr, axis=1)
+        avg = np.mean(acorr, axis=1)
         return _find_correlation_fast(acorr, avg, cutoff)
+
+
+def get_correlations(
+    feature_df,
+    labels,
+    corr_path=None,
+    xc_path=None,
+    corr_method="kendall",
+    xc_method="kendall",
+):
+    """
+    Returns label and pairwise feature correlation matrices using the given methods.
+    Methods are valid options for pandas .corr: {"pearson", "spearman", "kendall"}
+    Default is "kendall" (implemented as "c" variant, which handles ties and different ranges/cardinalities and is suitable for both continuous and ordinal data.
+    Parameters
+    ----------
+
+    feature_df: DataFrame, feature set
+    labels: Series, dependent variable
+    corr_path: str, path to label correlation file
+    xc_path: str, path to cross-correlation file
+    corr_method: str, method to calculate label correlation coefficients
+    xc_method: str, method to calculate cross-correlation coefficients
+
+    Returns
+    -------
+    label_corr: Series, correlation coefficients with dependent variable
+    cross_corr: DataFrame: cross-correlation coefficients
+
+    """
+    from scipy.stats import kendalltau
+
+    if os.path.isfile(corr_path):
+        label_corr = pd.read_pickle(corr_path)
+        print("Target correlation retrieved from disk.")
+    else:
+        print("Target correlation calculated.")
+        label_corr = calculate_correlation(feature_df, labels, method=corr_method)
+        if corr_path is not None and not labels.empty:
+            label_corr.to_pickle(corr_path)
+    if os.path.isfile(xc_path):
+        print("Cross-correlation retrieved from disk.")
+        cross_corr = pd.read_pickle(xc_path)
+    else:
+        print("Cross-correlation calculated.")
+        cross_corr = calculate_correlation(feature_df, method=xc_method)
+        if corr_path is not None and not cross_corr.empty:
+            cross_corr.to_pickle(xc_path)
+    # print("Cross-correlation:\n{}".format(cross_corr))
+    return label_corr, cross_corr
+
+
+def calculate_correlation(x1, x2=None, method="kendall"):
+
+    def _get_method(meth):
+        if meth == "kendall":
+            return math_tools.calculate_kendalls_c
+        else:
+            return meth
+
+    if x2 is None:
+        corr_df = x1.corr(method=_get_method(method))
+        assert corr_df.shape == (x1.shape[1], x1.shape[1])
+    else:
+        corr_df = x1.corrwith(other=x2, method=_get_method(method))
+        if len(x2.shape) <= 1 or x2.shape[1] == 1:
+            assert corr_df.shape[0] == x1.shape[1]
+        elif len(x1.shape) <= 1 or x1.shape[1] == 1:
+            assert corr_df.shape[0] == x2.shape[1]
+    return corr_df

@@ -253,7 +253,7 @@ def undersampler(feature_df, labels, feature_name, feature_dir):
             smaller_size = 0
             n_drop_feats = rus_dev_X.shape[1] - 3 * n_feats
             while True:
-                hc_feats = correlation_filter.find_correlation(
+                hc_feats = correlation_filter.cross_corr_filter(
                     dev_corr, n_drop=n_drop_feats, cutoff=cut_off, exact=True
                 )
                 high_corr_feats = [c for c in hc_feats if c not in estate_counts]
