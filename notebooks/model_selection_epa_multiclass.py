@@ -1,55 +1,67 @@
-import itertools
 import logging
 import os
 import pickle
 import pprint
-import warnings
 from copy import deepcopy
+from numbers import Number
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import requests
 import seaborn as sns
 import sklearn
-from sklearn import linear_model
+from sklearn import clone, linear_model
 from sklearn.ensemble import ExtraTreesClassifier, RandomForestClassifier
 from sklearn.linear_model import LogisticRegressionCV
 from sklearn.metrics import (
     balanced_accuracy_score,
     confusion_matrix,
     make_scorer,
+    matthews_corrcoef,
 )
 from sklearn.model_selection import (
     GridSearchCV,
-    RepeatedStratifiedKFold,
+    StratifiedKFold,
     train_test_split,
 )
 from sklearn.multiclass import OneVsOneClassifier, OneVsRestClassifier
 
+import correlation_filter
+import cv_tools
 import padel_categorization
+import scoring
 import vapor_pressure_selection
-from clean_new_epa_data import get_query_data
+from correlation_filter import get_correlations
+from data_tools import get_query_data
+from descriptor_processing import epa_chem_lookup_api, get_standardizer
 
 
 def get_confusion_weights():
-    return np.array([[1.0, 0.0, -0.5], [0.25, 1.0, 0.0], [0.0, 0.25, 1.0]])
+    return np.array([[1.0, -0.5, -1.0], [0.1, 1.0, 0.0], [0.0, 0.25, 1.0]])
 
 
 def three_class_solubility(y_true, y_pred, sample_weight=None, **kwargs):
+    # For balanced accuracy, with W = I: np.diag(C) = np.sum(C * W)
+    # In MCC, W = 2 * I - 1 (ie. off diagonals are -1 instead of 0)
     W = get_confusion_weights()
     try:
-        C = confusion_matrix(y_true, y_pred, sample_weight=sample_weight) * W
+        C = confusion_matrix(y_true, y_pred, sample_weight=sample_weight)
     except UserWarning:
         print("True, Predicted, and Confusion Weighting")
-        pprint.pprint(y_true.unique())
-        pprint.pprint(y_pred.unique())
-        pprint.pprint(W)
+        print(
+            "\ny_pred contains classes not in y_true:\n{}\n".format(
+                np.argwhere(np.astype(np.isnan(C), np.int16))
+            )
+        )
         C = confusion_matrix(y_true, y_pred, sample_weight=sample_weight)
-    with np.errstate(divide="ignore", invalid="ignore"):
-        per_class = np.diag(C * W) / C.sum(axis=1)
+    # with np.errstate(divide="ignore", invalid="ignore"):
+    with np.errstate(divide="print", invalid="print"):
+        per_class = np.sum(C * W, axis=1) / C.sum(axis=1)
     if np.any(np.isnan(per_class)):
-        warnings.warn("y_pred contains classes not in y_true")
+        raise UserWarning.add_note(
+            "\ny_pred contains classes not in y_true:\n{}\n".format(
+                np.argwhere(np.astype(np.isnan(per_class), np.int16))
+            )
+        )
         per_class = per_class[~np.isnan(per_class)]
     score = np.mean(per_class)
     return score
@@ -75,19 +87,88 @@ def optimize_tree(feature_df, labels, model, scoring, cv):
     return tree_optimized
 
 
-def get_class_splits(labels):
-    edges = [
-        5.5,
-        10.5,
-        19,
-    ]
-
-
 def safe_mapper(x, map):
     if x in map.keys():
         return map[x]
     else:
         return x
+
+
+def plot_model_scores(feature_df, train_labels, score_tups, model, subsets, path_dict):
+    results_list = list()
+    for i, best_features in enumerate(subsets):
+        results_correct = scoring.cv_model_generalized(
+            model,
+            feature_df[best_features],
+            train_labels,
+            scorer_tups=score_tups,
+            return_train=True,
+        )
+        exploded = _format_cv_generalized_score(
+            results_correct, i, hue_category="Correct"
+        )
+        # exploded.reset_index(level=0, names="Test/Train", inplace=True)
+        print("Exploded:\n{}".format(pprint.pformat(exploded)))
+        results_list.append(exploded)
+        rand_results = scoring.score_randomized_classes(
+            estimator=model,
+            feature_df=feature_df[best_features],
+            labels=train_labels,
+            scorer_tups=score_tups,
+            return_train=True,
+        )
+        rexploded = _format_cv_generalized_score(
+            rand_results, i, hue_category="Randomized"
+        )
+
+        """
+        randresults_dict_df = pd.DataFrame.from_dict(rand_results, orient="index")
+        rexploded = pd.concat(
+            [
+                ser.explode()
+                .reset_index()
+                .melt(id_vars="index", value_name="Score", ignore_index=False)
+                .reset_index(drop=True)
+                for col, ser in randresults_dict_df.items()
+            ],
+            keys=randresults_dict_df.columns,
+        )
+        rexploded.insert(loc=0, column="Subset", value=i)
+        rexploded.insert(loc=0, column="Labels", value="Randomized")
+        """
+        # rexploded.reset_index(level=0, names="Test/Train", inplace=True)
+        print("Exploded:\n{}".format(pprint.pformat(rexploded)))
+        results_list.append(rexploded)
+    all_results = pd.concat(results_list)
+    pprint.pprint(all_results)
+    plot = sns.catplot(
+        all_results,
+        x="Subset",
+        y="Score",
+        hue="Labels",
+        col="index",
+        row="variable",
+        errorbar="se",
+    )
+    return all_results, plot
+
+
+def _format_cv_generalized_score(results_correct, i, hue_category=None):
+    results_dict_df = pd.DataFrame.from_dict(results_correct, orient="index")
+    exploded = pd.concat(
+        [
+            ser.explode()
+            .reset_index()
+            .melt(id_vars="index", value_name="Score", ignore_index=False)
+            .reset_index(drop=True)
+            for col, ser in results_dict_df.items()
+        ],
+        keys=results_dict_df.columns,
+    )
+    exploded.insert(loc=0, column="Subset", value=i)
+    if hue_category is not None:
+        exploded.insert(loc=0, column="Labels", value=hue_category)
+    return exploded
 
 
 def main():
@@ -205,8 +286,8 @@ def _get_solubility_data(path_dict, select_params, conc_splits, from_disk=True):
             train_df, train_labels, path_dict["corr_path"], path_dict["xc_path"]
         )
         # epa_labels = pd.read_pickle(train_label_path)
-        with open(transformer_path, "wb") as f:
-            preprocessor = pickle.load(f)
+        # with open(path_dict["transformer_path"], "rb") as f:
+        #    preprocessor = pickle.load(f)
     else:
         # Get data
         insol_labels, maxed_sol_labels, sol100_labels = get_query_data()
@@ -224,40 +305,44 @@ def _get_solubility_data(path_dict, select_params, conc_splits, from_disk=True):
         )
         # transformed_df = pd.read_pickle(path_dict["transformed_df_path"])
         # print(transformed_df)
-        raw_df = pd.read_pickle(desc_path).dropna()  # .loc[transformed_df.index]
-        raw_df = raw_df.loc[raw_df.index.dropna()]
-        print("Missing labels")
-        print(max_conc[~max_conc.index.isin(raw_df.index)])
-        epa_labels = label_solubility_clusters(max_conc[raw_df.index], exp_dir)
-        print(epa_labels.value_counts())
+        raw_df = pd.read_pickle(path_dict["desc_path"]).dropna()
+        # TODO: Output list of compounds that failed to convert (INCHI, DTXSIDs, and SMILES)
+        logger.debug("Missing labels")
+        logger.debug(max_conc[~max_conc.index.isin(raw_df.index)])
+        logger.debug("Missing raw descriptors:")
+        logger.debug(raw_df[~raw_df.index.isin(combo_labels["inchiKey"])])
+        epa_labels = label_solubility_clusters(
+            max_conc[raw_df.index], path_dict["exp_dir"], conc_splits=conc_splits
+        )
         train_raw_df, test_raw_df = train_test_split(
             raw_df, test_size=0.2, stratify=epa_labels.squeeze(), random_state=0
         )
-
+        raw_df.index = raw_df.index.map(
+            lambda x: safe_mapper(x, sid_to_key), na_action="ignore"
+        )
         train_labels = epa_labels[train_raw_df.index]
         test_labels = epa_labels[test_raw_df.index]
-        print(train_labels.value_counts())
-        print(test_labels.value_counts())
-        train_labels.to_csv(train_label_path)
-        test_labels.to_csv(test_label_path)
-        preprocessor, p = vapor_pressure_selection.get_standard_preprocessor(
-            transform_func="asinh", corr_params=select_params
+        preprocessor, scaler, cross_corr = (
+            vapor_pressure_selection.get_standard_preprocessor(
+                transform_func="asinh", corr_params=select_params
+            )
         )
-        with open(transformer_path, "wb") as f:
-            pickle.dump(preprocessor, f)
         train_df = preprocessor.fit_transform(train_raw_df, train_labels)
         test_df = preprocessor.transform(test_raw_df)
-        train_df.to_pickle(transformed_df_path)
-        test_df.to_pickle(transformed_df_path)
-    """
-    tree_search = optimize_tree(
-        train_df,
-        epa_labels,
-        model=RandomForestClassifier(
-            bootstrap=False, class_weight="balanced", random_state=0
-        ),
-        scoring=epa_scorer,
-        cv=RepeatedStratifiedKFold(n_repeats=3, random_state=0),
+        logger.debug("After transformer: {}".format(train_df))
+        best_corrs = correlation_filter.calculate_correlation(
+            train_df, train_labels, method=select_params["corr_method"]
+        )
+        with open(path_dict["transformer_path"], "wb") as f:
+            pickle.dump(preprocessor, f)
+        train_labels.to_pickle(path_dict["prepped_train_labels"])
+        test_labels.to_pickle(path_dict["prepped_test_labels"])
+        train_df.to_pickle(path_dict["prepped_train_df_path"])
+        test_df.to_pickle(path_dict["prepped_test_df_path"])
+    # print(train_df.drop(index=train_df.dropna().index))
+    return train_df, train_labels, test_df, test_labels, best_corrs, cross_corr
+
+
 def _set_params():
     select_params = {
         "corr_method": "kendall",
@@ -290,7 +375,9 @@ def _set_params():
 
 def _set_paths():
     # Paths.
-    parent_dir = "{}binary_new_epa_data/all_features/".format(os.environ.get("MODEL_DIR"))
+    parent_dir = "{}binary_new_epa_data/all_features/".format(
+        os.environ.get("MODEL_DIR")
+    )
     data_dir = "{}multiclass_weighted_all_preprocess/".format(
         os.environ.get("MODEL_DIR")
     )
@@ -320,24 +407,40 @@ def _set_paths():
             ("exp_dir", "{}mcc/".format(parent_dir)),
         ]
     )
-    print(tree_search.best_params_)
-    print(tree_search.best_score_)
-    best_tree = tree_search.best_estimator_
     os.makedirs(path_dict["exp_dir"], exist_ok=True)
     return path_dict
-    """
-    print(train_df.drop(index=train_df.dropna().index))
-    # Get Candidate Features and Models.
-    candidate_features = vapor_pressure_selection.get_search_features(train_df)
-    search_features = train_df.columns[train_df.columns.isin(candidate_features)]
-    try:
-        search_features.drop(["SsSH"])
-    except KeyError:
-        print("# of -SH not present in feature set.")
-    print("{} features to select from.".format(len(search_features)))
-    search_features.to_series().to_csv(search_features_path)
-    model_list, name_list = get_multilabel_models(epa_scorer)
 
+
+def select_subsets_from_model(
+    feature_df,
+    labels,
+    n_subsets,
+    name_model_dict,
+    label_corr,
+    cross_corr,
+    exp_dir,
+    select_params,
+):
+    """
+    Selects best scoring feature subsets from specified scikit-learn estimators.
+    Parameters for feature selection are specified in select_params.
+
+    Parameters
+    ----------
+    feature_df: DataFrame, feature descriptors
+    labels: Series, Target labels
+    n_subsets: int, max number of feature subsets to return
+    name_model_dict: dict[str, BaseEstimator], Dictionary with name and unfitted estimator
+    label_corr: Series, correlation of each descriptor with label, method type in select_params
+    cross_corr: DataFrame, feature cross-correlations, method type in select_params
+    exp_dir: str, path of directory to save files
+    select_params: dict, Describes parameters for feature selection function
+
+    Returns
+    -------
+    model_scores_dict: dict[str, list[float]], CV scores of each estimator, refit using chosen subsets.
+    model_subsets_dict: dict[str, list[str]], list of names of chosen features for each estimator.
+    """
     model_subsets_dict, model_scores_dict, subset_predicts = dict(), dict(), dict()
 
     dev_labels, eval_labels = train_test_split(
@@ -355,6 +458,9 @@ def _set_paths():
     n_subsets = 10
     for m, n in zip(model_list, name_list):
         model_dir = "{}/{}/".format(exp_dir, n)
+    search_features = feature_df.columns.tolist()
+    for n, m in name_model_dict.items():
+        model_dir = "{}{}/".format(exp_dir, n)
         os.makedirs(model_dir, exist_ok=True)
         remaining_features = deepcopy(
             [
@@ -362,37 +468,49 @@ def _set_paths():
                 for x in search_features
                 if all(
                     [x in a.index.tolist() for a in [dev_df.T, best_corrs, cross_corr]]
+                    [
+                        x in a.index.tolist()
+                        for a in [feature_df.T, label_corr, cross_corr]
+                    ]
                 )
             ]
         )
+        print("Remaining features: {}".format(len(remaining_features)))
         model_subsets_dict[n], model_scores_dict[n], subset_predicts[n] = (
             list(),
             list(),
             list(),
         )
         for i in np.arange(n_subsets):
-            subset_dir = "{}/subset{}/".format(model_dir, i)
+            print("Selecting from {} features.".format(len(remaining_features)))
+            subset_dir = "{}subset{}/".format(model_dir, i)
             os.makedirs(subset_dir, exist_ok=True)
-            dev_data = (dev_df[remaining_features], dev_labels)
-            eval_data = (eval_df[remaining_features], eval_labels)
             os.makedirs(model_dir, exist_ok=True)
-            cv_results, cv_predicts, best_features = train_multilabel_models(
-                dev_data,
-                eval_data,
-                model=m,
-                model_name=n,
-                best_corrs=best_corrs[remaining_features],
-                cross_corr=cross_corr[remaining_features].loc[remaining_features],
-                select_params=select_params,
-                save_dir=subset_dir,
-            )
+            if os.path.isfile("{}best_features_{}.csv".format(subset_dir, n)):
+                top_score = 0
+                with open("{}feature_score_path.csv".format(subset_dir), "r") as f:
+                    for whole_line in f.readlines():
+                        line = whole_line.split()
+                        cv_results = [float(x) for x in line[:5]]
+                        feats = [str(x) for x in line[5:]]
+                        if np.mean(cv_results) - np.std(cv_results) > top_score:
+                            top_score = np.mean(cv_results) - np.std(cv_results)
+                            best_features = feats
+            else:
+                print(remaining_features)
+                cv_results, cv_predicts, best_features = train_multilabel_models(
+                    feature_df[remaining_features],
+                    labels,
+                    model=m,
+                    model_name=n,
+                    best_corrs=label_corr[remaining_features],
+                    cross_corr=cross_corr[remaining_features].loc[remaining_features],
+                    select_params=select_params,
+                    save_dir=subset_dir,
+                )
+                subset_predicts[n].append(cv_predicts)
             model_subsets_dict[n].append(best_features)
             model_scores_dict[n].append(cv_results)
-            subset_predicts[n].append(cv_predicts)
-            [remaining_features.remove(f) for f in best_features]
-    cv_scores = pd.DataFrame.from_dict(
-        model_scores_dict, orient="index", columns=np.arange(n_subsets)
-    )
     # cv_scores.mean().sort_values(ascending=False)
     print(cv_scores, flush=True)
     ax = sns.catplot(cv_scores)
@@ -467,6 +585,13 @@ def fetch_padel(smiles_df, desc_path, exp_dir):
         epa_df.dropna(how="all", axis=1, inplace=True)
         epa_df.dropna(how="any", inplace=True)
     return epa_df
+            [
+                remaining_features.remove(f)
+                for f in best_features
+                if f in remaining_features
+            ]
+    # cv_scores = pd.DataFrame.from_records(model_scores_dict, orient="index", columns=np.arange(n_subsets))
+    return model_scores_dict, model_subsets_dict
 
 
 def get_conversions(maxed_sol_labels, lookup_path):
