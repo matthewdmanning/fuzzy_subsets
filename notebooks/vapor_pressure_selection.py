@@ -243,20 +243,45 @@ def select_feature_subset(
         )
         if new_feat is None:
             break
-        selection_state["current_features"].append(new_feat)
-        selection_state, scores = score_subset(
-            train_df,
-            labels,
-            selection_models=selection_models,
+        else:
+            selection_state, subset_scores = score_subset(
+                feature_df=train_df,
+                labels=labels,
+                selection_models=selection_models,
+                selection_state=selection_state,
+                select_params=select_params,
+                save_dir=save_dir,
+                record_results=True,
+            )
+        print(selection_state["current_features"], subset_scores)
+        if score_drop_exceeded(
+            subset_scores,
+            selection_params=select_params,
             selection_state=selection_state,
-            select_params=select_params,
-            save_dir=save_dir,
-            hidden_test=hidden_test,
-            record_results=True,
-        )
-        # Variance Inflation Factor: Now implemented in feature selection phase
-        if False and (
-            selection_state["fails"] >= select_params["fails_min_vif"]
+        ):
+            while (
+                np.mean(subset_scores) + np.std(subset_scores)
+                < selection_state["best_score_adj"]
+            ):
+                if (
+                    len(selection_state["current_features"])
+                    <= select_params["features_min_sfs"]
+                ):
+                    selection_state["current_features"] = selection_state["best_subset"]
+                    break
+                selection_state, subset_scores = sequential_elimination(
+                    train_df,
+                    labels,
+                    select_params,
+                    selection_state,
+                    selection_models,
+                    clean_up=False,
+                    save_dir=save_dir,
+                )
+            continue
+        # Variance Inflation Factor: VIF check implemented in "new feature" selection function.
+        if (
+            _get_fails(selection_state) >= select_params["fails_min_vif"]
             and len(selection_state["current_features"])
             >= select_params["features_min_vif"]
         ):
