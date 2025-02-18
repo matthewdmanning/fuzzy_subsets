@@ -22,7 +22,7 @@ from sklearn.utils import compute_sample_weight
 
 import padel_categorization
 import sample_clusters
-from correlation_filter import find_correlation
+from correlation_filter import cross_corr_filter
 from vif import repeated_stochastic_vif
 
 mcc = make_scorer(balanced_accuracy_score)
@@ -359,7 +359,7 @@ def process_selection_data(dropped_dict, feature_df, labels, save_dir):
             pickle.dump(scaler, f)
     train_df = scaler.transform(feature_df)
     cross_corr = train_df.corr(method="kendall")
-    del_ser = find_correlation(
+    del_ser = cross_corr_filter(
         cross_corr, cutoff=0.95, n_drop=max(1, train_df.shape[1] - 30)
     )
     print([c for c in del_ser.index if type(c) is not str])

@@ -17,7 +17,7 @@ from sklearn.svm import SVC
 import data_tools
 import descriptor_processing
 import padel_categorization
-from data_tools import get_epa_mapper, load_training_data
+from data_tools import get_epa_mapper, get_query_data, load_training_data
 from DescriptorRequestor import QsarStdizer
 from epa_multiclass import get_conversions, safe_mapper, standardize_smiles
 
@@ -45,41 +45,6 @@ def rand_index(x_i, x_j, C=None):
     else:
         d = set()
     return (len(a) + len(d)) / (len(a) + len(b) + len(c) + len(d))
-
-
-def get_query_data():
-    data_dir = "{}db_queries_12_2024/".format(os.environ.get("DATA_DIR"))
-    insol_path = "{}chemtrack_dmso_insoluble_03DEC2024.csv".format(data_dir)
-    sol100_path = "{}chemtrack_dmso_max_solubility_17DEC2024.csv".format(data_dir)
-    maxed_sol_path = "{}chemtrack_dmso_solubility_03DEC2024.csv".format(data_dir)
-    columns = [
-        "dtxsid",
-        "target_concentration",
-        "target_concentration_unit",
-        "sample_concentration",
-        "sample_concentration_unit",
-    ]
-    insol_df = pd.read_csv(
-        insol_path, names=["dtxsid", "Insoluble", "Sparingly"]
-    ).set_index(keys="dtxsid")
-    maxed_sol_df = pd.read_csv(
-        maxed_sol_path,
-        names=columns,
-        usecols=("dtxsid", "target_concentration", "sample_concentration"),
-    ).set_index(keys="dtxsid")
-    sol100_df = pd.read_csv(
-        sol100_path,
-        names=columns,
-        usecols=("dtxsid", "target_concentration", "sample_concentration"),
-    ).set_index(keys="dtxsid")
-    [
-        df.drop(index="dtxsid", inplace=True)
-        for df in [insol_df, maxed_sol_df, sol100_df]
-    ]
-
-    maxed_sol_df.sort_values(by="sample_concentration", inplace=True)
-    sol100_df.sort_values(by="sample_concentration", inplace=True)
-    return insol_df, maxed_sol_df, sol100_df
 
 
 def report_overlaps(

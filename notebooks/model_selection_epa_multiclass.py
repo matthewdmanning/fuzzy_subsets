@@ -533,58 +533,6 @@ def select_subsets_from_model(
         model_subsets_dict,
         model_scores_dict,
     )
-
-
-def fetch_padel(smiles_df, desc_path, exp_dir):
-    epa_df = pd.DataFrame([])
-    if os.path.isfile("{}.pkl".format(desc_path)):
-        epa_df = pd.read_pickle("{}.pkl".format(desc_path))
-        # epa_df = epa_df[~epa_df.index.duplicated()]
-    overage = epa_df.index.difference(smiles_df.index)
-    epa_df.drop(overage, inplace=True)
-    missing_smiles = smiles_df.index.difference(epa_df.index).dropna()
-    new_smiles = smiles_df["smiles"].squeeze()[missing_smiles]
-    """
-            new_smiles = missing_smiles.intersection(
-                smiles_df.index.map(sid_to_key)
-            ).dropna()
-            """
-    # missing_smiles = different_smiles.difference(smiles_df.index)
-    if new_smiles.size > 0:
-        if not os.path.isfile("{}desc_api_out.pkl".format(exp_dir)):
-            desc_df, info_df, failed_list = get_descriptors(
-                smi_list=new_smiles.tolist()
-            )
-            assert not desc_df.empty or len(failed_list) > 0
-            desc_df.to_pickle("{}desc_api_out.pkl".format(exp_dir))
-        else:
-            desc_df = pd.read_pickle("{}desc_api_out.pkl".format(exp_dir))
-        if not desc_df.empty and not epa_df.empty:
-            if desc_df.shape[1] == epa_df.shape[1]:
-                epa_df = pd.concat([epa_df, desc_df])
-            else:
-                print(
-                    "epa_df and desc_df are different shapes[1]:\n{}\n{}".format(
-                        epa_df.shape, desc_df.shape
-                    )
-                )
-                epa_df = desc_df
-            epa_df = epa_df[~epa_df.index.duplicated()]
-        elif epa_df.empty and not desc_df.empty:
-            epa_df = desc_df
-        elif not epa_df.empty:
-            print("desc_df is empty!!!")
-            pass
-        else:
-            raise ValueError
-        epa_df.columns = padel_categorization.get_short_padel_names().astype(str)
-        epa_df.dropna(how="all", axis=1, inplace=True)
-        epa_df.dropna(how="any", inplace=True)
-        epa_df.to_pickle("{}.pkl".format(desc_path))
-    else:
-        epa_df.dropna(how="all", axis=1, inplace=True)
-        epa_df.dropna(how="any", inplace=True)
-    return epa_df
             [
                 remaining_features.remove(f)
                 for f in best_features
@@ -675,24 +623,6 @@ def train_multilabel_models(
     return cv_results, cv_predicts, best_features
 
 
-def get_correlations(dev_df, dev_labels, corr_path, xc_path, select_params):
-    if os.path.isfile(corr_path):
-        best_corrs = pd.read_pickle(corr_path)
-        print("Target correlation retrieved from disk.")
-        print(best_corrs)
-    else:
-        print("Target correlation calculated.")
-        best_corrs = dev_df.corrwith(dev_labels, method=select_params["corr_method"])
-        best_corrs.to_pickle(corr_path)
-    if os.path.isfile(xc_path):
-        print("Cross-correlation retrieved from disk.")
-        cross_corr = pd.read_pickle(xc_path)
-    else:
-        print("Cross-correlation calculated.")
-        cross_corr = dev_df.corr(method=select_params["xc_method"])
-        cross_corr.to_pickle(xc_path)
-    print("Cross-correlation:\n{}".format(cross_corr))
-    return best_corrs, cross_corr
 
 
 def get_multilabel_models(scorer, meta_est=False):
@@ -872,27 +802,6 @@ def standardize_smiles(feature_df, combo_labels, maxed_sol_labels, std_pkl):
     return smiles_df, sid_to_key
 
 
-def lookup_chem(comlist, batch_size=100, type="sid", prefix="DTXSID"):
-    # stdizer = DescriptorRequestor.QsarStdizer(input_type="dtxsid")
-    api_url = "https://ccte-cced-cheminformatics.epa.gov/api/search/download/properties"
-    response_list = list()
-    auth_header = {"x-api-key": os.environ.get("INTERNAL_KEY")}
-    with requests.session() as r:
-        req = requests.Request(method="POST", url=api_url)
-        for c_batch in itertools.batched(comlist, n=batch_size):
-            req_json = {"ids": [], "format": type}
-            if prefix is not None:
-                c_batch = [
-                    c.removeprefix(prefix) for c in c_batch if prefix is not None
-                ]
-            for c in c_batch:
-                req_json["ids"].append({"id": c, "sim": 0})
-            response = r.request(
-                method="POST", url=api_url, json=req_json, headers=auth_header
-            )
-            response_list.extend(response.json())
-    response_df = pd.json_normalize(response_list)
-    return response_df
 
 
 def get_standardizer(comlist, batch_size=100, input_type="smiles"):

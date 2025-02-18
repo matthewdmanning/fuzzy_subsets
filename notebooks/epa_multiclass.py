@@ -23,8 +23,8 @@ from sklearn.multiclass import OneVsOneClassifier, OneVsRestClassifier
 
 import padel_categorization
 import vapor_pressure_selection
-from clean_new_epa_data import get_query_data
 from data_cleaning import qsar_readiness
+from data_tools import get_query_data
 
 
 def optimize_tree(feature_df, labels, model, scoring, cv):

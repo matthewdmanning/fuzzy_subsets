@@ -12,7 +12,7 @@ from sklearn.feature_selection import f_classif, mutual_info_classif
 from sklearn.preprocessing import RobustScaler
 
 import data_tools
-from correlation_filter import find_correlation
+from correlation_filter import cross_corr_filter
 from data_cleaning import clean_and_check
 from quick_models import combined_rus_cv_results
 
@@ -321,7 +321,7 @@ def preprocess_data(data_path, label_path, selection_dir):
     if os.path.isfile(overthresh_path):
         overthresh_corr = pd.read_csv(overthresh_path, index_col="Features")
     else:
-        overthresh_corr = find_correlation(cross_corr)
+        overthresh_corr = cross_corr_filter(cross_corr)
         overthresh_corr.to_csv(overthresh_path, index=True, index_label="Features")
     train_df.drop(columns=train_df[overthresh_corr.index], inplace=True)
     print(

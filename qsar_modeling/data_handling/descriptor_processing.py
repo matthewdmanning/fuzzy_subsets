@@ -188,3 +188,25 @@ def main(
     else:
         all_desc = api_desc
     return all_desc
+
+def epa_chem_lookup_api(comlist, batch_size=100, type="sid", prefix="DTXSID"):
+    # stdizer = DescriptorRequestor.QsarStdizer(input_type="dtxsid")
+    api_url = "https://ccte-cced-cheminformatics.epa.gov/api/search/download/properties"
+    response_list = list()
+    auth_header = {"x-api-key": os.environ.get("INTERNAL_KEY")}
+    with requests.session() as r:
+        req = requests.Request(method="POST", url=api_url)
+        for c_batch in itertools.batched(comlist, n=batch_size):
+            req_json = {"ids": [], "format": type}
+            if prefix is not None:
+                c_batch = [
+                    c.removeprefix(prefix) for c in c_batch if prefix is not None
+                ]
+            for c in c_batch:
+                req_json["ids"].append({"id": c, "sim": 0})
+            response = r.request(
+                method="POST", url=api_url, json=req_json, headers=auth_header
+            )
+            response_list.extend(response.json())
+    response_df = pd.json_normalize(response_list)
+    return response_df
