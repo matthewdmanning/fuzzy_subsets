@@ -6,56 +6,12 @@ import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 from sklearn.metrics import (
-    ConfusionMatrixDisplay,
     DetCurveDisplay,
-    get_scorer,
-    get_scorer_names,
     RocCurveDisplay,
 )
 
 from data.constants import names_dict, score_dict
 from data_handling.persistence import logging
-
-
-def clf_score_report_from_fitted(results_dict, weights, metrics, displays):
-    score_dict = dict([(s, get_scorer(s)) for s in get_scorer_names()])
-    metrics_dict, display_dict = dict(), dict()
-    for mod_name, mod in results_dict.items():
-        [v.update((mod_name, dict())) for v in mod.values()]
-        if mod_name != "true":
-            for s, split_name in enumerate(mod.keys()):
-                if split_name == "true":
-                    continue
-                [v[mod_name].update((split_name, list())) for v in mod.values()]
-                for cv_num in range(len(mod[split_name])):
-                    score_kwargs = {
-                        "sample_weight": weights[split_name][cv_num],
-                        "pos_label": 0,
-                        "average": "weighted",
-                        "adjusted": "False",
-                    }
-    rocfig, rocax = plt.subplots()
-    rocfig.set_dpi(600)
-    return rocfig, rocax
-
-
-def get_confusion_display(
-    estimator, X, y_true, class_names=None, axes=None, colors=None
-):
-    if colors is None:
-        colors = plt.get_cmap("coolwarm").reversed(name="warmcool")
-    cmd = ConfusionMatrixDisplay.from_estimator(
-        X=X,
-        y=y_true,
-        estimator=estimator,
-        ax=axes,
-        display_labels=class_names,
-        cmap=colors,
-        xticks_rotation=0.3,
-        normalize="true",
-        values_format=".4f",
-    )
-    return cmd
 
 
 def roc_bounds(

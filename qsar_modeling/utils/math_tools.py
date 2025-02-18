@@ -4,7 +4,9 @@ from scipy.stats import kendalltau
 
 
 def calculate_kendalls_c(first_series, second_series):
-    return kendalltau(first_series, second_series, nan_policy="raise", variant="c").statistic
+    return kendalltau(
+        first_series, second_series, nan_policy="raise", variant="c"
+    ).statistic
 
 
 def softmax(X, axis=0):

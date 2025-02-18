@@ -9,7 +9,7 @@ from matplotlib import pyplot as plt
 from sklearn.inspection import PartialDependenceDisplay, permutation_importance
 from sklearn.metrics import balanced_accuracy_score, make_scorer
 
-from feature_selection_plots import get_selection_scores
+from archive.feature_selection_plots import get_selection_scores
 
 
 def violin_plots(feature_df, labels, subset, batch_size=4, title=None):

@@ -102,24 +102,17 @@ def fit_score_model_cv(
     cv_dev_score_dict, cv_eval_score_dict = dict(), dict()
     dev_score_summary, eva_score_summary = dict(), dict()
 
-    for score_name, score_obj in get_pred_score_funcs():
-        cv_dev_score_dict[score_name] = list()
-        cv_eval_score_dict[score_name] = list()
 
-        for dev_X, dev_y, eva_X, eva_y in cv_tools.split_df(
-            feature_df, labels, splitter=cv
-        ):
-            if scaler is not None:
-                scaler.fit(dev_X)
-                dev_X = scaler.transform(dev_X)
-                eva_X = scaler.transform(eva_X)
-            fit_est = estimator.fit(dev_X, dev_y)
-            dev_predict = fit_est.predict(dev_X)
-            eva_predict = fit_est.predict(eva_X)
-            cv_dev_score_dict[score_name].append(score_obj(dev_y, dev_predict))
-            cv_eval_score_dict[score_name].append(score_obj(eva_y, eva_predict))
-            dev_score_summary[score_name] = list()
-            eva_score_summary[score_name] = list()
+def combine_scores(
+    cv_dev_score_dict,
+    cv_eval_score_dict,
+    dev_score_summary,
+    eva_score_summary,
+    score_name_list,
+):
+    for score_name in score_name_list:
+        dev_score_summary[score_name] = list()
+        eva_score_summary[score_name] = list()
         for stat_name, stat in zip(
             ["Mean", "StDev", "Median", "Min", "Max"],
             [np.mean, np.std, np.median, np.min, np.max],
@@ -130,19 +123,17 @@ def fit_score_model_cv(
             eva_score_summary[stat_name].append(
                 "{:.5f}".format(stat([[s] for s in cv_eval_score_dict[score_name]]))
             )
-    dev_df = pd.DataFrame.from_dict(
-        data=dev_score_summary,
-        orient="index",
+    dev_df = pd.DataFrame.from_records(
+        data=cv_dev_score_dict,
+        index=[cv_dev_score_dict.keys()],
         columns=["Mean", "StDev", "Median", "Min", "Max"],
     )
-    eva_df = pd.DataFrame.from_dict(
-        data=eva_score_summary,
-        orient="index",
+    eva_df = pd.DataFrame.from_records(
+        data=cv_eval_score_dict,
+        index=[cv_eval_score_dict.keys()],
         columns=["Mean", "StDev", "Median", "Min", "Max"],
     )
-    dev_df.to_csv(dev_score_path)
-    eva_df.to_csv(eva_score_path)
-    return dev_score_summary, eva_score_summary, cv_dev_score_dict, cv_eval_score_dict
+    return dev_df, eva_df
 
 
 def score_model(
