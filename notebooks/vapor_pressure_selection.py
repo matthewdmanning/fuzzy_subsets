@@ -441,7 +441,45 @@ def sequential_elimination(
     else:
         sfs_tol = select_params["thresh_sfs"]
     # TODO: Implement configurable predict function for boosting.
-    # TODO: Eliminate duplicated scoring.
+    sfs_score_dict = dict().fromkeys(selection_state["current_features"], list())
+    current_score_adj = np.mean(
+        selection_state["subset_scores"][
+            tuple(sorted(selection_state["current_features"]))
+        ]
+    ) - np.std(
+        selection_state["subset_scores"][
+            tuple(sorted(selection_state["current_features"]))
+        ]
+    )
+    for left_out, score_list in sfs_score_dict.items():
+        new_subset = selection_state["current_features"].remove(left_out)
+        selection_state, scores = score_subset(
+            train_df,
+            labels,
+            selection_models=selection_models,
+            selection_state=selection_state,
+            select_params=select_params,
+            save_dir=save_dir,
+            subset=new_subset,
+            record_results=True,
+        )
+        sfs_score_dict[left_out] = scores
+    worst_feature_tup = sorted(
+        list(sfs_score_dict.items()), key=lambda x: (np.mean(x[1] - np.std(x[1])))
+    )[0]
+    if (
+        np.mean(worst_feature_tup[1]) - np.std(worst_feature_tup[1])
+        <= current_score_adj + sfs_tol
+    ) and not score_drop_exceeded(worst_feature_tup[1], select_params, selection_state):
+        subset_scores = worst_feature_tup[1]
+        selection_state["rejected_features"].update((worst_feature_tup[0], "SFS"))
+        selection_state["current_features"].remove(worst_feature_tup[0])
+
+    else:
+        subset_scores = selection_state["subset_scores"][
+            selection_state["current_features"]
+        ]
+    """
     sfs = (
         SequentialFeatureSelector(
             estimator=clone(selection_models["predict"]),
