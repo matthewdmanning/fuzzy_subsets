@@ -210,8 +210,11 @@ def padel_short_to_long():
 
 
 @cache
-def padel_short_to_long():
+def padel_convert_length(short_to_long=True):
     padel_df = get_full_padel_df()
     convert_df = padel_df[["Description", "Descriptor name"]]
-    convert_df.set_index(keys="Descriptor name", inplace=True)
+    if short_to_long:
+        convert_df.set_index(keys="Descriptor name", inplace=True)
+    else:
+        convert_df.set_index(keys="Description", inplace=True)
     return convert_df.squeeze()
