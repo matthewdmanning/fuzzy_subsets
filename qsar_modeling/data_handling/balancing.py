@@ -9,7 +9,11 @@ def get_epa_sol_all_insol(feature_df, labels, data_subset_tups):
     # train_sols = labels[labels == 1].index
     # sol_samples = tups['epa_sol'][0].index.intersection(train_sols)
     en_in = data_subset_tups["en_in"][0][
-        [c for c in data_subset_tups["en_in"][0].index if c not in data_subset_tups["epa_in"][0].index]
+        [
+            c
+            for c in data_subset_tups["en_in"][0].index
+            if c not in data_subset_tups["epa_in"][0].index
+        ]
     ]
     all_samples_ind = pd.concat(
         [data_subset_tups["epa_in"][0], en_in, data_subset_tups["epa_sol"][0]]
