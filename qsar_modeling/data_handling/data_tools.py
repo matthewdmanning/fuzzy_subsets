@@ -7,6 +7,7 @@ from sklearn.utils import check_X_y
 
 from data.feature_name_lists import get_estate_counts
 from data_handling.data_cleaning import check_inchi_only, clean_and_check
+from descriptor_processing import epa_chem_lookup_api
 from padel_categorization import get_two_dim_only
 
 checker = partial(
@@ -131,18 +132,23 @@ def load_maxmin_data(dataset, clean=True):
 
 
 def load_split_data(split="train", clean=True):
+    if split != "train":
+        raise NotImplementedError
     train_path = "{}data/enamine_all_padel.pkl".format(os.environ.get("PROJECT_DIR"))
     with open(train_path, "rb") as f:
         feature_df = pickle.load(f)
+    print(feature_df)
     labels = (
         pd.read_csv(
             "{}filtered/solubility_random_split_{}.csv".format(
                 os.environ.get("FINAL_DIR"), split
-            )
+            )).set_index(keys="INCHI_KEY", drop=True).squeeze()
         )
-        .set_index(keys="INCHI_KEY", drop=True)
-        .squeeze()[feature_df.index]
-    )
+    print(labels)
+    print(labels.index.intersection(feature_df.index).shape)
+    print(labels.index.difference(feature_df.index).shape)
+    print(feature_df.index.difference(labels.index).shape)
+    labels = labels[labels.index.intersection(feature_df.index)]
     if clean:
         feature_df, labels = clean_and_check(feature_df, labels)
     return feature_df, labels
@@ -281,3 +287,51 @@ def get_query_data():
     maxed_sol_df.sort_values(by="sample_concentration", inplace=True)
     sol100_df.sort_values(by="sample_concentration", inplace=True)
     return insol_df, maxed_sol_df, sol100_df
+
+
+def get_conversions(compound_df, lookup_path=None):
+    """
+    Uses internal EPA API to grab compound identifiers and form into a mapping.
+    Current implementation maps DTXSIDs -> SMILES.
+
+    Parameters
+    ----------
+    compound_df: pd.DataFrame | pd.Series, Index must contain compound indentifier
+    lookup_path: str, path to existing mapping or desired save location
+
+    Returns
+    -------
+    combo_labels: pd.DataFrame
+    convert_df: pd.DataFrame | pd.Series, mapping between identifiers, NaNs removed.
+    """
+    if lookup_path is not None and os.path.isfile(lookup_path):
+        convert_df = pd.read_csv(lookup_path)
+        if True:
+            convert_df.drop(
+                columns=[x for x in convert_df.columns if "Unnamed" in str(x)],
+                inplace=True,
+            )
+            convert_df.drop(columns="mol", inplace=True, errors="ignore")
+            convert_df.to_csv(lookup_path)
+    else:
+        print(lookup_path)
+        # raise IOError
+        convert_df = epa_chem_lookup_api(comlist=compound_df.index.tolist())
+        convert_df.drop(columns="mol", inplace=True, errors="ignore")
+        if lookup_path is not None:
+            convert_df.to_csv(lookup_path)
+        convert_df.drop(
+            columns=["bingoId", "name", "casrn", "formula", "cid"],
+            inplace=True,
+            errors="ignore",
+        )
+    combo_labels = pd.concat(
+        [convert_df, compound_df.reset_index(names="label_id")], axis=1
+    )
+    failed_lookup = combo_labels[combo_labels["id"] != combo_labels["label_id"]]
+    combo_labels.drop(index=failed_lookup.index, inplace=True)
+    nosmiles = combo_labels[
+        (combo_labels["smiles"] == "nan") | combo_labels["smiles"].isna()
+    ]
+    combo_labels.drop(index=nosmiles.index, inplace=True)
+    return combo_labels, convert_df
