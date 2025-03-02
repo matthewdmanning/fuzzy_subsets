@@ -3,20 +3,20 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 
 
-def balance_source_sol_data(source_sol_df):
-    return None
-
-
-def get_epa_sol_all_insol(feature_df, labels, tups):
+def get_epa_sol_all_insol(feature_df, labels, data_subset_tups):
     # Retrieves all insoluble and EPA soluble compounds and returns as a combined feature DataFrame and solubility Series.
     # insol_samples = pd.concat([tups['epa_in'][0], tups['en_in'][0]]).index.intersection(train_insols)
     # train_sols = labels[labels == 1].index
     # sol_samples = tups['epa_sol'][0].index.intersection(train_sols)
-    en_in = tups["en_in"][0][
-        [c for c in tups["en_in"][0].index if c not in tups["epa_in"][0].index]
+    en_in = data_subset_tups["en_in"][0][
+        [
+            c
+            for c in data_subset_tups["en_in"][0].index
+            if c not in data_subset_tups["epa_in"][0].index
+        ]
     ]
     all_samples_ind = pd.concat(
-        [tups["epa_in"][0], en_in, tups["epa_sol"][0]]
+        [data_subset_tups["epa_in"][0], en_in, data_subset_tups["epa_sol"][0]]
     ).index.intersection(feature_df.index)
     all_samples = labels[all_samples_ind]
     all_samples[all_samples == "Insoluble"] = 0

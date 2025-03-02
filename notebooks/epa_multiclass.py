@@ -406,6 +406,7 @@ def train_multilabel_models(epa_df, epa_labels, epa_scorer, mc_path):
         "scoring": make_scorer(balanced_accuracy_score),
     }
     from sklearn.ensemble import GradientBoostingClassifier
+
     gbc_default = GradientBoostingClassifier()
     ovo_tree = OneVsOneClassifier(estimator=best_tree)
     ovo_lr = OneVsOneClassifier(estimator=lrcv)
@@ -428,7 +429,7 @@ def train_multilabel_models(epa_df, epa_labels, epa_scorer, mc_path):
     test_df = epa_df.loc[test_labels.index]
     search_features = vapor_pressure_selection.get_search_features(train_df)
     print("{} features to select from.".format(len(search_features)))
-    short_to_long = padel_categorization.padel_short_to_long().to_dict()
+    short_to_long = padel_categorization.padel_convert_length().to_dict()
     # test_padel_conversion(search_features, short_to_long)
     best_corrs = train_df[search_features].corrwith(train_labels, method="kendall")
     cross_corr = train_df[search_features].corr(method="kendall")
