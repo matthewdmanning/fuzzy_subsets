@@ -1,9 +1,12 @@
+import itertools
 import os
+import pprint
 from collections import OrderedDict
 
 import numpy as np
 import pandas as pd
-from scipy.stats import kendalltau
+
+import utils.math_tools
 from utils import math_tools
 
 
@@ -158,6 +161,7 @@ def get_correlations(
     xc_path=None,
     corr_method="kendall",
     xc_method="kendall",
+    use_disk=True,
 ):
     """
     Returns label and pairwise feature correlation matrices using the given methods.
@@ -179,9 +183,8 @@ def get_correlations(
     cross_corr: DataFrame: cross-correlation coefficients
 
     """
-    from scipy.stats import kendalltau
 
-    if os.path.isfile(corr_path):
+    if os.path.isfile(corr_path) and use_disk:
         label_corr = pd.read_pickle(corr_path)
         print("Target correlation retrieved from disk.")
     else:
@@ -189,7 +192,7 @@ def get_correlations(
         label_corr = calculate_correlation(feature_df, labels, method=corr_method)
         if corr_path is not None and not labels.empty:
             label_corr.to_pickle(corr_path)
-    if os.path.isfile(xc_path):
+    if os.path.isfile(xc_path) and use_disk:
         print("Cross-correlation retrieved from disk.")
         cross_corr = pd.read_pickle(xc_path)
     else:
@@ -209,13 +212,157 @@ def calculate_correlation(x1, x2=None, method="kendall"):
         else:
             return meth
 
+    corr_method = _get_method(method)
     if x2 is None:
-        corr_df = x1.corr(method=_get_method(method))
-        assert corr_df.shape == (x1.shape[1], x1.shape[1])
+        corr_df = x1.corr(method=corr_method)
+        # assert corr_df.shape == (x1.shape[1], x1.shape[1])
     else:
-        corr_df = x1.corrwith(other=x2, method=_get_method(method))
-        if len(x2.shape) <= 1 or x2.shape[1] == 1:
-            assert corr_df.shape[0] == x1.shape[1]
-        elif len(x1.shape) <= 1 or x1.shape[1] == 1:
-            assert corr_df.shape[0] == x2.shape[1]
+        corr_df = x1.corrwith(other=x2, method=corr_method)
+        if False:
+            if len(x2.shape) <= 1 or x2.shape[1] == 1:
+                assert corr_df.shape[0] == x1.shape[1]
+            elif len(x1.shape) <= 1 or x1.shape[1] == 1:
+                assert corr_df.shape[0] == x2.shape[1]
     return corr_df
+
+
+def weighted_mean(values, weights, axis=1):
+    if len(values.squeeze().shape) > 1:
+        return np.sum(values * weights, axis=axis) / np.sum(weights)
+    else:
+        return np.sum(values * weights) / np.sum(weights)
+
+
+def weighted_covariance(x, y, weights):
+    delta_x = x - weighted_mean(x, weights=weights)
+    delta_y = y - weighted_mean(y, weights=weights)
+    return np.sum(weights * delta_x * delta_y) / np.sum(weights)
+
+
+def single_weighted_pearson_correlation(x, y, weights):
+    return weighted_covariance(x, y, weights) / np.sqrt(
+        weighted_covariance(x, x, weights) * weighted_covariance(y, y, weights)
+    )
+
+
+def weighted_correlation_matrix(feature_df, weights):
+    """
+    Calculates the weighted Pearson correlation coefficient for a DataFrame.
+
+    Parameters
+    ----------
+    feature_df: pd.DataFrame, (n_samples, n_features)
+    weights: pd.Series, (n_samples), relative importance weights
+
+    Returns
+    -------
+    wcm: pd.DataFrame, (n_features, n_features) diagonally symmetric weighted correlations between features. All diagonal components are set to 1.0
+    """
+    # weights = (weights - weights.min()) / weights.max()
+    # print(weights.describe())
+    # print(weights.head())
+    assert weights[weights > 0.000001].size > 0
+    w_sums = weights.sum()
+    # print("w_sums: {}".format(w_sums))
+    w_df = feature_df.multiply(weights, axis="index")
+    # print("weighted features: {}".format(w_df))
+    w_means = w_df.sum() / w_sums
+    # print("w_means: {}".format(w_means))
+    delta_df = feature_df.sub(w_means, axis=1)
+    # print("deltas: {}\n{}".format(delta_df.head(), delta_df.shape))
+    assert delta_df.shape == feature_df.shape
+    # pprint.pp(delta_df.apply(np.square, raw=True).multiply(weights, axis="index"))
+    w_var = (
+        delta_df.apply(np.square, raw=True)
+        .multiply(weights, axis="index")
+        .sum(axis=0)
+        .divide(w_sums)
+    )
+    # print("w_vars:\n{}\n{}".format(w_var, w_var.shape))
+    w_std = np.sqrt(w_var.to_numpy(dtype=np.float32))
+    delta_arr = delta_df.to_numpy(dtype=np.float32)
+    w_arr = weights.to_numpy(dtype=np.float32)
+    # print("w_stds:\n{}\n{}".format(w_std, w_std.shape))
+    wcm = np.empty(shape=(feature_df.shape[1], feature_df.shape[1]), dtype=np.float32)
+    for i, j in itertools.combinations(np.arange(feature_df.shape[1]), 2):
+        wcm[i, j] = (np.sum(w_arr * delta_arr[:, i] * delta_arr[:, j])) / (
+            w_sums * w_std[i] * w_std[j]
+        )
+        wcm[j, i] = wcm[i, j]
+        # Removed division by w_sum bc normalized above
+    weighted_corr_df = pd.DataFrame(
+        data=wcm,
+        index=feature_df.columns,
+        columns=feature_df.columns,
+    )
+    for i in np.arange(weighted_corr_df.shape[1]):
+        weighted_corr_df.iloc[i, i] = 1.0
+    print("Weighted corr matrix:\n{}".format(pprint.pformat(weighted_corr_df)))
+    return weighted_corr_df
+
+
+def bootstrapped_weighted_correlation(
+    feature_df,
+    weights,
+    labels=None,
+    method="kendall",
+    n_bootstraps=100,
+    sample_size=None,
+):
+    """
+    Uses bootstrap sampling to estimate the weighted correlation. Correlations are simple averages of bootstrapped results.
+    If labels is given, returns pd.Series [n_features] with weighted-correlation of features with label.
+    So far, only Kendall's Tau-C is supported.
+
+    Warnings: Not Implented!
+    If labels is None, returns pairwise weighted-correlation matrix as pd.DataFrame [n_features, n_features]
+    For non-bootstrapped, weighted Pearson correlation matrix, use weighted_correlation_matrix.
+
+    Parameters
+    ----------
+    feature_df: pd.DataFrame shape [n_samples, n_features]
+    weights: pd.Series,  shape [n_samples], Sample importance weights,
+    labels: pd.Series, shape[n_samples],
+    method: str or callable, So far only "kendall" is supported
+    n_bootstraps: int, Number of sampling iterations to perform.
+    sample_size: Number of samples drawn for each bootstrap iteration.
+
+    Returns
+    -------
+    corr_mean: pd.DataFrame | pd.Series, Arithmetic mean of boostrapped correlations for each feature pair.
+    """
+    if sample_size is None:
+        sample_size = int(min(feature_df.shape[0], max(500, np.sqrt(feature_df.shape[0]))))
+    corr_list = list()
+    for i in np.arange(n_bootstraps):
+        sample = feature_df.sample(n=sample_size, axis="index", weights=weights)
+        if method == "kendall":
+            corr_list.append(
+                [
+                    utils.math_tools.calculate_kendalls_c(
+                        sample[c], labels[sample.index]
+                    )
+                    for c in feature_df.columns
+                ]
+            )
+        else:
+            raise NotImplementedError
+    print(corr_list[0])
+    corr_df = pd.concat([pd.Series(c, index=feature_df.columns).T for c in corr_list])
+    if len(corr_df.shape) < 2:
+        corr_df = pd.DataFrame(data=np.stack(
+            [np.array(c) for c in corr_list]
+        ), columns=feature_df.columns)
+    print(corr_df)
+    # print(corr_df.columns)
+    corr_mean = corr_df.mean(axis="index")
+    print(corr_mean)
+    corr_mean.index = feature_df.columns
+    corr_std = corr_df.std(axis="index")
+    corr_std.index = corr_df.columns
+    print(
+        "Correlation {} Mean/Std:\n{}\n{}\n".format(
+            method, pprint.pformat(corr_mean), pprint.pformat(corr_std)
+        )
+    )
+    return corr_mean
