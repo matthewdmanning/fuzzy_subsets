@@ -51,7 +51,7 @@ def _permutation_removal(train_df, labels, estimator, select_params, selection_s
             train_df[selection_state["current_features"]],
             labels,
             n_repeats=n_repeats,
-            scoring=select_params["scoring"],
+            scoring=select_params["scorer"],
             n_jobs=-1,
         )
         import_mean = pd.Series(
@@ -179,18 +179,25 @@ def select_feature_subset(
     if select_params["cv"] is None:
         select_params["cv"] = RepeatedStratifiedKFold(random_state=0, n_repeats=3)
     if select_params["scoring"] is None:
-        select_params["scoring"] = make_scorer(balanced_accuracy_score)
+        select_params["scoring"] = balanced_accuracy_score
+    if select_params["scorer"] is None:
+        select_params["scorer"] = make_scorer(select_params["scoring"])
     with open("{}selection_params.txt".format(save_dir), "w") as f:
         for k, v in select_params.items():
             f.write("{}: {}\n".format(k, v))
     if initial_subset is None:
-        initial_subset = [target_corr.abs().idxmax()]
+        initial_subset = (
+            target_corr.abs()
+            .sort_values(ascending=False)
+            .iloc[: select_params["add_n_feats"]]
+            .index.tolist()
+        )
     selection_state = {
         "current_features": initial_subset,
         "subset_scores": dict(),
         "best_subset": list(),
         "rejected_features": dict(),
-        "best_score_adj": 0.0,
+        "best_score_adj": -1.0,
         "previous_best_score": 0.0,
         "fails": 0,
     }
@@ -205,18 +212,22 @@ def select_feature_subset(
     print(train_df.shape, sqcc_df.shape, target_corr.shape)
     # Start feature loop
     for i in np.arange(select_params["max_trials"]):
+        print("Feature_df shape: {}".format(train_df.shape))
+        print(len(selection_state["current_features"]))
+        # TODO: Does this check need to be here? Especially with the new weighting for reused features
         if (
-            len(selection_state["current_features"]) > select_params["max_features_out"]
-            or train_df.shape[1]
-            - len([selection_state["rejected_features"].keys()])
-            - len(selection_state["current_features"])
-            < select_params["n_vif_choices"]
+            len(selection_state["current_features"])
+            >= select_params["max_features_out"]
         ):
+            # or train_df.shape[1]
+            # - len([selection_state["rejected_features"].keys()])
+            # - len(selection_state["current_features"])
+            # < select_params["n_vif_choices"]
             print("Out of features to pick.")
             print(selection_state["current_features"])
             print(len([selection_state["rejected_features"].keys()]))
             break
-        clean_up = False
+        """
         try:
             sqcc_df_choices = sqcc_df.drop(
                 index=selection_state["rejected_features"]
@@ -229,17 +240,21 @@ def select_feature_subset(
                 .loc[train_df.columns.intersection(sqcc_df.index)]
                 .drop(index=selection_state["rejected_features"])
                 .drop(columns=selection_state["rejected_features"])
-            )
+            )        
+        """
+
+        clean_up = False
         target_corr_choices = target_corr[
             train_df.columns.intersection(target_corr.index)
         ].drop(selection_state["rejected_features"])
         new_feat, selection_state = choose_next_feature(
             feature_df=train_df,
             feature_list=selection_state["current_features"],
-            target_corr=target_corr_choices,
-            sq_xcorr=sqcc_df_choices,
+            target_corr=target_corr,
+            sq_xcorr=sqcc_df,
             selection_models=selection_models,
             selection_state=selection_state,
+            select_params=select_params,
         )
         if new_feat is None:
             break
@@ -254,6 +269,7 @@ def select_feature_subset(
                 record_results=True,
             )
         print(selection_state["current_features"], subset_scores)
+        # Check if score has dropped too much.
         if score_drop_exceeded(
             subset_scores,
             selection_params=select_params,
@@ -267,7 +283,9 @@ def select_feature_subset(
                     len(selection_state["current_features"])
                     <= select_params["features_min_sfs"]
                 ):
-                    selection_state["current_features"] = selection_state["best_subset"]
+                    selection_state["current_features"] = copy.deepcopy(
+                        selection_state["best_subset"]
+                    )
                     break
                 selection_state, subset_scores = sequential_elimination(
                     train_df,
@@ -338,24 +356,21 @@ def select_feature_subset(
                 else:
                     # _get_fails(selection_state)
                     break
-        if (
-            len(selection_state["current_features"])
-            >= select_params["max_features_out"]
-        ):
-            clean_up = True
         while (
-            _get_fails(selection_state) >= select_params["fails_min_sfs"] or clean_up
-        ) and (
-            select_params["features_min_sfs"] < len(selection_state["current_features"])
-        ):
+            len(selection_state["current_features"])
+            >= select_params["features_min_sfs"]
+            or _get_fails(selection_state) >= select_params["fails_min_sfs"]
+        ) or clean_up:
+            if (
+                len(select_params["current_features"])
+                >= select_params["max_features_out"]
+            ):
+                clean_up = True
             # DEBUG
-            print(len(selection_state["current_features"]))
-            print(select_params["min_features_out"])
             if (
                 len(selection_state["current_features"])
                 <= select_params["min_features_out"]
             ):
-                clean_up = False
                 break
             n_features_in = copy.deepcopy(len(selection_state["current_features"]))
             selection_state, subset_scores = sequential_elimination(
@@ -367,6 +382,7 @@ def select_feature_subset(
                 clean_up=clean_up,
                 save_dir=save_dir,
             )
+            print(select_params["rejected_features"])
             # SFS fails to eliminate a feature.
             # DEBUG
             print(
@@ -402,6 +418,7 @@ def select_feature_subset(
         with open("{}best_model.pkl".format(save_dir), "wb") as f:
             pickle.dump(best_fit_model, f)
     else:
+        print(selection_state["best_subset"])
         raise RuntimeError
     print("Rejects: {}".format(selection_state["rejected_features"]))
     pd.Series(selection_state["rejected_features"], name="Dropped Features").to_csv(
@@ -523,8 +540,8 @@ def score_subset(
     save_dir,
     subset=None,
     record_results=False,
+    sample_weight=None,
 ):
-    print("Subset passed".format(subset))
     if subset is None or len(subset) == 0:
         subset = tuple(sorted(selection_state["current_features"]))
     elif len(selection_state["current_features"]):
@@ -535,6 +552,7 @@ def score_subset(
         current_features = [copy.deepcopy(subset)]
     else:
         current_features = tuple(sorted(copy.deepcopy(subset)))
+    assert len(current_features) > 0
     score_tuple = [(select_params["score_name"], select_params["scoring"])]
     scores = None
     for prior_set in selection_state["subset_scores"].keys():
@@ -545,14 +563,36 @@ def score_subset(
     if scores is None:
         selection_state["subset_scores"][current_features] = list()
         # best_corrs, cross_corr = get_correlations(train_df, train_labels, path_dict["corr_path"], path_dict["xc_path"], select_params["corr_method"], select_params["xc_method"])
-        results = scoring.cv_model_generalized(
-            estimator=selection_models["predict"],
-            feature_df=feature_df[list(current_features)],
-            labels=labels,
-            cv=select_params["cv"],
-            scorer_tups=score_tuple,
-        )
-        scores = results[select_params["score_name"]]["test"]
+
+        if "sample_weight" in select_params.keys() or sample_weight is not None:
+            if sample_weight is not None:
+                weights = sample_weight
+            else:
+                weights = select_params["sample_weight"]
+            results, test_idx_list = scoring.cv_model_generalized(
+                estimator=selection_models["predict"],
+                feature_df=feature_df[list(current_features)],
+                labels=labels,
+                cv=select_params["cv"],
+                sample_weight=weights,
+            )
+            scores = scoring.score_cv_results(
+                results,
+                dict(score_tuple),
+                y_true=labels,
+                score_kwargs={"sample_weight": weights},
+            )["Score"].tolist()
+        else:
+            results, test_idx_list = scoring.cv_model_generalized(
+                estimator=selection_models["predict"],
+                feature_df=feature_df[list(current_features)],
+                labels=labels,
+                cv=select_params["cv"],
+            )
+            scores = scoring.score_cv_results(
+                results, dict(score_tuple), y_true=labels
+            )["Score"].tolist()
+        print(scores)
         selection_state["subset_scores"][tuple(sorted(current_features))] = scores
         if record_results:
             selection_state = record_score(
@@ -570,9 +610,12 @@ def choose_next_feature(
     target_corr,
     sq_xcorr,
     selection_models,
+    selection_state,
+    select_params,
     vif_choice=5,
-    selection_state=None,
 ):
+    print("Feature list")
+    print(feature_list)
     feat_corrs = target_corr.drop(
         [
             c
@@ -580,7 +623,7 @@ def choose_next_feature(
             if (c in selection_state["rejected_features"].keys() or c in feature_list)
         ]
     )
-    if len(feature_list) == 0:
+    if len(feature_list) <= 0:
         sum_sqcc = pd.Series(1 / feat_corrs.index.size, index=feat_corrs.index)
     else:
         ones = pd.DataFrame(
@@ -590,8 +633,10 @@ def choose_next_feature(
             index=feat_corrs.index,
             columns=feature_list,
         )
-        sum_sqcc = ones.subtract(sq_xcorr[feature_list].loc[feat_corrs.index]).sum(
-            axis=1
+        sum_sqcc = (
+            ones.subtract(sq_xcorr[feature_list].loc[feat_corrs.index])
+            .sum(axis=1)
+            .squeeze()
         )
     x = sum_sqcc.multiply(other=np.abs(feat_corrs), fill_value=0.0)
     feat_probs = pd.Series(scipy.special.softmax(x), index=x.index).sort_values(
@@ -600,8 +645,9 @@ def choose_next_feature(
     # feature_list = list(set(feature_list))
     # noinspection PyTypeChecker
     # TODO: Clean up this logic. Purpose: Avoid string splitting. Need to get better type checking.
-    if len(feature_list) <= 1:
-        vif_choice = None
+    if len(feature_list) <= select_params["add_n_feats"]:
+        vif_choice = len(feature_list)
+        new_feat = feature_list
     new_feat = np.random.choice(
         a=feat_corrs.index.to_numpy(), size=vif_choice, replace=False, p=feat_probs
     )
@@ -612,16 +658,17 @@ def choose_next_feature(
         if new_feat not in sq_xcorr.columns.tolist():
             print("{} not in cross_corr".format(new_feat))
             raise RuntimeError("New feature is not in cross-correlation matrix")
-            new_feat = None
         else:
             new_feat = [new_feat]
     else:
         new_feat = [
             x for x in new_feat if x in sq_xcorr.columns and x in feature_df.columns
         ]
-        assert len(new_feat) > 0
-    if np.size(new_feat) > 1 or len(new_feat) > 1:
-        vifs = dict()
+    if (
+        np.size(new_feat) > select_params["add_n_feats"]
+        or len(new_feat) > select_params["add_n_feats"]
+    ):
+        vifs = pd.Series()
         for nf in new_feat:
             if nf not in feature_df.columns:
                 print("Feature {} not in feature_df".format(nf))
@@ -633,15 +680,23 @@ def choose_next_feature(
                 subset=feature_df[[nf]],
             )
             vifs[nf] = vifs_ser.min()
-        print(vifs)
-        vif_selected = pd.Series(vifs).idxmin()
-        print(vif_selected)
+        under_thresh = vifs[vifs < select_params["thresh_vif"]]
+        if under_thresh.shape[0] < select_params["add_n_feats"]:
+            under_thresh = vifs.sort_values().iloc[
+                : min(vifs.shape[0], select_params["add_n_feats"])
+            ]
+        vif_selected = under_thresh.sample(
+            n=min(under_thresh.size, select_params["add_n_feats"]),
+            weights=1 / under_thresh,
+        ).index.tolist()
     else:
-        vif_selected = new_feat[0]
+        vif_selected = new_feat[: select_params["add_n_feats"]]
+    if isinstance(vif_selected, str):
+        vif_selected = [vif_selected]
     if len(selection_state["current_features"]) == 0:
-        selection_state["current_features"] = [vif_selected]
+        selection_state["current_features"] = vif_selected
     else:
-        selection_state["current_features"].append(vif_selected)
+        selection_state["current_features"].extend(vif_selected)
         try:
             selection_state["current_features"] = sorted(
                 selection_state["current_features"]
@@ -667,6 +722,8 @@ def process_selection_data(
     scaler="standard",
     transform=None,
 ):
+    raise DeprecationWarning
+    # TODO: Delete function.
     preloaded = False
     drop_corr = False
     best_corrs, cross_corr = None, None
@@ -674,7 +731,7 @@ def process_selection_data(
         feature_df, labels = sample_clusters.grab_enamine_data()
     if dropped_dict is None:
         dropped_dict = dict()
-    combo_transform, scaler, best_corrs, cross_corr = get_standard_preprocessor(
+    combo_transform, scaler, cross_corr = get_standard_preprocessor(
         scaler, transform, select_params
     )
     combo_transform.fit(X=feature_df, y=labels)
