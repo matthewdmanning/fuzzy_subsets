@@ -142,8 +142,11 @@ def load_split_data(split="train", clean=True):
         pd.read_csv(
             "{}filtered/solubility_random_split_{}.csv".format(
                 os.environ.get("FINAL_DIR"), split
-            )).set_index(keys="INCHI_KEY", drop=True).squeeze()
+            )
         )
+        .set_index(keys="INCHI_KEY", drop=True)
+        .squeeze()
+    )
     print(labels)
     print(labels.index.intersection(feature_df.index).shape)
     print(labels.index.difference(feature_df.index).shape)
