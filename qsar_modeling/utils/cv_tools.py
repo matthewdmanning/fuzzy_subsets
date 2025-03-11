@@ -1,6 +1,6 @@
 import copy
 import itertools
-import logging
+from inspect import signature
 
 import numpy as np
 import pandas as pd
@@ -30,21 +30,38 @@ def get_split_ind(data, labels, n_splits=5, splitter=None, **splitter_kws):
     if splitter is None:
         splitter = StratifiedKFold
     indices_list = list()
-    for train_ind, test_ind in splitter(n_splits=n_splits, **splitter_kws).split(X=data, y=labels.astype(int)):
+    if splitter_kws is not None:
+        splitter_kws = dict([(k, v) for k, v in splitter_kws.items() if k in signature(splitter).parameters])
+    for train_ind, test_ind in splitter(n_splits=n_splits, **splitter_kws).split(
+        X=data, y=labels.astype(int)
+    ):
         if train_ind.size == 0 or test_ind.size == 0:
-            print('One of the indices is length 0!!!')
+            print("One of the indices is length 0!!!")
             raise ValueError
         indices_list.append((train_ind, test_ind))
     assert len(indices_list) == n_splits
     return tuple(indices_list)
 
 
-def split_df(data, labels, indices_list=None, n_splits=5, splitter=StratifiedKFold, **splitter_kws):
+def split_df(
+    data,
+    labels,
+    indices_list=None,
+    n_splits=5,
+    splitter=StratifiedKFold,
+    **splitter_kws
+):
     if indices_list is None:
-        indices_list = get_split_ind(data, labels, n_splits, splitter=splitter, **splitter_kws)
+        if splitter_kws is not None:
+            splitter_kws = dict(
+                [(k, v) for k, v in splitter_kws.items() if k in signature(splitter).parameters]
+            )
+        indices_list = get_split_ind(
+            data, labels, n_splits, splitter=splitter, **splitter_kws
+        )
     split_list = list()
     assert len(indices_list) == n_splits
-    for (train_ind, test_ind) in indices_list:
+    for train_ind, test_ind in indices_list:
         train_data = data.iloc[train_ind]
         train_labels = labels.iloc[train_ind].squeeze()
         test_data = data.iloc[test_ind]
@@ -58,32 +75,40 @@ def package_output(train_y, test_y, model_tuple):
     return true_predict_tuples
 
 
-def score_cv_results(true_predict_tuples, scoring_list='balanced', scoring_dict=None):
+def score_cv_results(true_predict_tuples, scoring_list="balanced", scoring_dict=None):
     if scoring_dict is None:
-        if scoring_list == 'balanced':
+        if scoring_list == "balanced":
             scoring_list = [matthews_corrcoef, balanced_accuracy_score]
         scoring_dict = dict([(s, (s.__name__)) for s in scoring_list])
-        scores_dict = dict([(s.__name__, {'train': list(), 'test': list()}) for s in scoring_list])
+        scores_dict = dict(
+            [(s.__name__, {"train": list(), "test": list()}) for s in scoring_list]
+        )
     else:
-        scores_dict = dict([(k, {'train': list(), 'test': list()}) for k, v in scoring_dict])
+        scores_dict = dict(
+            [(k, {"train": list(), "test": list()}) for k, v in scoring_dict]
+        )
     for scorer, scorer_name in scoring_dict.items():
         dev_scores = [scorer(a[0], a[1]) for (a, b) in true_predict_tuples]
         eval_scores = [scorer(b[0], b[1]) for (a, b) in true_predict_tuples]
-        scores_dict[scorer_name]['train'] = dev_scores
-        scores_dict[scorer_name]['test'] = eval_scores
+        scores_dict[scorer_name]["train"] = dev_scores
+        scores_dict[scorer_name]["test"] = eval_scores
     return scores_dict
 
 
 def log_score_summary(scores_dict, level=10, score_file=None, score_logger=None):
     score_list = list()
     for scorer_name, split_scores_dict in scores_dict.items():
-        for stat_name, stat in zip(['Mean', 'StDev', 'Median', 'Min', 'Max'],
-                                   [np.mean, np.std, np.median, np.min, np.max]):
+        for stat_name, stat in zip(
+            ["Mean", "StDev", "Median", "Min", "Max"],
+            [np.mean, np.std, np.median, np.min, np.max],
+        ):
             for split_name, scores in split_scores_dict.items():
-                score_list.append('{}: {:.5f}'.format(stat_name, stat([[s] for s in scores])))
-            print('\t'.join(score_list))
+                score_list.append(
+                    "{}: {:.5f}".format(stat_name, stat([[s] for s in scores]))
+                )
+            print("\t".join(score_list))
             if score_logger is not None:
-                score_logger.log(level=level, msg='\t'.join(score_list))
+                score_logger.log(level=level, msg="\t".join(score_list))
     return score_list
 
 
@@ -95,7 +120,9 @@ def quadratic_splits(grouped_sers, n_splits=5):
     nested_splits = list()
     for ind in indices:
         spaces = np.linspace(0, len(ind) - 1, num=n_splits + 1, dtype=int)
-        nested_splits.append([ind[int(a):int(b)] for a, b in itertools.pairwise(spaces)])
+        nested_splits.append(
+            [ind[int(a) : int(b)] for a, b in itertools.pairwise(spaces)]
+        )
     return nested_splits
 
 

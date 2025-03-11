@@ -23,7 +23,9 @@ def sort_ordinals(feature_list, start=0, stop=None, step=1):
     i = start
     while len(feature_list) > 0:
         if i < 10:
-            t = [f for f in feature_list if str(i) in f.lower() and is_single(f.lower())]
+            t = [
+                f for f in feature_list if str(i) in f.lower() and is_single(f.lower())
+            ]
         elif i >= 10:
             t = [f for f in feature_list if str(i) in f.lower()]
             [remaining.pop(f) for f in t]
@@ -38,50 +40,79 @@ def sort_ordinals(feature_list, start=0, stop=None, step=1):
     return sorted_list
 
 
-def iterate_feature_pca(feature_df, new_feat, previous_subset, previous_pca=None, evr_thresh=(0.9,), delta_thresh=None,
-                        **pca_kwargs):
+def iterate_feature_pca(
+    feature_df,
+    new_feat,
+    previous_subset,
+    previous_pca=None,
+    evr_thresh=(0.9,),
+    delta_thresh=None,
+    **pca_kwargs
+):
     from sklearn.decomposition import PCA
+
     if previous_pca is None:
         previous_pca = PCA(**pca_kwargs).fit(feature_df[previous_subset])
     new_pca = PCA(**pca_kwargs).fit(feature_df[previous_subset.append(new_feat)])
     if evr_thresh is not None and evr_thresh[0] is not None:
         t_len = min(len(new_pca.explained_variance_ratio_), len(evr_thresh))
-        if not all([new_pca.explained_variance_ratio_[i] < evr_thresh[i] for i in t_len]):
+        if not all(
+            [new_pca.explained_variance_ratio_[i] < evr_thresh[i] for i in t_len]
+        ):
             return False, new_pca
     if delta_thresh is not None and delta_thresh[0] is not None:
-        t_len = min(len(new_pca.explained_variance_ratio_), len(delta_thresh), len(new_pca.explained_variance_ratio_))
-        if not all([(1 - new_pca.explained_variance_ratio_[i] / previous_pca.explained_variance_ratio_[i] >
-                     delta_thresh[i]) for i in t_len]):
+        t_len = min(
+            len(new_pca.explained_variance_ratio_),
+            len(delta_thresh),
+            len(new_pca.explained_variance_ratio_),
+        )
+        if not all(
+            [
+                (
+                    1
+                    - new_pca.explained_variance_ratio_[i]
+                    / previous_pca.explained_variance_ratio_[i]
+                    > delta_thresh[i]
+                )
+                for i in t_len
+            ]
+        ):
             return False, new_pca
     return True, new_pca
 
 
-def thresholded_group_pca(feature_df, subset_list, smallest_size=3, evr_thresh=0.925, **pca_kwargs):
+def thresholded_group_pca(
+    feature_df, subset_list, smallest_size=3, evr_thresh=0.925, **pca_kwargs
+):
     previous_pca = None
-    pca_check, new_pca = iterate_feature_pca(feature_df, subset_list[smallest_size], subset_list[:smallest_size - 1],
-                                             evr_thresh=(evr_thresh,), **pca_kwargs)
+    pca_check, new_pca = iterate_feature_pca(
+        feature_df,
+        subset_list[smallest_size],
+        subset_list[: smallest_size - 1],
+        evr_thresh=(evr_thresh,),
+        **pca_kwargs
+    )
     while pca_check and new_pca.n_features_in_ < len(subset_list):
         previous_pca = new_pca
-        pca_check, new_pca = iterate_feature_pca(feature_df, subset_list[new_pca.n_features_in_],
-                                                 subset_list[:new_pca.n_features_in_ + 1], previous_pca=previous_pca,
-                                                 **pca_kwargs)
+        pca_check, new_pca = iterate_feature_pca(
+            feature_df,
+            subset_list[new_pca.n_features_in_],
+            subset_list[: new_pca.n_features_in_ + 1],
+            previous_pca=previous_pca,
+            **pca_kwargs
+        )
     return previous_pca
 
 
-def iter_feats(feat_groups):
-    for name, feat_dict in feat_groups:
-        col_group, selector = feat_dict
-
-
 def set_cov_matrix(df, sample_wts=None, *args, **kwargs):
-    logging.info('Calculating covariance matrix...')
+    logging.info("Calculating covariance matrix...")
     if sample_wts is not None:
         freq_wts = np.round(sample_wts)
         cov_arr = np.cov(df, rowvar=False, ddof=1, fweights=freq_wts)
     else:
         cov_arr = np.cov(df, ddof=1, rowvar=False)
     cov_mat = pd.DataFrame(data=cov_arr, index=df.columns, columns=df.columns)
-    logging.info('Covariance matrix of shape {} calculated.'.format(cov_mat.shape))
+    logging.info("Covariance matrix of shape {} calculated.".format(cov_mat.shape))
     # if cov_mat.isna().astype(int).sum().sum() > 0:
     #    print('Covariance matrix contains invalid values.')
     return cov_mat
@@ -89,6 +120,7 @@ def set_cov_matrix(df, sample_wts=None, *args, **kwargs):
 
 # WARNING: pyitlib's conditional_mutual_info may be unstable!
 # Code take from: https://stackoverflow.com/questions/55402338/finding-conditional-mutual-information-from-3-discrete-variable
+
 
 def gen_dict(x):
     dict_z = {}
@@ -98,8 +130,9 @@ def gen_dict(x):
 
 
 # I(X;Y|Z) = H(X|Z) + H(Y|Z) - H(X,Y|Z)
-def entropy(x, y, z):
-    x = np.array([x, y, z]).T
+def entropy(a, b, c):
+    # Calculates entropy for binary data.
+    x = np.array([a, b, c]).T
     x = x[x[:, -1].argsort()]  # sorted by the last column
     w = x[:, -3]
     y = x[:, -2]
@@ -113,9 +146,9 @@ def entropy(x, y, z):
     pos = 0
     ent = 0
     for i in range(len(list_z)):
-        w = x[pos:pos + list_z[i], -3]
-        y = x[pos:pos + list_z[i], -2]
-        z = x[pos:pos + list_z[i], -1]
+        w = x[pos : pos + list_z[i], -3]
+        y = x[pos : pos + list_z[i], -2]
+        z = x[pos : pos + list_z[i], -1]
         pos += list_z[i]
         list_wy = np.zeros((len(set(w)), len(set(y))), dtype=float, order="C")
         list_w = list(set(w))
@@ -137,7 +170,7 @@ def entropy(x, y, z):
     return ent
 
 
-'''
+"""
 X = [0, 1, 1, 0, 1, 0, 1, 0, 0, 1, 0, 0]
 Y = [0, 1, 1, 0, 0, 0, 1, 0, 0, 1, 1, 0]
 Z = [1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1]
@@ -149,7 +182,7 @@ c = entropy(X, Y, Z)
 p = a + b - c
 print(p)
 0.15834454415751043
-'''
+"""
 
 
 def weighted_entrop(data):
@@ -162,11 +195,14 @@ def weighted_entrop(data):
     d = 1 - lnf.sum(axis=0)
     weighted_entropy = d / d.sum()
 
-    weighted_entropy = pd.DataFrame(weighted_entropy, index=df.columns, columns=['weight'])
+    weighted_entropy = pd.DataFrame(
+        weighted_entropy, index=df.columns, columns=["weight"]
+    )
     return weighted_entropy
 
 
 # def joint_mutual_information(X, y):
+
 
 def compute_gram(X, y, sample_weights):
     normalized_weights = sample_weights * (X.shape[0] / (sample_weights.sum()))

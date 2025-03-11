@@ -1,0 +1,1325 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CsvFileAttributes">
+    <option name="attributeMap">
+      <map>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\commercial_data\eMolecules\padel\padel_emol_version_10k_13933.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\commercial_data\eMolecules\padel\padel_emol_version_10k_27655.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\commercial_data\life_chemicals\stdizer-2024-04-09T20_30_02.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\enamine_data\all_qsar_fails.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\enamine_data\chemcart\ready_1.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\enamine_data\dashboard_and_enamine_padel_desc_nans.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\enamine_data\dashboard_and_enamine_padel_smiles_nans.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\enamine_data\qsar_code_200.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\enamine_data\qsared\non_qsar_originals.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\enamine_data\qsared\non_qsar_originals1.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\enamine_data\qsared\non_qsar_originals10.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\enamine_data\qsared\non_qsar_originals11.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\enamine_data\qsared\non_qsar_originals12.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\enamine_data\qsared\non_qsar_originals13.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\enamine_data\qsared\non_qsar_originals14.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\enamine_data\qsared\non_qsar_originals15.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\enamine_data\qsared\non_qsar_originals16.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\enamine_data\qsared\non_qsar_originals17.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\enamine_data\qsared\non_qsar_originals2.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\enamine_data\qsared\non_qsar_originals3.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\enamine_data\qsared\non_qsar_originals4.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\enamine_data\qsared\non_qsar_originals5.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\enamine_data\qsared\non_qsar_originals6.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\enamine_data\qsared\non_qsar_originals7.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\enamine_data\qsared\non_qsar_originals8.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\enamine_data\qsared\non_qsar_originals9.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\enamine_data\qsared\smiles\failed_qsar_enamine.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\enamine_data\rescrape\isomeric_smiles_ochem_dmso.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\enamine_data\rescrape\rescrape1.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\enamine_data\rescrape\rescrape2.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\enamine_data\rescrape\rescrape3.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\enamine_data\rescrape\rescrape5.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\epa_internal\CPDAT_descriptor\Chemical List CPDAT-2024-02-12.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\epa_internal\CPDAT_descriptor\Chemical List CPDAT-2024-02-12_failed.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\epa_internal\Chemical List CHEMINV_dmsoinsolubles-2024-02-29.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\epa_internal\Chemical List CHEMINV_stability-2024-02-29.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\epa_internal\Chemical List EPAPFASINSOL-2024-02-29.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\epa_internal\Chemical List EPAPFASINV-2024-02-29 - Soluble at 5mM.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\epa_internal\Chemical List EPAPFASINV-2024-02-29.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\epa_internal\Chemical List TOX21SL-2024-02-29.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\epa_internal\soluble_pfas_failed.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value=":" />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\epa_internal\tox_insoluble_all_null.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\final_datasets\COMBINED_SH_ERRORS.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\final_datasets\ENAMINE_OCHEM_INSOLUBLE_5mM.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\final_datasets\EPA_DASHBOARD_INSOLUBLE_5mM.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\final_datasets\EPA_DASHBOARD_SOLUBLE_5mM.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\final_datasets\OVERLAPS.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\final_datasets\circ_fingerprints\EPA_ENAMINE_MAXMIN_TEST_IND.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\final_datasets\original_source_downloads\EPACHEMINV_AVAIL-2024-04-16.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\final_datasets\padel\padel_desc_groups.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\final_datasets\padel\salty.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\final_datasets\qsar\INTERMETALLICS_QSAR_ENAMINE_OCHEM_INSOLUBLE_5mM.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\final_datasets\qsar\INTERMETALLICS_QSAR_EPA_DASHBOARD_INSOLUBLE_5mM.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\final_datasets\qsar\INTERMETALLICS_QSAR_EPA_DASHBOARD_SOLUBLE_5mM.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\final_datasets\qsar\QSAR_ENAMINE_EPA_SOLUBLE_OVERLAP.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\final_datasets\qsar\QSAR_ENAMINE_OCHEM_INSOLUBLE_5mM_duplicated.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\final_datasets\qsar\QSAR_ENAMINE_OCHEM_SOLUBLE_5mM_duplicated.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\final_datasets\qsar\QSAR_EPA_DASHBOARD_INSOLUBLE_5mM.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\final_datasets\qsar\QSAR_EPA_DASHBOARD_INSOLUBLE_5mM_duplicated.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\final_datasets\qsar\QSAR_EPA_DASHBOARD_SOLUBLE_5mM.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\final_datasets\qsar\QSAR_EPA_DASHBOARD_SOLUBLE_5mM_duplicated.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\final_datasets\qsar\SALTS_QSAR_ENAMINE_OCHEM_INSOLUBLE_5mM.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\final_datasets\qsar\SALTS_QSAR_EPA_DASHBOARD_INSOLUBLE_5mM.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\final_datasets\qsar\SALTS_QSAR_EPA_DASHBOARD_SOLUBLE_5mM.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\final_datasets\qsar\qsar_with_mol\QSAR_EPA_DASHBOARD_INSOLUBLE_5mM_original.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_1.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_10.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_100.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_101.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_102.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_103.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_11.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_12.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_13.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_14.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_15.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_16.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_17.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_18.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_19.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_2.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_20.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_21.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_22.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_23.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_24.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_25.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_26.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_27.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_28.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_29.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_3.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_30.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_31.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_32.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_33.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_34.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_35.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_36.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_37.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_38.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_39.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_4.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_40.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_41.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_42.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_43.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_44.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_45.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_46.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_47.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_48.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_49.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_5.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_50.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_51.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_52.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_53.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_54.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_55.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_56.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_57.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_58.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_59.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_6.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_60.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_61.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_62.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_63.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_64.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_65.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_66.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_67.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_68.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_69.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_7.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_70.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_71.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_72.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_73.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_74.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_75.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_76.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_77.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_78.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_79.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_8.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_80.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_81.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_82.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_83.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_84.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_85.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_86.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_87.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_88.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_89.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_9.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_90.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_91.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_92.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_93.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_94.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_95.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_96.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_97.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_98.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\dmso_zip\open_source_data\pubchem\PubChem_RDKit-2024-02-12_99.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\qsar-modeling-workflow\models\grove_trials\7\run_1\cv1\dev_keys.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\qsar-modeling-workflow\models\grove_trials\7\run_1\cv1\eval_keys.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\qsar-modeling-workflow\models\grove_trials\7\run_1\cv1\feature_rankings.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\qsar-modeling-workflow\models\grove_trials\7\run_1\cv1\logistic-cv\dev_scores.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\qsar-modeling-workflow\models\grove_trials\7\run_1\cv1\logistic-cv\eval_scores.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\qsar-modeling-workflow\models\grove_trials\7\run_1\cv1\random-forest\dev_scores.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\qsar-modeling-workflow\models\grove_trials\7\run_1\cv1\random-forest\eval_scores.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="C:\Users\mmanning\OneDrive - Environmental Protection Agency (EPA)\qsar-modeling-workflow\models\grove_trials\7\run_1\cv1\solubility_features_mutual_info.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="\EPA-only_keys.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="\data\uninterpretable_features.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="\models\correlation_corrected_feat_selection\brf_epa_sol_0\collinear_250-0-8_rfe_2.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="\models\correlation_corrected_feat_selection\brf_epa_sol_0\collinear_500-0-95_rfe_0.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="\models\correlation_corrected_feat_selection\brf_epa_sol_0\n125_step5_rfe_3.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="\models\correlation_corrected_feat_selection\brf_epa_sol_0\n500_step25_rfe_1.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="\models\correlation_corrected_feat_selection\brf_epa_sol_0\n75_step5_rfe_3.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="\models\correlation_corrected_feat_selection\brf_epa_sol_0\vif_brf_100_10.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="\models\correlation_corrected_feat_selection\brf_epa_sol_1\collinear_250-0-8_rfe_2.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="\models\correlation_corrected_feat_selection\brf_epa_sol_1\vif_brf_75_1.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="\models\correlation_corrected_feat_selection\brf_epa_sol_4\n75_step5_rfe_3.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="\models\correlation_corrected_feat_selection\brf_epa_sol__0\collinear_500-0-95_rfe_0.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+</project>

@@ -1,5 +1,26 @@
 from functools import partial
 import pandas as pd
+from sklearn.utils import check_X_y as checker
+
+from data.element_lists import DISALLOWED, WITH_SALTS
+
+
+def qsar_readiness(smiles_list, allow_salts=True):
+    not_ready, ready = list(), list()
+    if allow_salts:
+        forbidden = WITH_SALTS
+    else:
+        forbidden = DISALLOWED
+    for smi in smiles_list:
+        if not isinstance(smi, str):
+            print(smi)
+            raise ValueError
+        for e in forbidden:
+            if e in smi:
+                not_ready.append(smi)
+                break
+        ready.append(smi)
+    return ready, not_ready
 
 
 def remove_duplicate_idx(df):
@@ -19,15 +40,21 @@ def remove_duplicate_idx(df):
 
 def rename_duplicate_features(feature_df):
     # Renames unique-valued, identically-named features in a DataFrame.
+    # feature_df = feature_df.T.drop_duplicates().T
     while feature_df.columns[feature_df.columns.duplicated()].size > 0:
-        feature_df.columns = feature_df.columns.where(~feature_df.columns.duplicated(), feature_df.columns + 'i')
+        dup_col = feature_df.columns[feature_df.columns.duplicated(keep="first")]
+        feature_df.columns = feature_df.columns.where(
+            ~feature_df.columns.duplicated(keep="first"),
+            feature_df.columns[feature_df.columns.duplicated()] + "i",
+        )
     assert feature_df.columns[feature_df.columns.duplicated()].size == 0
-
+    """
     dups = feature_df.columns[feature_df.columns.duplicated(keep=False)].unique()
     for col in dups:
         inds = feature_df.columns
         for i, ind in enumerate(inds):
             feature_df.columns[ind] = '{}_i'.format(feature_df.columns[ind])
+    """
     return feature_df
 
 
@@ -36,28 +63,72 @@ def check_inchi_only(inchi_keys):
     correct_keys, bad_keys = list(), list()
     for k in inchi_keys:
         ksplit = k.split("-")
-        if len(ksplit) == 3 and len(ksplit[0]) == 14 and len(ksplit[1]) == 10 and len(ksplit[2]) == 1:
+        if (
+            len(ksplit) == 3
+            and len(ksplit[0]) == 14
+            and len(ksplit[1]) == 10
+            and len(ksplit[2]) == 1
+        ):
             correct_keys.append(k)
         else:
             bad_keys.append(k)
     return correct_keys, bad_keys
 
 
-def clean_and_check(feature_df, labels, y_dtype=None):
-    tup_X = rename_duplicate_features(feature_df)
-    valid_idx, invalid_idx = check_inchi_only(tup_X.index)
+def clean_and_check(feature_df, labels, y_dtype=None, var_thresh=0, verbose=False):
+    X_df = feature_df.copy()
+    X_df = rename_duplicate_features(X_df)
+    valid_idx, invalid_idx = check_inchi_only(X_df.index)
     if len(invalid_idx) > 0:
         raise UserWarning
         print("INCHI keys are not valid: {}".format(invalid_idx))
-    tup_X = tup_X[tup_X.var(axis=1) > 0]
-    tup_y = remove_duplicate_idx(labels)
-    tup_X = tup_X.loc[tup_y.index]
-    tup_y = tup_y.squeeze()
+    """
+    y_ser = remove_duplicate_idx(labels)
+    if type(y_ser.index) is pd.RangeIndex:
+        X_df = X_df.loc[y_ser]
+    else:
+        X_df = X_df.loc[y_ser.index]
     if y_dtype is not None:
-        tup_y = tup_y.astype(y_dtype)
-    feature_arr, labels_arr = checker(tup_X, y=tup_y)
-    X_out = pd.DataFrame(data=feature_arr, index=tup_X.index, columns=tup_X.columns)
-    y_out = pd.Series(data=labels_arr, index=tup_y.index)
-    assert not X_out.empty
-    assert not y_out.empty
-    return X_out, y_out
+        y_ser = y_ser.astype(y_dtype)
+    """
+    zero_var_cols = X_df[X_df.nunique(axis=1) < var_thresh].columns
+    if verbose:
+        print(feature_df.shape)
+        print(
+            "{} features with less than {} variance removed.".format(
+                feature_df.shape[1] - zero_var_cols.size, var_thresh
+            )
+        )
+    if zero_var_cols.size == 0:
+        X_df.drop(columns=zero_var_cols, inplace=True)
+    feature_arr, labels_arr = checker(X_df, y=y_ser)
+    Xt = pd.DataFrame(data=feature_arr, index=X_df.index, columns=X_df.columns)
+    yt = pd.Series(data=labels_arr, index=y_ser.index)
+    assert not Xt.empty
+    assert not yt.empty
+    return Xt, yt
+
+
+def data_check():
+    from data_tools import load_all_descriptors, load_combo_data, load_training_data
+
+    all_X = load_all_descriptors()
+    print("Shapes of all descriptor DFs")
+    print(all_X.shape)
+    train_X, train_y = load_training_data()
+    combo_data = load_combo_data()
+    all_idx_dict = dict([(k, df.index) for k, df in combo_data.items()])
+    # Verification
+    print("Shape from combo data dictionary: ")
+    print([(k, idx.size) for k, idx in all_idx_dict.items()])
+    all_y_dict = dict([(k, df["DMSO_SOLUBILITY"]) for k, df in combo_data.items()])
+    all_y = pd.concat(all_y_dict.values())
+    # all_y = pd.concat(all_y_dict.values())
+    # all_X = pd.concat(all_X_dict.values())
+    test_idx = all_X.index.difference(train_X.index)
+    test_y = all_y[test_idx]
+    test_X = all_X.loc[test_idx]
+    print("Test data sizes:")
+    print(test_idx.size)
+    for k, idx in all_idx_dict.items():
+        print(k, test_idx.intersection(idx).size, train_y.index.intersection(idx).size)

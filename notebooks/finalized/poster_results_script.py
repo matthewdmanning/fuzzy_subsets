@@ -1,62 +1,77 @@
+import datetime
 import itertools
 import os
 import pickle
-import pprint
-import datetime
-import random
 
-import data_handling.data_cleaning
 import numpy as np
 import pandas as pd
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.linear_model import LogisticRegressionCV
-from sklearn.model_selection import GridSearchCV, ParameterGrid, StratifiedKFold
-from sklearn.feature_selection import RFE
 from imblearn.under_sampling import RandomUnderSampler
-from sklearn.preprocessing import RobustScaler
-
-import data_tools
-from data import feature_name_lists
-from qsar_modeling.data_handling.data_tools import get_interpretable_features, load_training_data, load_metadata
-from sklearn.metrics import *
 from sklearn._config import set_config as sk_config
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.feature_selection import RFE
+from sklearn.linear_model import LogisticRegressionCV
+from sklearn.metrics import *
+from sklearn.metrics import (
+    balanced_accuracy_score,
+    confusion_matrix,
+    matthews_corrcoef,
+    roc_auc_score,
+)
+from sklearn.model_selection import StratifiedKFold
 from sklearn.utils import check_X_y
+
 import cv_tools
-from sklearn.metrics import matthews_corrcoef, balanced_accuracy_score, roc_auc_score, confusion_matrix
+import data_handling.data_cleaning
+from data import feature_name_lists
+from qsar_modeling.data_handling.data_tools import (
+    get_interpretable_features,
+    load_metadata,
+    load_training_data,
+)
 from qsar_modeling.utils import samples
 
 # from utils import cv_tools
-pd.set_option('display.precision', 4)
-pd.set_option('format.precision', 4)
-np.set_printoptions(formatter={'float': '{: 0.4f}'.format})
-sk_config(transform_output='pandas', display='text', print_changed_only=True)
+pd.set_option("display.precision", 4)
+pd.set_option("format.precision", 4)
+np.set_printoptions(formatter={"float": "{: 0.4f}".format})
+sk_config(transform_output="pandas", display="text", print_changed_only=True)
 
 start = datetime.datetime.now()
 
 
 def load_sample_keys(filepath):
     sample_list = list()
-    with open(filepath, 'r', encoding='utf-8') as f:
-        [sample_list.extend(s.split(',')) for s in f.readlines()]
-        sample_list = [s.partition('\\')[0] for s in sample_list if s.endswith('-N')]
+    with open(filepath, "r", encoding="utf-8") as f:
+        [sample_list.extend(s.split(",")) for s in f.readlines()]
+        sample_list = [s.partition("\\")[0] for s in sample_list if s.endswith("-N")]
         # csv.reader(f)
     return sample_list
 
 
 def load_feature_rankings(filepath, threshold=None):
-    ranking_ser = pd.read_csv(filepath).set_index(keys='Features', inplace=False).squeeze()  # , index_col="Features")
+    ranking_ser = (
+        pd.read_csv(filepath).set_index(keys="Features", inplace=False).squeeze()
+    )  # , index_col="Features")
     if threshold is not None:
         ranking_ser.drop(ranking_ser[ranking_ser > threshold].index, inplace=True)
     return ranking_ser.index
 
 
-def brute_force_importance_rf_clf(feature_df, labels, clf, n_features_out, n_jobs=-2, step_size=1, **model_kwargs):
-    eliminator = RFE(estimator=clf, n_features_to_select=n_features_out, step=step_size).fit(feature_df, y=labels)
-    brute_features = pd.Series(eliminator.ranking_, index=feature_df.columns.tolist()).sort_values()
+def brute_force_importance_rf_clf(
+    feature_df, labels, clf, n_features_out, n_jobs=-2, step_size=1, **model_kwargs
+):
+    eliminator = RFE(
+        estimator=clf, n_features_to_select=n_features_out, step=step_size
+    ).fit(feature_df, y=labels)
+    brute_features = pd.Series(
+        eliminator.ranking_, index=feature_df.columns.tolist()
+    ).sort_values()
     return brute_features, eliminator
 
 
-def get_subsample_from_meta(field, include=None, exclude=None, feature_df=None, meta_df=None):
+def get_subsample_from_meta(
+    field, include=None, exclude=None, feature_df=None, meta_df=None
+):
     """
     Retrieves a single selection from metadata as INCHI keys.
     Parameters
@@ -75,7 +90,9 @@ def get_subsample_from_meta(field, include=None, exclude=None, feature_df=None, 
         if meta_df is None:
             meta_df = load_metadata()
     for ind, val in meta_df[field].items:
-        if all([i.lower() in val.lower() for i in include]) and not any([i.lower() in val.lower() for i in exclude]):
+        if all([i.lower() in val.lower() for i in include]) and not any(
+            [i.lower() in val.lower() for i in exclude]
+        ):
             subsample.append(ind)
     return subsample
 
@@ -84,31 +101,46 @@ def get_epa_sol_all_insol(feature_df, labels, tups):
     # insol_samples = pd.concat([tups['epa_in'][0], tups['en_in'][0]]).index.intersection(train_insols)
     # train_sols = labels[labels == 1].index
     # sol_samples = tups['epa_sol'][0].index.intersection(train_sols)
-    en_in = tups['en_in'][0][[c for c in tups['en_in'][0].index if c not in tups['epa_in'][0].index]]
-    all_samples_ind = pd.concat([tups['epa_in'][0], en_in, tups['epa_sol'][0]]).index.intersection(
-        feature_df.index)
+    en_in = tups["en_in"][0][
+        [c for c in tups["en_in"][0].index if c not in tups["epa_in"][0].index]
+    ]
+    all_samples_ind = pd.concat(
+        [tups["epa_in"][0], en_in, tups["epa_sol"][0]]
+    ).index.intersection(feature_df.index)
     all_samples = labels[all_samples_ind]
-    all_samples[all_samples == 'Insoluble'] = 0
-    all_samples[all_samples == 'Soluble'] = 1
+    all_samples[all_samples == "Insoluble"] = 0
+    all_samples[all_samples == "Soluble"] = 1
     select_y = labels[all_samples.index]
     select_X = feature_df.loc[all_samples.index]
     # assert not select_X.isna().any()
     return select_X, select_y
 
 
-def sample_observations_by_source(groups_observations, freq_list, replace=False, random_state=None):
-    if all([0. <= p <= 1. for p in freq_list]):
+def sample_observations_by_source(
+    groups_observations, freq_list, replace=False, random_state=None
+):
+    if all([0.0 <= p <= 1.0 for p in freq_list]):
         freq_list = [int(p * len(n)) for n, p in zip(groups_observations, freq_list)]
-    yield itertools.repeat([pd.concat([obs.sample(n=freq, random_state=random_state, replace=replace) for obs, freq in
-                                       zip(groups_observations, freq_list)])])
+    yield itertools.repeat(
+        [
+            pd.concat(
+                [
+                    obs.sample(n=freq, random_state=random_state, replace=replace)
+                    for obs, freq in zip(groups_observations, freq_list)
+                ]
+            )
+        ]
+    )
 
 
 def mix_insol_all_insol(feature_df, labels, tups, epa_ratio=0.75):
     train_insols = labels[labels == 0].index
-    insol_samples = pd.concat([tups['epa_in'][0], tups['en_in'][0]]).index.intersection(train_insols)
+    insol_samples = pd.concat([tups["epa_in"][0], tups["en_in"][0]]).index.intersection(
+        train_insols
+    )
     train_sols = labels[labels == 1].index
-    epa_sol_samples = tups['epa_sol'][0].index.intersection(train_sols)
-    en_sol_samples = tups['en_sol'][0]
+    epa_sol_samples = tups["epa_sol"][0].index.intersection(train_sols)
+    en_sol_samples = tups["en_sol"][0]
     select_y = labels[all_samples]
     select_X = feature_df.loc[all_samples][feature_df.columns]
     return select_X, select_y
@@ -132,7 +164,9 @@ def quadratic_splits(grouped_sers, n_splits=5):
     nested_splits = list()
     for ind in indices:
         spaces = np.linspace(0, len(ind) - 1, num=n_splits + 1, dtype=int)
-        nested_splits.append([ind[int(a):int(b)] for a, b in itertools.pairwise(spaces)])
+        nested_splits.append(
+            [ind[int(a) : int(b)] for a, b in itertools.pairwise(spaces)]
+        )
     return nested_splits
 
 
@@ -149,10 +183,10 @@ def get_quadratic_test_folds(grouped_sers, n_splits=5):
 def drop_duplicate_indices(df):
     if df.index.has_duplicates:
         # pd.Index.duplicated()
-        print('Index duplicates found. Starting with {}'.format(df.index.size))
+        print("Index duplicates found. Starting with {}".format(df.index.size))
         drop_list = [i for i, x in enumerate(df.index.duplicated()) if x is True]
         new_df = df.drop(index=drop_list)
-        print('Ending with {}'.format(new_df.index.size))
+        print("Ending with {}".format(new_df.index.size))
     else:
         new_df = df
     return new_df
@@ -177,20 +211,34 @@ def get_notebook_data():
     meta = load_metadata(desc=False)
     # meta_dict = dict(zip(['epa_sol', "epa_in", "en_in", "en_sol"], meta))
     interp_X, interp_y = get_interpretable_features()
-    valid_inchi, invalid_inchi = data_handling.data_cleaning.check_inchi_only(interp_y.index)
+    valid_inchi, invalid_inchi = data_handling.data_cleaning.check_inchi_only(
+        interp_y.index
+    )
     if len(invalid_inchi) > 0:
-        print('Invalid INCHI keys:')
+        print("Invalid INCHI keys:")
         print([i for i in invalid_inchi])
 
     # Drop duplicates
-    print('Original size: {}'.format(interp_X.shape))
+    print("Original size: {}".format(interp_X.shape))
     g_dict = data_by_groups(interp_y, meta)
-    full_groups_list = dict([(k, pd.Series(data=k, index=v[0].index, name=k)) for k, v in g_dict.items() if
-                             k in ['epa_sol', 'epa_in', 'en_in']])
-    meta['en_in'][0].drop(index=meta['en_in'][0].index.intersection(meta['epa_in'][0].index), inplace=True)
-    full_groups_list = dict([(k, v[0]) for k, v in meta.items() if k in ['epa_sol', 'epa_in', 'en_in']])
-    new_idx = stepwise_duplicate(pd.concat(full_groups_list.values(), sort=True)).squeeze().index.intersection(
-        interp_y.index)
+    full_groups_list = dict(
+        [
+            (k, pd.Series(data=k, index=v[0].index, name=k))
+            for k, v in g_dict.items()
+            if k in ["epa_sol", "epa_in", "en_in"]
+        ]
+    )
+    meta["en_in"][0].drop(
+        index=meta["en_in"][0].index.intersection(meta["epa_in"][0].index), inplace=True
+    )
+    full_groups_list = dict(
+        [(k, v[0]) for k, v in meta.items() if k in ["epa_sol", "epa_in", "en_in"]]
+    )
+    new_idx = (
+        stepwise_duplicate(pd.concat(full_groups_list.values(), sort=True))
+        .squeeze()
+        .index.intersection(interp_y.index)
+    )
     valid_idx = new_idx.intersection(valid_inchi)
     unique_y = interp_y[valid_idx]
     unique_X = interp_X.loc[valid_idx]
@@ -201,9 +249,9 @@ def get_notebook_data():
 n_features_out = 40
 project_dir = "//"
 # exp_dir = '{}models/hyperopted-training_curve/'.format(project_dir)
-feature_dir = '{}models/epa_solubles_hyperparam/'.format(project_dir)
-exp_dir = '{}models/epa_solubles_final_test/'.format(project_dir)
-train_data_dir = '{}epa_solubles_atom_type_count/'.format(project_dir)
+feature_dir = "{}models/epa_solubles_hyperparam/".format(project_dir)
+exp_dir = "{}models/epa_solubles_final_test/".format(project_dir)
+train_data_dir = "{}epa_solubles_atom_type_count/".format(project_dir)
 key_path = "{}EPA-only_keys.csv".format(project_dir)
 ranked_features_path = "/models/epa_solubles_hyperparam/feature_rankings.csv"
 
@@ -216,24 +264,35 @@ if not os.path.isfile(key_path):
 ranked_features = pd.DataFrame([])
 if os.path.isfile(ranked_features_path):
     ranked_features = load_feature_rankings(ranked_features_path, threshold=1)
-    print('Ranked features loaded: \n{}'.format(len(ranked_features)))
+    print("Ranked features loaded: \n{}".format(len(ranked_features)))
     selected_train_X = combined_X[ranked_features]
 elif not os.path.isfile(
-        ranked_features_path):  # or (ranked_features.empty and selected_train_X.isna().astype(int).sum().sum() > 0):
-    feature_method = 'brute'
-    if feature_method == 'brute':
-        print('Brute force feature selection started.')
+    ranked_features_path
+):  # or (ranked_features.empty and selected_train_X.isna().astype(int).sum().sum() > 0):
+    feature_method = "brute"
+    if feature_method == "brute":
+        print("Brute force feature selection started.")
         # train_X, train_y = get_epa_sol_all_insol(combined_X, combined_y, meta_dict)
         rfc = RandomForestClassifier(random_state=0, oob_score=True, n_jobs=-2)
-        lr = LogisticRegressionCV(penalty='elasticnet', solver='saga', max_iter=5000,
-                                  scoring=make_scorer(matthews_corrcoef), n_jobs=-2, random_state=0, cv=5,
-                                  l1_ratios=[0.25])
-        ranked_features, rfe_model = brute_force_importance_rf_clf(combined_X, combined_y, clf=rfc,
-                                                                   n_features_out=n_features_out)
-        ranked_features.to_csv(ranked_features_path, index_label='Features')  # , float_format='%.4f')
+        lr = LogisticRegressionCV(
+            penalty="elasticnet",
+            solver="saga",
+            max_iter=5000,
+            scoring=make_scorer(matthews_corrcoef),
+            n_jobs=-2,
+            random_state=0,
+            cv=5,
+            l1_ratios=[0.25],
+        )
+        ranked_features, rfe_model = brute_force_importance_rf_clf(
+            combined_X, combined_y, clf=rfc, n_features_out=n_features_out
+        )
+        ranked_features.to_csv(
+            ranked_features_path, index_label="Features"
+        )  # , float_format='%.4f')
         selected_train_X = rfe_model.transform(combined_X)
         # print([c for c in selected_train_X.columns if 'e-state' in c.lower()])
-    elif feature_method == 'list':
+    elif feature_method == "list":
         print("Using E-count descriptors")
         ecounts = feature_name_lists.get_estate_counts(combined_X.columns.tolist())
         selected_train_X = combined_X[ecounts]
@@ -244,21 +303,21 @@ if not os.path.isdir(exp_dir):
 log_mcc_list, log_bac_list, log_auc_list = list(), list(), list()
 for i in np.arange(5):
     i = i + 1
-    rus_dir = '{}rus{}/'.format(exp_dir, i)
+    rus_dir = "{}rus{}/".format(exp_dir, i)
     os.makedirs(rus_dir, exist_ok=True)
     if not os.path.isdir(rus_dir) and not os.path.exists(rus_dir):
-        print('Not here.')
+        print("Not here.")
     else:
-        print('{} already exists.'.format(rus_dir))
+        print("{} already exists.".format(rus_dir))
     check_X_y(selected_train_X, combined_y)
-    '''
+    """
     with open('{}X_train.pkl'.format(exp_dir), 'wb') as f:
         pickle.dump(selected_train_X, f)
     with open('{}y_train.pkl'.format(exp_dir), 'wb') as f:
         pickle.dump(combined_y, f)
     with open('{}grouped_by_source.pkl'.format(exp_dir), 'wb') as f:
         pickle.dump(full_groups_list, f)
-        '''
+        """
     # rand_idx = interp_y.index.tolist()
     # random.shuffle(rand_idx)
     # shuffle_X = interp_X[ranked_features].loc[rand_idx]
@@ -267,8 +326,12 @@ for i in np.arange(5):
     shuffle_epa_X = selected_train_X.loc[epa_rand]
     shuffle_epa_y = combined_y[epa_rand]
     rus_random_state = 1000 * i
-    shuffle_X, shuffle_y = RandomUnderSampler(random_state=rus_random_state).fit_resample(shuffle_epa_X, shuffle_epa_y)
-    epa_rus, epa_labels = RandomUnderSampler(random_state=rus_random_state).fit_resample(selected_train_X, combined_y)
+    shuffle_X, shuffle_y = RandomUnderSampler(
+        random_state=rus_random_state
+    ).fit_resample(shuffle_epa_X, shuffle_epa_y)
+    epa_rus, epa_labels = RandomUnderSampler(
+        random_state=rus_random_state
+    ).fit_resample(selected_train_X, combined_y)
 
     # insol_ser = pd.concat([full_groups_list['epa_in'], full_groups_list['en_in']], verify_integrity=True).squeeze()
     # full_groups_list['epa_sol'].drop(index=full_groups_list['epa_sol'].index.intersection(insol_ser.index), inplace=True)
@@ -280,67 +343,91 @@ for i in np.arange(5):
     # cv_method = PredefinedSplit(group_folds)
     rus_X = shuffle_X
     rus_y = shuffle_y
-    print('Input size: {}'.format(shuffle_y.size))
-    print('RUS size: {}'.format(rus_y.size))
+    print("Input size: {}".format(shuffle_y.size))
+    print("RUS size: {}".format(rus_y.size))
     rus_y = stepwise_duplicate(rus_y)
     rus_X = stepwise_duplicate(rus_X)
-    scramble_y = pd.Series(data=np.random.randint(0, 2, size=rus_y.size), index=rus_y.index)
+    scramble_y = pd.Series(
+        data=np.random.randint(0, 2, size=rus_y.size), index=rus_y.index
+    )
     #
     # The final inputs into the CV cycle
     #
     input_X, input_y = epa_rus, epa_labels
     cv_method = StratifiedKFold
     sweight = None
-    splitter_kw = {'shuffle': True, 'random_state': 0}
+    splitter_kw = {"shuffle": True, "random_state": 0}
     model_name = "rf_epa_sol_only_rus-{}_strat_trained".format(rus_random_state)
-    hyper_path = '{}grid_search/'.format(rus_dir)
+    hyper_path = "{}grid_search/".format(rus_dir)
     model = RandomForestClassifier
     cv = 0
     from sklearn.pipeline import clone
 
-    replica_model = model(n_estimators=100, max_features=5, max_leaf_nodes=200, min_impurity_decrease=5e-5,
-                          random_state=0, n_jobs=-1)
-    for dev_X, dev_y, eva_X, eva_y in cv_tools.split_df(input_X, input_y, splitter=cv_method):
+    replica_model = model(
+        n_estimators=100,
+        max_features=5,
+        max_leaf_nodes=200,
+        min_impurity_decrease=5e-5,
+        random_state=0,
+        n_jobs=-1,
+    )
+    for dev_X, dev_y, eva_X, eva_y in cv_tools.split_df(
+        input_X, input_y, splitter=cv_method
+    ):
         cv += 1
-        replica_dir = '{}replica_cv{}/'.format(rus_dir, i)
-        model_dir = '{}model_name/'.format(replica_dir)
+        replica_dir = "{}replica_cv{}/".format(rus_dir, i)
+        model_dir = "{}model_name/".format(replica_dir)
         if not os.path.isdir(replica_dir):
             os.mkdir(replica_dir)
         if not os.path.isdir(model_dir):
             os.mkdir(model_dir)
-        model_path = '{}model_obj.pkl'.format(model_dir)
-        cv_dev_path = '{}dev_true.csv'.format(replica_dir)
-        cv_eva_path = '{}eval_true.csv'.format(replica_dir)
-        cv_dev_pred_path = '{}dev_pred.csv'.format(model_dir)
-        cv_eva_pred_path = '{}eval_pred.csv'.format(model_dir)
+        model_path = "{}model_obj.pkl".format(model_dir)
+        cv_dev_path = "{}dev_true.csv".format(replica_dir)
+        cv_eva_path = "{}eval_true.csv".format(replica_dir)
+        cv_dev_pred_path = "{}dev_pred.csv".format(model_dir)
+        cv_eva_pred_path = "{}eval_pred.csv".format(model_dir)
         dev_y.to_csv(cv_dev_path)
         eva_y.to_csv(cv_eva_path)
         cv_model = clone(replica_model).fit(dev_X, dev_y, sample_weight=sweight)
-        with open(model_path, 'wb') as f:
+        with open(model_path, "wb") as f:
             pickle.dump(replica_model, f)
         dev_pred = pd.Series(data=cv_model.predict(dev_X), index=dev_y.index)
         eva_pred = pd.Series(data=cv_model.predict(eva_X), index=eva_y.index)
         dev_pred.to_csv(cv_dev_pred_path, index_label="INCHI_KEY")
         eva_pred.to_csv(cv_eva_pred_path, index_label="INCHI_KEY")
-        dev_conf_mat = confusion_matrix(dev_y, dev_pred, normalize='true', sample_weight=sweight)
-        eva_conf_mat = confusion_matrix(eva_y, eva_pred, normalize='true', sample_weight=sweight)
-        print('Dev Confusion Matrix:\n{}'.format(dev_conf_mat))
+        dev_conf_mat = confusion_matrix(
+            dev_y, dev_pred, normalize="true", sample_weight=sweight
+        )
+        eva_conf_mat = confusion_matrix(
+            eva_y, eva_pred, normalize="true", sample_weight=sweight
+        )
+        print("Dev Confusion Matrix:\n{}".format(dev_conf_mat))
         print("Eval Confusion Matrix:\n {}".format(eva_conf_mat))
         print("MCC: Dev score, Eval score")
-        print(matthews_corrcoef(dev_y, dev_pred, sample_weight=sweight),
-              matthews_corrcoef(eva_y, eva_pred, sample_weight=sweight))
+        print(
+            matthews_corrcoef(dev_y, dev_pred, sample_weight=sweight),
+            matthews_corrcoef(eva_y, eva_pred, sample_weight=sweight),
+        )
         print("BAC: Dev score, Eval score")
-        print(balanced_accuracy_score(dev_y, dev_pred, sample_weight=sweight),
-              balanced_accuracy_score(eva_y, eva_pred, sample_weight=sweight))
+        print(
+            balanced_accuracy_score(dev_y, dev_pred, sample_weight=sweight),
+            balanced_accuracy_score(eva_y, eva_pred, sample_weight=sweight),
+        )
         print("AUC: Dev score, Eval score")
-        print(roc_auc_score(dev_y, dev_pred, sample_weight=sweight),
-              roc_auc_score(eva_y, eva_pred, sample_weight=sweight))
+        print(
+            roc_auc_score(dev_y, dev_pred, sample_weight=sweight),
+            roc_auc_score(eva_y, eva_pred, sample_weight=sweight),
+        )
         # tn, fp, fn, tp = samples.get_confusion_samples((dev_y, dev_pred))
         tn, fp, fn, tp = samples.get_confusion_samples((eva_y, eva_pred))
         # conf_path_list = ['{}_eval_{}'.format(model_dir)]
-        [samples.get_sample_info(iks).to_csv("{}{}_eval_samples.csv".format(model_dir, s), index_label="INCHI_KEY") for
-         iks, s in zip([tn, fp, fn, tp], ['tp', 'fp', 'fn', 'tp'])]
-    '''
+        [
+            samples.get_sample_info(iks).to_csv(
+                "{}{}_eval_samples.csv".format(model_dir, s), index_label="INCHI_KEY"
+            )
+            for iks, s in zip([tn, fp, fn, tp], ["tp", "fp", "fn", "tp"])
+        ]
+    """
     Grid search used to get poster results
     forest_params = ParameterGrid(
         {'n_estimators': [10, 50, 100], 'min_impurity_decrease': [0, 0.00005, 0.0001, 0.00025],
@@ -359,8 +446,8 @@ for i in np.arange(5):
     except:
         with open('{}best_model.pkl'.format(hyper_path), 'wb') as f:
             pickle.dump(search_party.best_estimator_, f)
-    '''
-    '''
+    """
+    """
     print("CV Optimized Random Forest Scoring")
     for train_X, train_y, test_X, test_y in cv_tools.split_df(epa_rus, epa_labels, **splitter_kw):
         print('Train value counts: \n{}'.format(train_y.value_counts()))
@@ -400,7 +487,7 @@ for scorename, scorelist in zip(["MCC", "BAC", "ROC-AUC"], [log_mcc_list, log_ba
 summary_df = pd.DataFrame.from_dict(summary, orient='index', columns=['Mean', 'StDev', 'Min', 'Median', 'Max'])
 summary_df.to_csv('{}{}_alldata_score_summary.csv'.format(exp_dir, model_name))
 exit()
-# dev_summary, eva_summary, dev_dict, eva_dict = scoring.fit_score_model_cv(clf, rus_X, rus_y, score_dir="{}logit/".format(rus_dir), scaler=RobustScaler())
+# dev_summary, eva_summary, dev_dict, eva_dict = scoring.cv_model_generalized(clf, rus_X, rus_y, score_dir="{}logit/".format(rus_dir), scaler=RobustScaler())
 # print(dev_summary)
 # print(eva_summary)
 # check_consistent_length(rus_y, rus_X)
@@ -440,8 +527,8 @@ for i in [0]:
             np.mean(node_list), np.std(node_list), np.min(node_list), np.median(node_list), np.max(node_list)))
     # Needs lots more coding for full score summary.
     # dev_score_dict, eva_score_dict = score_model(fitted, shuffle_X, fit_eva_X, rus_dev_y, rus_eva_y)
-    '''
-    '''
+    """
+    """
     with open('{}hyper-dev_scores.csv'.format(hyper_path), 'w') as f:
         csv.writer(f).writerow(cv_dev_score_dict.items())
     with open('{}hyper-eval_scores.csv'.format(hyper_path), 'w') as f:
@@ -452,8 +539,8 @@ for i in [0]:
     print(lcurve)    
     best = RandomForestClassifier(max_features=5, max_leaf_nodes=250, min_impurity_decrease=5e-05, n_estimators=100, bootstrap=False, n_jobs=-1)
     fitted = best.fit(rus_X, rus_y)
-    '''
-    '''
+    """
+    """
     from sklearn.metrics import DetCurveDisplay
     import matplotlib.pyplot as plt
 
@@ -472,7 +559,7 @@ for i in [0]:
                                          fname_stub='{}rus_lc'.format(rus_dir))
 
     continue
-    # fit_score_model_cv(best, X=rus_X, y=rus_y, cv_inst=PredefinedSplit(group_folds), score_dir=rus_dir)
+    # cv_model_generalized(best, X=rus_X, y=rus_y, cv_inst=PredefinedSplit(group_folds), score_dir=rus_dir)
     std_scaler = StandardScaler().fit(rus_X)
     fit_dev_X = std_scaler.fit_transform(rus_X)
     fit_eva_X = std_scaler.transform(rus_eva_X)
@@ -551,4 +638,4 @@ for i in [0]:
     exec_time = end - start
     print('One CV run took {}'.format(exec_time))
     exit()
-'''
+"""

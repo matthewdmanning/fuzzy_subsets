@@ -7,23 +7,25 @@ from imblearn.under_sampling import RandomUnderSampler
 from plotly import subplots as sp
 from sklearn.feature_selection import mutual_info_classif
 
-from notebooks.dmso_workflow import train_y, names, train_X
 
-
-def mutual_info_rus_():
-    print(train_y)
+def mutual_info_rus_(feature_df, labels):
+    print(labels)
     for name, cols in names.items():
         if len(cols) == 0:
-            print('{} has no columns!'.format(name))
+            print("{} has no columns!".format(name))
             continue
         ncols = int(np.floor(len(cols) / 2))
         nrows = int(np.ceil(len(cols) / ncols))
-        fig = sp.make_subplots(rows=nrows, cols=ncols, shared_xaxes='columns')
+        fig = sp.make_subplots(rows=nrows, cols=ncols, shared_xaxes="columns")
         print(fig)
-        labeled_cols = pd.concat([train_X[cols], train_y], axis=1)  # .rename(columns=labels)'
-        sol_labeled = labeled_cols[labeled_cols['Solubility'] == 1]
-        insol_labeled = labeled_cols[labeled_cols['Solubility'] == 0]
-        vi = sns.boxplot(data=labeled_cols[cols])  # , color='Solubility')  # , row=i, col=j)
+        labeled_cols = pd.concat(
+            [feature_df[cols], labels], axis=1
+        )  # .rename(columns=labels)'
+        sol_labeled = labeled_cols[labeled_cols["Solubility"] == 1]
+        insol_labeled = labeled_cols[labeled_cols["Solubility"] == 0]
+        vi = sns.boxplot(
+            data=labeled_cols[cols]
+        )  # , color='Solubility')  # , row=i, col=j)
         vi.imshow()
         for i, j in itertools.product(range(nrows), range(ncols)):
             if i + j >= len(cols):
@@ -36,17 +38,23 @@ def mutual_info_rus_():
         print(labeled_cols)
     exit()
     if True:
-        px.histogram(data_frame=labeled_cols, x=cols, color='Solubility')
+        px.histogram(data_frame=labeled_cols, x=cols, color="Solubility")
 
-        selected_X = train_X[cols]
+        selected_X = feature_df[cols]
         evr_list, mi_list = list(), list()
         for i in range(1):
-            new_X, new_y = RandomUnderSampler().fit_resample(X=selected_X, y=train_y)
-            print('Total Sample: {}'.format(new_y.size))
-            print('Soluble Sample: {}'.format(new_y[new_y == 1].size))
-            print('Inoluble Sample: {}'.format(new_y[new_y == 0].size))
+            new_X, new_y = RandomUnderSampler().fit_resample(X=selected_X, y=labels)
+            print("Total Sample: {}".format(new_y.size))
+            print("Soluble Sample: {}".format(new_y[new_y == 1].size))
+            print("Inoluble Sample: {}".format(new_y[new_y == 0].size))
             mi_list.append(
-                pd.Series(mutual_info_classif(X=new_X[cols], y=new_y, discrete_features=True, n_jobs=-1), index=cols))
+                pd.Series(
+                    mutual_info_classif(
+                        X=new_X[cols], y=new_y, discrete_features=True, n_jobs=-1
+                    ),
+                    index=cols,
+                )
+            )
             # pc = PCA(n_components=None, whiten=True)
             # X_pc = pc.fit_transform(new_X)
             # evr_list.append(pd.Series(pc.explained_variance_ratio_, index=cols))
@@ -58,16 +66,18 @@ def mutual_info_rus_():
         # evstd = evrdf.std(axis=1)
         # print('Explained Variance Ratios (Mean, Std) from PCA = 10x RUS')
         # [print('{:.6f}, {:.6f}'.format(m, s)) for m, s in zip(evmean.tolist(), evstd.tolist())]
-        print(name, 'Mutual Information: Mean and Std from 10x RUS')
-        [print('{}, {:.6f}, {:.6f}'.format(col, mi, mistd)) for col, mi, mistd in
-         zip(cols, mi_mean.tolist(), mi_std.tolist())]
-        import plotly.express as px
+        print(name, "Mutual Information: Mean and Std from 10x RUS")
+        [
+            print("{}, {:.6f}, {:.6f}".format(col, mi, mistd))
+            for col, mi, mistd in zip(cols, mi_mean.tolist(), mi_std.tolist())
+        ]
 
-        labeled_cols = pd.concat([train_X[names[name]], train_y]).columns.set_names(
-            names=list(names.keys()).append('Solubility'))
+        labeled_cols = pd.concat([feature_df[names[name]], labels]).columns.set_names(
+            names=list(names.keys()).append("Solubility")
+        )
         print(labeled_cols.head())
         # px.bar(data_frame=labeled_cols, x=)
-    '''g = Plot()
+    """g = Plot()
     sns.set_theme(style="ticks", font_scale=1, rc={"figure.dpi": 300, })
     ax = sns.scatterplot(data=evmean, s=25)
     ax.set(ylabel='Explained Variance Ratio')
@@ -84,4 +94,23 @@ def mutual_info_rus_():
     exit()
     plt.errorbar(yerr=evstd[:10], capsize=2, barsabove=True)
     plt.title('PCA of Molecular Walk/Path Counts')
-    plt.ylabel('Explained Variance Ratio')'''
+    plt.ylabel('Explained Variance Ratio')"""
+
+
+def cv_boxplots(cv_folds, feature_subset="auto", max_features=10):
+    import matplotlib.pyplot as plt
+    import plotly.express as px
+    from utils import distributions
+
+    if feature_subset == "auto":
+        cv_means = distributions.ks_feature_tests(cv_folds).index
+    elif feature_subset == "all":
+        cv_means = cv_means = distributions.ks_feature_tests(cv_folds).index
+    else:
+        cv_means = feature_subset
+    if type(max_features) is int:
+        cv_means = cv_means[:max_features]
+    for col in cv_means:
+        cv_data = pd.concat([df[col] for df in cv_folds], axis=1)
+        px.box(cv_data)
+        plt.show()

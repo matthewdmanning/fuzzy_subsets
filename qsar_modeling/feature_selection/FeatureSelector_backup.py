@@ -9,7 +9,13 @@ import cachetools
 import numpy as np
 import pandas as pd
 import sklearn.utils.validation
-from sklearn.feature_selection import chi2, f_classif, mutual_info_classif, SequentialFeatureSelector, VarianceThreshold
+from sklearn.feature_selection import (
+    chi2,
+    f_classif,
+    mutual_info_classif,
+    SequentialFeatureSelector,
+    VarianceThreshold,
+)
 from sklearn.linear_model import ElasticNetCV, LassoCV
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import Normalizer, RobustScaler
@@ -22,15 +28,23 @@ from qsar_modeling.data_handling.padel_categorization import padel_df
 pd.options.display.max_colwidth = 30
 pd.options.display.width = 30
 PADEL_GROUPS_DIR = "{}padel/padel_desc_groups.csv".format(os.environ.get("FINAL_DIR"))
-GROUP_COL_NAMES = ('Type', 'Number', 'Descriptor', 'Class')
+GROUP_COL_NAMES = ("Type", "Number", "Descriptor", "Class")
 WEIGHT_NAMES = (
-    'mass', 'charges', 'van der Waals', 'Sanderson', 'electronegativites', 'polarizabilities', 'ionization', 'I-state',)
+    "mass",
+    "charges",
+    "van der Waals",
+    "Sanderson",
+    "electronegativites",
+    "polarizabilities",
+    "ionization",
+    "I-state",
+)
 # Model running options.
 linear_dim_reduction = False
 plot_tsne = False
 plot_logreg = True
 forest = True
-'''
+"""
 @dataclasses.dataclass
 class TrainingOpts:
     run_debug: bool
@@ -39,24 +53,50 @@ class TrainingOpts:
     pjobs: int
     data_dir: str | os.PathLike
     stats_dir: str | os.PathLike
-'''
+"""
 
 
 # TODO: Check assumptions/requirements of estimators.
 class FeatureSelectorTrainer:
-    _group_names = ('zero_var', 'nonzero_var', 'sparse', 'dense', 'discrete', 'cont', 'nonneg', 'neg')
+    _group_names = (
+        "zero_var",
+        "nonzero_var",
+        "sparse",
+        "dense",
+        "discrete",
+        "cont",
+        "nonneg",
+        "neg",
+    )
 
-    def __init__(self, data, labels=None, fs=None, options=None, logger=None, subsets=None, *args, **kwargs):
+    def __init__(
+        self,
+        data,
+        labels=None,
+        fs=None,
+        options=None,
+        logger=None,
+        subsets=None,
+        *args,
+        **kwargs,
+    ):
         self.options = options
         self._logger = self.set_options(log_opts=logger)
         if data.constants.run_debug:
-            self._X = FeatureFrame(df=data.sample(n=2500, axis='index').sample(n=100, axis='columns').copy(deep=True),
-                                   options=self.options, logger=self._logger)
+            self._X = FeatureFrame(
+                df=data.sample(n=2500, axis="index")
+                .sample(n=100, axis="columns")
+                .copy(deep=True),
+                options=self.options,
+                logger=self._logger,
+            )
             self.options.sample_wts = self.options.sample_wts[self.X.feat_frame.index]
         elif fs and type(fs) is FeatureFrame:
             self._X = fs
         else:
-            self._X = FeatureFrame(df=data.copy(deep=True), options=self.options, logger=self._logger)
+            self._X = FeatureFrame(
+                df=data.copy(deep=True), options=self.options, logger=self._logger
+            )
         self._y = labels
         self._corr = None
         self._descriptor_groups_df = None
@@ -68,22 +108,26 @@ class FeatureSelectorTrainer:
         # self._get_desc_groups(grouping_dir=PADEL_GROUPS_DIR, cols=GROUP_COL_NAMES)
         if not data.constants.run_debug:
             if len(self.X.sparse) < self.options.min_sparse:
-                self._logger.warning('Too few sparse features: \n{}'.format(self.X.sparse))
+                self._logger.warning(
+                    "Too few sparse features: \n{}".format(self.X.sparse)
+                )
                 raise ValueError
             if len(self.X.dense) < self.options.min_dense:
-                self._logger.warning('Too few dense features: \n{}'.format(self.X.dense))
+                self._logger.warning(
+                    "Too few dense features: \n{}".format(self.X.dense)
+                )
                 raise ValueError
         cweights = self.y.copy().replace({1: 1, 0: 10})
 
-    '''
+    """
     def __initialize_data_history__(self):
         for a in self.data_dict:
             self.data_history[a.__name] = [a]
-    '''
+    """
 
     # Set default values for options named tuple.
     def set_options(self, log_opts=None):
-        self._logger = logging.getLogger(name='dmso_logger.logFeatureSelector')
+        self._logger = logging.getLogger(name="dmso_logger.logFeatureSelector")
         logging.basicConfig(**log_opts)
         if constants.run_debug:
             self._logger.setLevel(logging.DEBUG)
@@ -93,11 +137,12 @@ class FeatureSelectorTrainer:
 
     def _calc_values(self):
         # self._corr = self.calc_cov_mat()
-        self._corr = self.X.feat_frame[self.X.nonzero_vars].corrwith(other=self.y, axis='columns',
-                                                                     method=constants.cov_method)
+        self._corr = self.X.feat_frame[self.X.nonzero_vars].corrwith(
+            other=self.y, axis="columns", method=constants.cov_method
+        )
         # self._set_descriptor_groups_df()
 
-    '''
+    """
     # aweights is used to balance covariance estimates for different subsets of observations.
     def calc_cov_mat(self, calc_cov=None, filter_nan=False, sample_wts='auto', *args, **kwargs):
         if calc_cov is not None:
@@ -135,7 +180,7 @@ class FeatureSelectorTrainer:
         self._logger.debug('Covariance matrix with weighting of {}:\n{}'.format(self.options.sample_wts, _corr))
         self._corr_mat = _corr
         return _corr
-        '''
+        """
 
     @cachetools.cached(cache={})
     def set_condition_num(self):
@@ -144,7 +189,7 @@ class FeatureSelectorTrainer:
         condition_index = np.sqrt(max(eigenvalues) / eigenvalues)
         pprint.PrettyPrinter().pprint(condition_index)
         self._logger.info(f"Condition Index: {condition_index}")
-        np.save('{}condition_index'.format(self.options.stats_dir), arr=condition_index)
+        np.save("{}condition_index".format(self.options.stats_dir), arr=condition_index)
         self.condition_num = condition_index
 
     @cachetools.cached(cache={})
@@ -154,148 +199,216 @@ class FeatureSelectorTrainer:
         # sklearn.utils.assert_all_finite(dense_df)
         vif = pd.DataFrame()
         vif["features"] = dense_df.columns
-        vif["VIF Factor"] = [variance_inflation_factor(np.array(dense_df.values.tolist(), dtype=float), i) for i in
-                             range(dense_df.shape[1])]
-        vif.set_index(keys='features', drop=True, inplace=True)
+        vif["VIF Factor"] = [
+            variance_inflation_factor(
+                np.array(dense_df.values.tolist(), dtype=float), i
+            )
+            for i in range(dense_df.shape[1])
+        ]
+        vif.set_index(keys="features", drop=True, inplace=True)
         self._logger.info(vif)
         return vif
 
-    def seq_linear_select(self, df=None, label=None, method='auto', seq_linear_select_scoring='balanced_accuracy',
-                          num_parallel=1):
+    def seq_linear_select(
+        self,
+        df=None,
+        label=None,
+        method="auto",
+        seq_linear_select_scoring="balanced_accuracy",
+        num_parallel=1,
+    ):
         if not df:
             df = self.X
         if not label:
             label = self.y
         check_X_y(df, label)
-        if method == 'elastic' or (method == 'auto' and df.shape[1] < 50):
-            seq_linear_select_estimator = ElasticNetCV(n_jobs=num_parallel, random_state=0, max_iter=5000, tol=1e-5,
-                                                       cv=3)
+        if method == "elastic" or (method == "auto" and df.shape[1] < 50):
+            seq_linear_select_estimator = ElasticNetCV(
+                n_jobs=num_parallel, random_state=0, max_iter=5000, tol=1e-5, cv=3
+            )
         else:
-            seq_linear_select_estimator = LassoCV(fit_intercept=False, max_iter=2500, tol=1e-5, n_jobs=num_parallel,
-                                                  random_state=0,
-                                                  cv='balanced')
-        seq_linear_selector = SequentialFeatureSelector(estimator=seq_linear_select_estimator,
-                                                        scoring=seq_linear_select_scoring,
-                                                        n_jobs=num_parallel)
+            seq_linear_select_estimator = LassoCV(
+                fit_intercept=False,
+                max_iter=2500,
+                tol=1e-5,
+                n_jobs=num_parallel,
+                random_state=0,
+                cv="balanced",
+            )
+        seq_linear_selector = SequentialFeatureSelector(
+            estimator=seq_linear_select_estimator,
+            scoring=seq_linear_select_scoring,
+            n_jobs=num_parallel,
+        )
         return seq_linear_selector.fit(df)
 
     # TODO: Delete groups with no members or just one member.
-    def _set_descriptor_groups_df(self, grouping_dir=PADEL_GROUPS_DIR, cols=GROUP_COL_NAMES, use3d=False):
+    def _set_descriptor_groups_df(
+        self, grouping_dir=PADEL_GROUPS_DIR, cols=GROUP_COL_NAMES, use3d=False
+    ):
         padel_name_df = padel_df
-        short_long_zip = zip(padel_name_df['Descriptor name'].tolist(), padel_name_df['Description'].tolist())
+        short_long_zip = zip(
+            padel_name_df["Descriptor name"].tolist(),
+            padel_name_df["Description"].tolist(),
+        )
         short_long_dict = dict([(a, b) for a, b in short_long_zip])
         if grouping_dir:
             desc_groups_df = pd.read_csv(filepath_or_buffer=grouping_dir, usecols=cols)
             # desc_groups_df.dropna(subset='Descriptor', inplace=True)
             if not use3d:
                 # logging.info(desc_groups_df['Descriptor'])
-                desc_groups_df.drop(desc_groups_df[desc_groups_df['Class'] == '3D'].index, inplace=True)
+                desc_groups_df.drop(
+                    desc_groups_df[desc_groups_df["Class"] == "3D"].index, inplace=True
+                )
             long_dict = dict()
-            for _, i, desc_group in desc_groups_df[desc_groups_df['Number'] > 1][['Type', 'Descriptor']].itertuples():
+            for _, i, desc_group in desc_groups_df[desc_groups_df["Number"] > 1][
+                ["Type", "Descriptor"]
+            ].itertuples():
                 # logging.warning('{} {}'.format(type(desc_group), desc_group))
                 # i, desc_group = vals.values
                 ind = str(i)
-                logging.info('Desc row: {}: {}'.format(ind, desc_group))
-                if desc_group == 'nan' or desc_group == np.NaN or not desc_group or type(desc_group) is float:
+                logging.info("Desc row: {}: {}".format(ind, desc_group))
+                if (
+                    desc_group == "nan"
+                    or desc_group == np.NaN
+                    or not desc_group
+                    or type(desc_group) is float
+                ):
                     long_dict.update([(ind, list())])
                     continue
                 elif type(desc_group) is str:
-                    if ',' not in desc_group:
+                    if "," not in desc_group:
                         if desc_group in short_long_dict.keys():
                             long_dict.update([(ind, list(desc_group))])
                             continue
                         else:
-                            logging.error('COULD NOT FIND DESCRIPTOR IN LIST: {}'.format(desc_group))
+                            logging.error(
+                                "COULD NOT FIND DESCRIPTOR IN LIST: {}".format(
+                                    desc_group
+                                )
+                            )
                             continue
-                    elif ',' in desc_group:
-                        key_list = [d.strip() for d in desc_group.split(',')]
+                    elif "," in desc_group:
+                        key_list = [d.strip() for d in desc_group.split(",")]
                         desc_list = list()
                         if any([len(k) == 1 for k in key_list]):
-                            logging.warning('SPLITTING INTO SINGLE CHARACTERS!')
+                            logging.warning("SPLITTING INTO SINGLE CHARACTERS!")
                         else:
                             for d in key_list:
                                 if len(d) <= 1:
                                     logging.error(
-                                        'Descriptor splitting for {} gives single characters'.format(key_list))
+                                        "Descriptor splitting for {} gives single characters".format(
+                                            key_list
+                                        )
+                                    )
                                 elif d not in short_long_dict.keys():
-                                    logging.warning('Descriptor not found in key list!!!: "{}"'.format(d))
+                                    logging.warning(
+                                        'Descriptor not found in key list!!!: "{}"'.format(
+                                            d
+                                        )
+                                    )
                                     continue
                                     # key_list.remove(d)
                                 else:
                                     desc_list.append((d, short_long_dict[d]))
-                                    self._logger.debug('{} in keys!'.format(d))
+                                    self._logger.debug("{} in keys!".format(d))
                             long_dict = dict(desc_list)
                             if len(desc_list) == 0:
                                 logging.warning(
-                                    'Empty descriptor group label: {}: {}'.format(ind, desc_group.split(',')))
+                                    "Empty descriptor group label: {}: {}".format(
+                                        ind, desc_group.split(",")
+                                    )
+                                )
                                 long_dict.update({ind: list()})
                             elif len(desc_list) == 0 and any(
-                                    [k in desc_group.strip(',') for k in short_long_dict.keys()]):
+                                [
+                                    k in desc_group.strip(",")
+                                    for k in short_long_dict.keys()
+                                ]
+                            ):
                                 logging.error(
-                                    'DESCRIPTOR LIST NOT BEING SPLIT CORRECTLY! \n{}VS.\n{}'.format(desc_group,
-                                                                                                    desc_list))
+                                    "DESCRIPTOR LIST NOT BEING SPLIT CORRECTLY! \n{}VS.\n{}".format(
+                                        desc_group, desc_list
+                                    )
+                                )
                                 raise ValueError
                             else:
                                 long_dict.update({ind: list()})
                     else:
                         logging.error(
-                            'Desc list {} is string but is not in descriptor DF and does not contain comma delimiter.'.format(
-                                key_list))
+                            "Desc list {} is string but is not in descriptor DF and does not contain comma delimiter.".format(
+                                key_list
+                            )
+                        )
                         raise ValueError
                 elif type(desc_group) is list:
                     long_dict.update((ind, desc_group))
                 elif type(desc_group) is tuple or type(desc_group) is set:
                     long_dict.update((ind, list(desc_group)))
                 else:
-                    logging.error('Unknown type {} for descriptor group {}'.format(type(desc_group), desc_group))
+                    logging.error(
+                        "Unknown type {} for descriptor group {}".format(
+                            type(desc_group), desc_group
+                        )
+                    )
                     raise TypeError
                     # long_dict.update([(ind, [short_long_dict[str(d)] for d in desc_group.split(',') if str(d) in short_long_dict.keys()])])
-            self._logger.info('Input dictionary: {}'.format(long_dict.items()))
+            self._logger.info("Input dictionary: {}".format(long_dict.items()))
             for k, v in long_dict.items():
                 if type(v) is not list:
                     long_dict[k] = list(v)
-            self._logger.info('Input dictionary: {}'.format(long_dict.items()))
+            self._logger.info("Input dictionary: {}".format(long_dict.items()))
             long_df = pd.DataFrame.from_dict(long_dict)
             if long_df.empty:
-                long_df = pd.DataFrame.from_dict(long_dict, orient='index')
+                long_df = pd.DataFrame.from_dict(long_dict, orient="index")
             if long_df.empty:
                 long_df = pd.DataFrame.from_records(data=long_dict)
             if long_df.empty:
-                long_df = pd.Series(data=long_dict.values(), index=long_dict.keys(), name='Long')
+                long_df = pd.Series(
+                    data=long_dict.values(), index=long_dict.keys(), name="Long"
+                )
             if long_df.empty:
-                self._logger.warning('Long descriptor DF is empty!')
+                self._logger.warning("Long descriptor DF is empty!")
                 raise ValueError
-            if type(long_df) is pd.DataFrame and len(long_df.shape) > 1 and long_df.shape[0] < long_df.shape[1]:
+            if (
+                type(long_df) is pd.DataFrame
+                and len(long_df.shape) > 1
+                and long_df.shape[0] < long_df.shape[1]
+            ):
                 long_df = long_df.T
             else:
                 self._logger.info(type(long_df))
-            self._logger.info('Brand new long_df: {}'.format(long_df))
+            self._logger.info("Brand new long_df: {}".format(long_df))
             try:
-                long_df.rename(columns=['Long'], inplace=True)
+                long_df.rename(columns=["Long"], inplace=True)
             except TypeError:
-                self._logger.error('Could not rename long_df')
-            self._logger.info('Long DF: \n{}'.format(long_df.to_string()))
-            new_desc_df = desc_groups_df.set_index(keys='Type').join(long_df, how='inner')
+                self._logger.error("Could not rename long_df")
+            self._logger.info("Long DF: \n{}".format(long_df.to_string()))
+            new_desc_df = desc_groups_df.set_index(keys="Type").join(
+                long_df, how="inner"
+            )
             if new_desc_df.empty:
-                new_desc_df = desc_groups_df.join(long_df.reset_index(), how='inner')
+                new_desc_df = desc_groups_df.join(long_df.reset_index(), how="inner")
             # desc_groups_df['Long'] = desc_groups_df['Descriptor'].apply(func=lambda x: [[short_long_dict[a.strip()] for a in d if a != 'NaN' and a != np.NaN] for d.split(',') in x if len(d) > 1 else x])
             # desc_groups_df['Long'] = desc_groups_df['Descriptor'].apply(func=lambda x: [short_long_dict[d.rstrip(',')] for d in x.split()])
-            self._logger.info('Col Names: {}'.format(new_desc_df.columns))
-            self._logger.info('Long Name Descriptors: \n{}'.format(new_desc_df))
+            self._logger.info("Col Names: {}".format(new_desc_df.columns))
+            self._logger.info("Long Name Descriptors: \n{}".format(new_desc_df))
             # new_desc_df.sort_values(key=lambda x: len(x), inplace=True, ascending=False)
         else:
             raise FileNotFoundError
         self._descriptor_groups_df = new_desc_df
 
     @cachetools.cached(cache={})
-    def scale_df(self, df=None, scale_to=None, select_scalers='all', *args, **kwargs):
+    def scale_df(self, df=None, scale_to=None, select_scalers="all", *args, **kwargs):
         df_scaled = dict()
         if not df:
             df = self.X.cont
         if not self.scalers:
             self.scalers = self.scale_df(scale_to, *args, **kwargs)
-        if select_scalers != 'all':
-            select_scalars = [key for key in self.scalers.keys() if key in select_scalers]
+        if select_scalers != "all":
+            select_scalars = [
+                key for key in self.scalers.keys() if key in select_scalers
+            ]
         else:
             select_scalers = self.scalers
         for name, scaler in self.scalers.items():
@@ -311,13 +424,23 @@ class FeatureSelectorTrainer:
         return df_scaled
 
     # Set Sample weight option.
-    def isolate_observations(self, fit_to=None, sample_wts='auto', contamination=0.001, rstate=None, n_jobs=-1):
+    def isolate_observations(
+        self,
+        fit_to=None,
+        sample_wts="auto",
+        contamination=0.001,
+        rstate=None,
+        n_jobs=-1,
+    ):
         from sklearn.ensemble import IsolationForest
+
         if not fit_to:
             fit_to = self.X.feat_frame[self.X.nonzero_vars]
-        if sample_wts == 'auto':
+        if sample_wts == "auto":
             sample_wts = None
-        iso = IsolationForest(n_jobs=n_jobs, contamination=contamination, random_state=0)
+        iso = IsolationForest(
+            n_jobs=n_jobs, contamination=contamination, random_state=0
+        )
         if fit_to:
             iso = iso.fit(fit_to, sample_weight=sample_wts)
         return iso
@@ -334,7 +457,9 @@ class FeatureSelectorTrainer:
     def get_high_vars(self, n=50):
         scaler = RobustScaler()
         high_thresh = VarianceThreshold()
-        high_thresh_pipe = Pipeline(steps=[('high_var_scaler', scaler), ('high_thresh', high_thresh)])
+        high_thresh_pipe = Pipeline(
+            steps=[("high_var_scaler", scaler), ("high_thresh", high_thresh)]
+        )
         return high_thresh_pipe
 
     @property
@@ -357,8 +482,15 @@ class FeatureSelectorTrainer:
 
     @cachetools.cached(cache={})
     @scalers.setter
-    def scalers(self, fit_to=None, robust_iqr=(0.05, 0.95), unit_robust_iqr=(0.05, 0.95), normalizer_norm='l2', *args,
-                **kwargs):
+    def scalers(
+        self,
+        fit_to=None,
+        robust_iqr=(0.05, 0.95),
+        unit_robust_iqr=(0.05, 0.95),
+        normalizer_norm="l2",
+        *args,
+        **kwargs,
+    ):
         """
         :param fit_to:
         :param robust_iqr:
@@ -370,10 +502,23 @@ class FeatureSelectorTrainer:
         """
 
         # noinspection PyArgumentEqualDefault
-        scaler_dict = dict([
-            ('robust', RobustScaler(quantile_range=robust_iqr, unit_variance=False, **kwargs)),
-            ('robust_unit', RobustScaler(quantile_range=unit_robust_iqr, unit_variance=True, **kwargs)),
-            ('normal', Normalizer(norm=normalizer_norm, **kwargs))])
+        scaler_dict = dict(
+            [
+                (
+                    "robust",
+                    RobustScaler(
+                        quantile_range=robust_iqr, unit_variance=False, **kwargs
+                    ),
+                ),
+                (
+                    "robust_unit",
+                    RobustScaler(
+                        quantile_range=unit_robust_iqr, unit_variance=True, **kwargs
+                    ),
+                ),
+                ("normal", Normalizer(norm=normalizer_norm, **kwargs)),
+            ]
+        )
         if fit_to:
             [val.fit(fit_to.to_numpy()) for val in scaler_dict.values()]
         self._scalers = scaler_dict
@@ -399,16 +544,25 @@ class FeatureSelectorTrainer:
         for ind, col in itertools.combinations(corr_mat.columns.tolist(), r=2):
             val = corr_mat.loc[ind, col]
             # self._logger(ind, col, val, flush=True)
-            if not isinstance(val, numbers.Number) or np.abs(val) > 1.:
+            if not isinstance(val, numbers.Number) or np.abs(val) > 1.0:
                 self._logger.warning(
-                    'CoV matrix element is non-numerical: {}.\nThis happened on row: \n{:25}\nand column:\n{:25}\n'.format(
-                        val, ind, col))
-            elif np.abs(val) == 1.:
+                    "CoV matrix element is non-numerical: {}.\nThis happened on row: \n{:25}\nand column:\n{:25}\n".format(
+                        val, ind, col
+                    )
+                )
+            elif np.abs(val) == 1.0:
                 same_list.append((col, ind))
                 self._logger.warning(
-                    'Perfectly correlated feature pair with R of {}:\n{:25}\n{:25} '.format(val, ind, col))
-            elif np.abs(val) > self.options['cov_thresh']:
-                self._logger.info('Highly correlated features with an R of {:25}\n{:25}\n{}'.format(val, ind, col))
+                    "Perfectly correlated feature pair with R of {}:\n{:25}\n{:25} ".format(
+                        val, ind, col
+                    )
+                )
+            elif np.abs(val) > self.options["cov_thresh"]:
+                self._logger.info(
+                    "Highly correlated features with an R of {:25}\n{:25}\n{}".format(
+                        val, ind, col
+                    )
+                )
                 close_list.append([(ind, col), val])
         self._logger.info(close_list)
         self.X._cov_pairs = close_list
@@ -420,23 +574,31 @@ def iter_feats(feat_groups):
         col_group, selector = feat_dict
 
 
-REQUIRED_OPTS = ('tol_discrete', 'tol_sparse', 'sparsity')
+REQUIRED_OPTS = ("tol_discrete", "tol_sparse", "sparsity")
 
-'''def set_corr_pairs(matrix, cov_thresh, *args, **kwargs):
+"""def set_corr_pairs(matrix, cov_thresh, *args, **kwargs):
     corr_set = set()
     for i in range(1, matrix.shape[0]):
         for j in range(0, i + 1):
             if matrix[i, j] >= cov_thresh:
                 corr_set.add((matrix.columns[i], matrix.columns[j]))
-    return corr_set'''
+    return corr_set"""
 
 
-def set_corr_mat(df, corr_method='auto', filter_nan=False, sample_wts=None, *args, **kwargs):
-    if corr_method == 'auto':
+def set_corr_mat(
+    df, corr_method="auto", filter_nan=False, sample_wts=None, *args, **kwargs
+):
+    if corr_method == "auto":
         norm_wt = np.sum(np.array(sample_wts)) / len(sample_wts.keys())
-        corr_arr = np.divide(np.cov(df, rowvar=False, ddof=0, aweights=sample_wts), np.sum(sample_wts))
+        corr_arr = np.divide(
+            np.cov(df, rowvar=False, ddof=0, aweights=sample_wts), np.sum(sample_wts)
+        )
         cov_mat = pd.DataFrame(data=corr_arr, index=df.columns, columns=df.columns)
-    elif corr_method == 'pearson' or corr_method == 'spearman' or corr_method == 'kendall':
+    elif (
+        corr_method == "pearson"
+        or corr_method == "spearman"
+        or corr_method == "kendall"
+    ):
         cov_mat = df.corr(method=corr_method)
     else:
         raise ValueError
@@ -444,12 +606,20 @@ def set_corr_mat(df, corr_method='auto', filter_nan=False, sample_wts=None, *arg
     #    print('Covariance matrix contains invalid values.')
     excess_cov = np.nonzero(1 - cov_mat.abs())
     if len(excess_cov) > cov_mat.size:
-        print('There are {} covariance values greater outside of [-1, 1]'.format(len(excess_cov)))
+        print(
+            "There are {} covariance values greater outside of [-1, 1]".format(
+                len(excess_cov)
+            )
+        )
     if filter_nan:
         for tup in excess_cov:
             ind, col = tup
             val = cov_mat[ind, col]
-            print('Invalid value in CoV matrix: {}\nRow: {}\nColumn:{}\n'.format(val, ind, col))
+            print(
+                "Invalid value in CoV matrix: {}\nRow: {}\nColumn:{}\n".format(
+                    val, ind, col
+                )
+            )
         if invalid:
             raise ValueError
     return cov_mat
@@ -459,7 +629,13 @@ def feat_types_clf_scorers(value):
     cont_mi_clf = functools.partialmethod(mutual_info_classif, discrete_features=False)
     disc_mi_clf = functools.partialmethod(mutual_info_classif, discrete_features=True)
     return dict(
-        [(f_classif, 'real'), (cont_mi_clf, 'real'), (disc_mi_clf, 'discrete'), (chi2, 'nonneg')])
+        [
+            (f_classif, "real"),
+            (cont_mi_clf, "real"),
+            (disc_mi_clf, "discrete"),
+            (chi2, "nonneg"),
+        ]
+    )
 
 
 class FeatureFrame:
@@ -514,8 +690,10 @@ class FeatureFrame:
         return self._feat_vars
 
     def _set_feat_vars(self, skipna=True, numeric_only=False, *args, **kwargs):
-        feat_vars = self.original.var(axis='index', skipna=skipna, numeric_only=numeric_only)
-        self._logger.info('Feature variances: {}'.format(feat_vars))
+        feat_vars = self.original.var(
+            axis="index", skipna=skipna, numeric_only=numeric_only
+        )
+        self._logger.info("Feature variances: {}".format(feat_vars))
         if feat_vars.empty or feat_vars.dropna().empty:
             raise ValueError
         self._feat_vars = feat_vars
@@ -560,26 +738,40 @@ class FeatureFrame:
                 nonneg_cols.append(col)
         self.nonneg = pd.Index(nonneg_cols)
         self.neg = pd.Index(neg_cols)
-        self._logger.info('Nonnegative features: {}'.format(self.nonneg.size))
-        self._logger.info('Features with negative values: {}'.format(self.neg.size))
+        self._logger.info("Nonnegative features: {}".format(self.nonneg.size))
+        self._logger.info("Features with negative values: {}".format(self.neg.size))
 
     def _set_discrete_cont(self):
         # remainder = self.feat_frame.copy().round(0).subtract(self.feat_frame).astype(float)
         # self._logger.info(remainder.max(axis='rows').sort_values(ascending=False)[:5])
         # self._logger.info(remainder.max(axis='rows').sort_values(ascending=True)[:5])
-        count_cols = pd.Index([x for x in self.feat_frame.columns if
-                               ('count' in x.lower() or 'number' in x.lower()) and 'measure' not in x.lower()])
+        count_cols = pd.Index(
+            [
+                x
+                for x in self.feat_frame.columns
+                if ("count" in x.lower() or "number" in x.lower())
+                and "measure" not in x.lower()
+            ]
+        )
         non_counts = self.feat_frame.columns.difference(count_cols)
-        uniques = self.feat_frame[non_counts].nunique(axis='columns')
-        self._logger.info('Columns containing "count" or "number": \n{}'.format(count_cols.tolist()))
+        uniques = self.feat_frame[non_counts].nunique(axis="columns")
+        self._logger.info(
+            'Columns containing "count" or "number": \n{}'.format(count_cols.tolist())
+        )
         self.discrete = uniques[
-            uniques < (self.options.discrete_max * self.feat_frame[non_counts].shape[1])].index.union(count_cols)
+            uniques < (self.options.discrete_max * self.feat_frame[non_counts].shape[1])
+        ].index.union(count_cols)
         # self.discrete = remainder.columns[((remainder <= self.options.tol_discrete) | (remainder >= (1 - self.options.tol_discrete))).astype(int).sum() == 0]
         self.cont = self.feat_frame.columns.difference(self.discrete)
-        self._logger.info('Discrete features: {}'.format(self.discrete.size))
-        self._logger.info('Continuous features: {}'.format(self.cont.size))
-        if self.discrete.size < self.options.min_discrete or self.cont.size < self.options.min_continuous:
-            self._logger.error('Too few features for tol_sparse: {}.'.format(self.options.tol_discrete))
+        self._logger.info("Discrete features: {}".format(self.discrete.size))
+        self._logger.info("Continuous features: {}".format(self.cont.size))
+        if (
+            self.discrete.size < self.options.min_discrete
+            or self.cont.size < self.options.min_continuous
+        ):
+            self._logger.error(
+                "Too few features for tol_sparse: {}.".format(self.options.tol_discrete)
+            )
             raise AttributeError
 
     @property
@@ -588,12 +780,19 @@ class FeatureFrame:
 
     @cov_mat.setter
     def cov_mat(self, val):
-        if self.cov_mat is not None and type(self.cov_mat) is pd.DataFrame and not self.cov_mat.empty:
-            self._logger.warn('Covariance matrix has already been calculated.')
+        if (
+            self.cov_mat is not None
+            and type(self.cov_mat) is pd.DataFrame
+            and not self.cov_mat.empty
+        ):
+            self._logger.warn("Covariance matrix has already been calculated.")
             pass
         else:
-            self._cov_mat = set_corr_mat(self.feat_frame[self.dense], corr_method=constants.cov_method,
-                                         sample_wts=self.options.sample_wts)
+            self._cov_mat = set_corr_mat(
+                self.feat_frame[self.dense],
+                corr_method=constants.cov_method,
+                sample_wts=self.options.sample_wts,
+            )
 
     @property
     def cov_pairs(self):
@@ -602,7 +801,9 @@ class FeatureFrame:
     @cov_pairs.setter
     def cov_pairs(self, val):
         if type(self.cov_mat) is pd.DataFrame and not self.cov_mat.empty:
-            self._cov_pairs = set_corr_pairs(self.cov_mat, cov_thresh=self.options.corr_thresh)
+            self._cov_pairs = set_corr_pairs(
+                self.cov_mat, cov_thresh=self.options.corr_thresh
+            )
 
     @property
     def sparse(self):
@@ -650,8 +851,8 @@ class FeatureFrame:
                 freq_dict[col] = ser
             sermax = ser.max(skipna=ignore_nan)
             # print('Feature freq max: {}'.format(sermax))
-            logging.debug('Feature maximum: {}'.format(sermax))
-            if freq_cut < sermax < 1.:
+            logging.debug("Feature maximum: {}".format(sermax))
+            if freq_cut < sermax < 1.0:
                 sparse_list.append(col)
             elif freq_cut > sermax:
                 dense_list.append(col)
@@ -661,10 +862,12 @@ class FeatureFrame:
         self.dense = pd.Index(dense_list)
         self.zero_vars = pd.Index(zero_list)
         self.nonzero_vars = self.original.columns.difference(self.zero_vars)
-        self._logger.info('Zero variance features: {}'.format(self.zero_vars.size))
-        self._logger.info('Non-zero variance features: {}'.format(self.nonzero_vars.size))
-        self._logger.info('Sparse features: {}'.format(self.sparse.size))
-        self._logger.info('Dense features: {}'.format(self.dense.size))
+        self._logger.info("Zero variance features: {}".format(self.zero_vars.size))
+        self._logger.info(
+            "Non-zero variance features: {}".format(self.nonzero_vars.size)
+        )
+        self._logger.info("Sparse features: {}".format(self.sparse.size))
+        self._logger.info("Dense features: {}".format(self.dense.size))
 
         # self.feature_properties['zero_vars'] = self.X.vary.columns.symmetric_difference(pd.Index(current_data=nonzeros))
 
@@ -685,6 +888,7 @@ class FeatureFrame:
                 # self._logger.error('Required option {} not found.'.format(o))
                 raise KeyError
         self._options = arg
+
 
 # TODO Balanced covariance matrix.
 # def balanced_cov(df, corr_method, ):
