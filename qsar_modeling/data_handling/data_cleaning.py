@@ -47,13 +47,6 @@ def rename_duplicate_features(feature_df):
             feature_df.columns[feature_df.columns.duplicated()] + "i",
         )
     assert feature_df.columns[feature_df.columns.duplicated()].size == 0
-    """
-    dups = feature_df.columns[feature_df.columns.duplicated(keep=False)].unique()
-    for col in dups:
-        inds = feature_df.columns
-        for i, ind in enumerate(inds):
-            feature_df.columns[ind] = '{}_i'.format(feature_df.columns[ind])
-    """
     return feature_df
 
 
@@ -81,15 +74,6 @@ def clean_and_check(feature_df, labels, y_dtype=None, var_thresh=0, verbose=Fals
     if len(invalid_idx) > 0:
         raise UserWarning
         print("INCHI keys are not valid: {}".format(invalid_idx))
-    """
-    y_ser = remove_duplicate_idx(labels)
-    if type(y_ser.index) is pd.RangeIndex:
-        X_df = X_df.loc[y_ser]
-    else:
-        X_df = X_df.loc[y_ser.index]
-    if y_dtype is not None:
-        y_ser = y_ser.astype(y_dtype)
-    """
     zero_var_cols = X_df[X_df.nunique(axis=1) < var_thresh].columns
     if verbose:
         print(feature_df.shape)
@@ -106,28 +90,3 @@ def clean_and_check(feature_df, labels, y_dtype=None, var_thresh=0, verbose=Fals
     assert not Xt.empty
     assert not yt.empty
     return Xt, yt
-
-
-def data_check():
-    from data_tools import load_all_descriptors, load_combo_data, load_training_data
-
-    all_X = load_all_descriptors()
-    print("Shapes of all descriptor DFs")
-    print(all_X.shape)
-    train_X, train_y = load_training_data()
-    combo_data = load_combo_data()
-    all_idx_dict = dict([(k, df.index) for k, df in combo_data.items()])
-    # Verification
-    print("Shape from combo data dictionary: ")
-    print([(k, idx.size) for k, idx in all_idx_dict.items()])
-    all_y_dict = dict([(k, df["DMSO_SOLUBILITY"]) for k, df in combo_data.items()])
-    all_y = pd.concat(all_y_dict.values())
-    # all_y = pd.concat(all_y_dict.values())
-    # all_X = pd.concat(all_X_dict.values())
-    test_idx = all_X.index.difference(train_X.index)
-    test_y = all_y[test_idx]
-    test_X = all_X.loc[test_idx]
-    print("Test data sizes:")
-    print(test_idx.size)
-    for k, idx in all_idx_dict.items():
-        print(k, test_idx.intersection(idx).size, train_y.index.intersection(idx).size)

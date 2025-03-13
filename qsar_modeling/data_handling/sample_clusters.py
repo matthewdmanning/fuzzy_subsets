@@ -12,9 +12,9 @@ from sklearn.manifold import SpectralEmbedding, TSNE
 from sklearn.preprocessing import StandardScaler
 from sklearn.tree import DecisionTreeClassifier
 
-import data_tools
 import feature_name_lists
 from data_cleaning import clean_and_check
+from dmso_utils import data_tools
 from RingSimplifier import RingSimplifer
 
 
@@ -39,19 +39,29 @@ def find_enriching_splits(feature_df, labels, depth=2):
         trained_tree = clone(dt).fit(feature_df[col].to_frame(), labels)
         minpurity = np.argmin(trained_tree.tree_.impurity)
         thresh = trained_tree.tree_.threshold[0]
-        leaves = pd.Series(trained_tree.apply(feature_df[col].to_frame()), index=feature_df.index)
+        leaves = pd.Series(
+            trained_tree.apply(feature_df[col].to_frame()), index=feature_df.index
+        )
         # Need to get (weighted?) n_samples / impurity measure.
         smallest_members = leaves[leaves == minpurity].index
         pos_small = smallest_members.intersection(pos_members).size
         neg_small = smallest_members.intersection(neg_members).size
         # smallest = trained_tree.tree_.weighted_n_node_samples[minpurity]
-        split_dict[col[:15]] = np.array([thresh, trained_tree.tree_.impurity[minpurity], pos_small, neg_small])
-    split_df = pd.DataFrame.from_dict(split_dict, orient="index", columns=["Threshold", "Impurity", "Solubles", "Insolubles"]).sort_values(by="Impurity")
+        split_dict[col[:15]] = np.array(
+            [thresh, trained_tree.tree_.impurity[minpurity], pos_small, neg_small]
+        )
+    split_df = pd.DataFrame.from_dict(
+        split_dict,
+        orient="index",
+        columns=["Threshold", "Impurity", "Solubles", "Insolubles"],
+    ).sort_values(by="Impurity")
     return split_df
 
 
 def cluster_split():
-    KMeans(n_clusters=2, )
+    KMeans(
+        n_clusters=2,
+    )
 
 
 def simplify_rings(feature_df, all_names, large_start=8):
@@ -90,7 +100,9 @@ def simplify_rings(feature_df, all_names, large_start=8):
                 het_name = het_list[0]
                 if het_name in cdf.columns:
                     print(cdf[het_name].value_counts)
-                    cdf[large_het_name] = cdf[large_het_name].add(cdf[het_name], fill_valus=0)
+                    cdf[large_het_name] = cdf[large_het_name].add(
+                        cdf[het_name], fill_valus=0
+                    )
                     cdf.drop(
                         columns=het_name,
                         inplace=True,
@@ -117,15 +129,20 @@ def simplify_rings(feature_df, all_names, large_start=8):
             """
         # print(k, [cdf[cdf[n] > 0][n].value_counts(sort=False) for n in t if n in cdf.columns])
         if "Number of >12-membered rings" in cdf.columns:
-            cdf[large_name] = cdf[large_name].add(cdf["Number of >12-membered rings"], fill_valus=0)
+            cdf[large_name] = cdf[large_name].add(
+                cdf["Number of >12-membered rings"], fill_valus=0
+            )
             cdf.drop(columns="Number of >12-membered rings", inplace=True)
         if (
             "Number of >12-membered rings containing heteroatoms (N, O, P, S, or halogens)"
             in cdf.columns
         ):
-            cdf[large_het_name] = cdf[large_het_name].add(cdf[
-                "Number of >12-membered rings containing heteroatoms (N, O, P, S, or halogens)"
-            ], fill_valus=0)
+            cdf[large_het_name] = cdf[large_het_name].add(
+                cdf[
+                    "Number of >12-membered rings containing heteroatoms (N, O, P, S, or halogens)"
+                ],
+                fill_valus=0,
+            )
             cdf.drop(
                 columns="Number of >12-membered rings containing heteroatoms (N, O, P, S, or halogens)",
                 inplace=True,
@@ -196,7 +213,9 @@ def main():
     zero_var_counts = ring_df.columns[ring_df.nunique() == 1]
     ring_df.drop(columns=zero_var_counts, inplace=True)
     all_df = clean_and_check(ring_df, train_labels)
-    counts_df = all_df[all_df.columns[all_df.columns.isin(all_count_descriptors)]].copy()
+    counts_df = all_df[
+        all_df.columns[all_df.columns.isin(all_count_descriptors)]
+    ].copy()
     remaining_df = all_df.drop(columns=counts_df.columns)
     print(remaining_df.shape)
     # print("Zero var: {}".format(zero_var_counts))

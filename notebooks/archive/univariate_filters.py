@@ -1,7 +1,5 @@
-import pandas as pd
-
-from feature_selection.bivariate_filters import filter_covariants
-from feature_selection.mutual_info_tools.jmi_homebrew import balanced_mi_y
+from _deprecated.bivariate_filters import filter_covariants
+from feature_selection._mutual_info_tools.jmi_homebrew import balanced_mi_y
 
 
 def corr_filter(

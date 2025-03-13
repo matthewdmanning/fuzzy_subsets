@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 from sklearn import clone
-from sklearn.metrics import mean_squared_log_error
+from sklearn.metrics import mean_squared_error, mean_squared_log_error
 from sklearn.metrics.pairwise import cosine_distances
 from sklearn.model_selection import StratifiedKFold
 from sklearn.preprocessing import LabelBinarizer
@@ -15,7 +15,7 @@ from sklearn.utils import compute_sample_weight
 from sklearn.utils._param_validation import HasMethods
 
 import cv_tools
-from data_handling import data_tools
+from dmso_utils import data_tools
 
 
 def model_prediction_distance(
@@ -39,6 +39,7 @@ def cv_model_prediction_distance(
     response="predict_proba",
     **kwargs
 ):
+    # Make regressor/response-compatible use sklearn estimator checks. Correct default CV splitter.
     test_idx_list = list()
     distance_dict = {"test": list(), "train": list()}
     predict_dict = dict()
@@ -105,8 +106,28 @@ def weigh_single_proba(onehot_true, probs, prob_thresholds=None):
     return unweighted
 
 
+def weight_by_error(y_true, predicts, loss=mean_squared_error):
+    y_pred = predicts.copy()
+    y_true = y_true.copy()
+    print(y_true)
+    print(y_pred)
+    if isinstance(y_pred, (list, tuple)):
+        resids = pd.concat([y_true - p for p in y_pred], axis=1).max(axis=1)
+    else:
+        resids = y_true - y_pred
+    print(resids)
+    # sample_losses = loss(y_true=y_true[y_pred.index], y_pred=y_pred, multioutput="raw_values")
+    # print(sample_losses)
+    return pd.Series(data=resids**2, index=y_true.index, name="losses")
+
+
 def weight_by_proba(
-    y_true, probs, prob_thresholds=(0, 0.75), label_type="binary", combo_type="max"
+    y_true,
+    probs,
+    prob_thresholds=(0, 0.75),
+    label_type="binary",
+    combo_type="max",
+    class_labels=None,
 ):
     probs = copy.deepcopy(probs)
     y_true = y_true.copy()
@@ -115,7 +136,9 @@ def weight_by_proba(
     else:
         onehot_labels = LabelBinarizer().fit_transform(y_true.to_frame())
     assert onehot_labels.shape == (y_true.size, y_true.nunique())
-    onehot_labels.columns = ["Soluble", "Insoluble"]
+    if class_labels is not None:
+        onehot_labels.columns = class_labels
+    # onehot_labels.columns = ["Soluble", "Insoluble"]
     # print("Onehot:\n{}".format(pprint.pformat(onehot_labels.shape)))
     onehot_normed = onehot_labels.sub(np.ones_like(onehot_labels) / y_true.nunique())
     onehot_normed.columns = onehot_labels.columns
@@ -130,8 +153,9 @@ def weight_by_proba(
 
         # print("Normed:\n{}".format(pprint.pformat(onehot_normed.shape)))
     elif isinstance(probs, list) and len(probs) > 1:
-        for p in probs:
-            p.columns = ["Soluble", "Insoluble"]
+        if class_labels is not None:
+            for p in probs:
+                p.columns = class_labels
         unweighted = pd.concat(
             [
                 p.multiply(onehot_labels)
@@ -161,7 +185,8 @@ def weight_by_proba(
             sample_weights = (
                 sample_weights_raw - sample_weights_raw.min()
             ) / sample_weights_raw.max()
-        elif combo_type == "max":
+        # elif combo_type == "max":
+        else:
             sample_weights_raw = unweighted.max(axis=1)
         # if "sq" in activate:
         #     pd.Series.apply()
@@ -173,6 +198,7 @@ def weight_by_proba(
     sample_weights = sample_weights_raw**2
     print("Sample weights:")
     pprint.pprint(sample_weights.describe())
+    sample_weights.index = probs.index
     return sample_weights
 
 

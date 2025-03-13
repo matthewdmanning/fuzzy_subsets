@@ -7,13 +7,31 @@ from scipy.cluster import hierarchy
 from scipy.spatial.distance import squareform
 
 
-# This function uses the Spearman rank correlation to construct a hierarchical clustering of features in a dataset, calculated using the distance matrix.
-# graph_hierarchy plots the results of the dendrogram.
-
-
 def spearman_rank_multicollinear(
     feature_df, labels=None, corr=None, nan_policy="propagate", cluster_feats=False
 ):
+    """
+
+    This function uses the Spearman rank correlation to construct a hierarchical clustering of features in a dataset, calculated using the distance matrix.
+    graph_hierarchy plots the results of the dendrogram.
+
+    Parameters
+    ----------
+    feature_df : pd.DataFrame
+    labels : pd.Series
+    corr : pd.DataFrame
+    nan_policy: str
+    cluster_feats: bool
+
+    Returns
+    -------
+    selected_features_names
+    corr_df
+    dendro
+    fig1
+    fig2
+    """
+
     def graph_hierarchy():
         fig2, ax2 = plt.subplots(figsize=(60, 40), dpi=1600)
         ax1.imshow(corr[dendro["leaves"], :][:, dendro["leaves"]])

@@ -13,8 +13,8 @@ from sklearn.model_selection import GroupKFold
 from sklearn.preprocessing import Normalizer, RobustScaler
 from sklearn.utils.validation import check_X_y
 
+from _deprecated.FeatureFrame import FeatureFrame
 from constants import names, paths, run_params, selector_params
-from feature_selection.FeatureFrame import FeatureFrame
 from qsar_modeling.data_handling.padel_categorization import padel_df
 
 pd.options.display.max_colwidth = 30

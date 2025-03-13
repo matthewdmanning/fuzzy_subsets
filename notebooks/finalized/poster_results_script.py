@@ -23,7 +23,7 @@ from sklearn.utils import check_X_y
 import cv_tools
 import data_handling.data_cleaning
 from data import feature_name_lists
-from qsar_modeling.data_handling.data_tools import (
+from dmso_utils.data_tools import (
     get_interpretable_features,
     load_metadata,
     load_training_data,

@@ -7,7 +7,6 @@ import pandas as pd
 
 import distributions
 from constants import names, paths, run_params, selector_params
-from features import set_cov_matrix
 
 
 class FeatureFrame:
@@ -328,3 +327,17 @@ class FeatureFrame:
                 raise KeyError
         self._options = arg
     """
+
+
+def set_cov_matrix(df, sample_wts=None, *args, **kwargs):
+    logging.info("Calculating covariance matrix...")
+    if sample_wts is not None:
+        freq_wts = np.round(sample_wts)
+        cov_arr = np.cov(df, rowvar=False, ddof=1, fweights=freq_wts)
+    else:
+        cov_arr = np.cov(df, ddof=1, rowvar=False)
+    cov_mat = pd.DataFrame(data=cov_arr, index=df.columns, columns=df.columns)
+    logging.info("Covariance matrix of shape {} calculated.".format(cov_mat.shape))
+    # if cov_mat.isna().astype(int).sum().sum() > 0:
+    #    print('Covariance matrix contains invalid values.')
+    return cov_mat

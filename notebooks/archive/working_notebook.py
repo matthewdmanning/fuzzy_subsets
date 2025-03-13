@@ -10,6 +10,7 @@ import numpy as np
 import pandas as pd
 from imblearn.ensemble import BalancedRandomForestClassifier
 from imblearn.under_sampling import NearMiss, RandomUnderSampler
+from modeling.score_report import plot_results
 from scipy.special import softmax
 from sklearn.decomposition import IncrementalPCA
 from sklearn.feature_selection import mutual_info_classif
@@ -20,11 +21,10 @@ from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import RobustScaler, StandardScaler
 from sklearn.utils import check_X_y, compute_class_weight, compute_sample_weight
 
+from _deprecated import FeatureSelector
+from _deprecated.importance import extra_trees_gini_importances
 from constants import names, paths, run_params
-from feature_selection.importance import extra_trees_gini_importances
 from feature_selection.vif import calculate_vif, repeated_stochastic_vif
-from modeling.score_report import plot_results
-from qsar_modeling.feature_selection import FeatureSelector
 
 # Load Data & Options
 logger = logging.getLogger("dmso_logger.working_nb")
@@ -433,7 +433,7 @@ def train_models(train_X, train_y, total_meta_df):
                 )
             # Don't use until refactor to use new dictionary system.
             if feat_type == "fmim":
-                from feature_selection.importance import fmim
+                from _deprecated.importance import fmim
 
                 MODEL_DIR = "{}fmim/".format(select_dir)
                 fmim_feats_in = good_feats.intersection(fs.X.dense)

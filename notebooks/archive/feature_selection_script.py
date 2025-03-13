@@ -17,14 +17,14 @@ from sklearn.metrics import (
 from sklearn.model_selection import StratifiedKFold
 
 import balancing
-import data_tools
 import feature_combination
-from feature_selection import vif
-from feature_selection.correlation_filter import cross_corr_filter
-from feature_selection.importance import (
+from _deprecated.importance import (
     brute_force_importance_rf_clf,
     dummy_score_elimination,
 )
+from dmso_utils import data_tools
+from feature_selection import vif
+from feature_selection.correlation_filter import cross_corr_filter
 
 
 def get_epa_sol_all_insol(feature_df, labels, tups):

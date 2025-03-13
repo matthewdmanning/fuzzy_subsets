@@ -19,7 +19,7 @@ from sklearn.utils import check_X_y
 import data_handling.data_cleaning
 from data import feature_name_lists
 from data_handling.balancing import data_by_groups
-from qsar_modeling.data_handling.data_tools import (
+from dmso_utils.data_tools import (
     get_interpretable_features,
     load_metadata,
     load_training_data,

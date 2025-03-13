@@ -12,8 +12,8 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import RobustScaler
 
 import balancing
-import data_tools
-from quick_models import combined_rus_cv_results, cv_model_documented
+from dmso_utils import data_tools
+from dmso_utils.quick_models import combined_rus_cv_results, cv_model_documented
 
 
 def hyperparam(

@@ -11,10 +11,10 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.feature_selection import f_classif, mutual_info_classif
 from sklearn.preprocessing import RobustScaler
 
-import data_tools
 from correlation_filter import cross_corr_filter
 from data_cleaning import clean_and_check
-from quick_models import combined_rus_cv_results
+from dmso_utils import data_tools
+from dmso_utils.quick_models import combined_rus_cv_results
 
 
 def rus_train(

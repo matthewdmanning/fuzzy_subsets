@@ -13,19 +13,19 @@ from sklearn.utils import check_X_y
 import data_handling.data_cleaning
 from data import feature_name_lists
 from data_handling.balancing import data_by_groups
-from qsar_modeling.data_handling.data_cleaning import remove_duplicate_idx
-from qsar_modeling.data_handling.data_tools import (
+from dmso_utils.data_tools import (
     get_interpretable_features,
     load_metadata,
 )
-from quick_models import combined_rus_cv_results
+from dmso_utils.quick_models import combined_rus_cv_results
+from qsar_modeling.data_handling.data_cleaning import remove_duplicate_idx
 
 # from utils import cv_tools
 
 """
 This script runs an unsampled, cross-validated model training, with optional hyperparameterization, to predict DMSO
 solubility using EPA Tox21 data and Enamine data, stored on OChem.eu and published by Tetko, et al.
-The primary logic is contained in main(). Other functions are used to implement this logic and handle complex tasks,
+The primary logic is contained in feature_analysis(). Other functions are used to implement this logic and handle complex tasks,
 such as implementing undersampling/cross-validation loops.
 """
 
@@ -86,7 +86,7 @@ def get_quadratic_test_folds(grouped_sers, n_splits=5):
 def get_notebook_data(epa_soluble=True):
     def get_features(feature_path, feature_df, ecounts=False):
         if os.path.isfile(ranked_features_path):
-            selected_feats = data_handling.data_tools.load_feature_rankings(
+            selected_feats = dmso_utils.data_tools.load_feature_rankings(
                 ranked_features_path, threshold=1
             )
             print("Ranked features loaded: \n{}".format(len(selected_feats)))

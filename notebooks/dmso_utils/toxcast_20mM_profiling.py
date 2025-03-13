@@ -3,7 +3,7 @@ import pprint
 
 import pandas as pd
 
-import data_tools
+from dmso_utils import data_tools
 
 
 def get_tox_20():

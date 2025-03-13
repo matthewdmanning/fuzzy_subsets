@@ -2,7 +2,7 @@ import os
 
 import pandas as pd
 
-from feature_selection.mutual_info_tools import jmi_homebrew
+from feature_selection._mutual_info_tools import jmi_homebrew
 
 
 def mi_bivariate(feature_df, labels, save_dir=None):

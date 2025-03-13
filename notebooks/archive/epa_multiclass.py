@@ -21,10 +21,11 @@ from sklearn.model_selection import (
 )
 from sklearn.multiclass import OneVsOneClassifier, OneVsRestClassifier
 
+import build_preprocessor
 import padel_categorization
 import vapor_pressure_selection
 from data_cleaning import qsar_readiness
-from data_tools import get_query_data
+from dmso_utils.data_tools import get_query_data
 
 
 def optimize_tree(feature_df, labels, model, scoring, cv):
@@ -189,7 +190,7 @@ def main():
             "corr_method": "kendall",
             "thresh_xc": 0.95,
         }
-        preprocessor, p = vapor_pressure_selection.get_standard_preprocessor(
+        preprocessor, p = build_preprocessor.get_standard_preprocessor(
             transform_func="asinh", corr_params=preprocessor_params
         )
         train_df = preprocessor.fit_transform(epa_df, epa_labels)

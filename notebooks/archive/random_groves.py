@@ -16,14 +16,14 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVC
 
 import cv_tools
-import univariate_filters
+from archive import univariate_filters
 from data import feature_name_lists
-from feature_combination import weight_by_feature
-from qsar_modeling.data_handling.data_tools import (
+from dmso_utils.data_tools import (
     get_interpretable_features,
     load_metadata,
     load_training_data,
 )
+from feature_combination import weight_by_feature
 from qsar_modeling.feature_selection import correlation_filter
 
 # from utils import cv_tools

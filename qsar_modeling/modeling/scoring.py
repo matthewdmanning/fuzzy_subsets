@@ -1,14 +1,20 @@
+import copy
+import itertools
 import numbers
 import pickle
+import pprint
+import traceback
 from collections import defaultdict
 from functools import partial
+from inspect import signature
 
 import numpy as np
 import pandas as pd
-import sklearn.model_selection
+import sklearn.pipeline
 from matplotlib import pyplot as plt
 from scipy.stats import gmean
 from sklearn import clone, metrics
+from sklearn.base import BaseEstimator, is_classifier, is_regressor
 from sklearn.metrics import (
     average_precision_score,
     balanced_accuracy_score,
@@ -21,7 +27,9 @@ from sklearn.metrics import (
     precision_score,
     recall_score,
 )
-from sklearn.model_selection import LearningCurveDisplay, StratifiedKFold
+from sklearn.model_selection import KFold, LearningCurveDisplay, StratifiedKFold
+from sklearn.utils._param_validation import HasMethods
+from sklearn.utils.validation import _check_y
 
 from qsar_modeling.utils import cv_tools
 
@@ -108,28 +116,198 @@ def get_prob_scores_dict(pos_label=0):
     return score_list
 
 
+def score_cv_results(
+    results_dict, score_func_dict, y_true=None, by_fold=True, **score_kws
+):
+    """
+    Applies scoring function to nested dictionary of estimator outputs.
+    results_dict:
+
+    Parameters
+    ----------
+    results_dict: dict[str[str[list]]], ex. {"predict": {"test": [pd.Series]}}
+    score_func_dict: dict[str, callable], Accepts estimator output from results_dict
+    y_true: pd.Series | Iterable[pd.Series], arg for score_func, if by_fold == False, must be pd.Series
+    by_fold: bool, whether to apply score_func to individual folds or score after concatenating folds
+    score_kws: Applied to each score_func call.
+
+    Returns
+    -------
+    score_dict: Same structure as results_dict, but contains output from score_funcs
+    {score_name: {split_name: list[pd.Series] | pd.Series}}
+    """
+    score_dict = dict.fromkeys(score_func_dict.keys(), dict())
+    for score_name, score_func in score_func_dict.items():
+        if "y_score" in signature(score_func).parameters.keys():
+            output_name = "predict_proba"
+
+        # elif "y_pred" in signature(score_func).parameters.keys():
+        else:
+            output_name = "predict"
+        for split_name, result in results_dict[output_name].items():
+            score = list()
+            if by_fold:
+                for r in result:
+                    new_kws = copy.deepcopy(score_kws)
+                    for k, v in [
+                        (s, t) for s, t in score_kws.items() if isinstance(t, pd.Series)
+                    ]:
+                        new_kws[k] = v[r.index]
+                    # print(score_func(y_true[r.index], r))
+                    if y_true is not None:
+                        this_score = score_func(y_true=y_true[r.index], y_pred=r)
+                        score.append(this_score)
+                    else:
+                        score.append(score_func(r, **new_kws))
+            else:
+                if y_true is not None:
+                    print(y_true.value_counts(), result.value_counts())
+                    score = score_func(y_true, pd.concat(result), **score_kws)
+                else:
+                    score = score_func(pd.concat(result), **score_kws)
+            score_dict[score_name][split_name] = score
+            # print(pd.DataFrame.from_records(score_dict))
+        score_dict[score_name] = (
+            pd.DataFrame.from_records(score_dict[score_name])
+            .reset_index(names="CV Fold")
+            .melt(id_vars=["CV Fold"], var_name="Split", value_name="Score")
+        )
+        score_dict[score_name].insert(loc=0, column="Metric", value=score_name)
+    score_df = pd.concat(score_dict.values(), ignore_index=True)
+    return score_df
+
+
+def proba_from_meta_estimator(
+    base_estimator,
+    meta_est,
+    feature_df,
+    labels,
+    subsets,
+    cv=StratifiedKFold,
+    sample_weights=None,
+):
+    from sklearn.ensemble import StackingClassifier
+    from sklearn.compose import ColumnTransformer
+
+    ColumnTransformer(estimator_tups, transformers=None)
+
+    for model, sample_weights in itertools.zip_longest(base_estimator, sample_weights):
+        meta_fit = StackingClassifier(estimators=estimator_tups, cv=cv, n_jobs=-1).fit(
+            X=feature_df, y=feature_df, sample_weight=sample_weights
+        )
+
+
+def calculate_proba_from_model(
+    estimator,
+    feature_df,
+    labels,
+    select_params,
+    cv=StratifiedKFold,
+    preprocessor=None,
+    sample_weight=None,
+):
+    """
+    Convenience function to calculate model predict_proba for one or more sample_weightings.
+
+    Parameters
+    ----------
+    estimator: BaseEstimator
+    feature_df: pd.DataFrame
+    labels: pd.Series
+    cv: default=StratifiedKFold
+    preprocessor: BaseEstimator, fold-wise preprocessing before fitting
+    sample_weight: None | pd.Series | Iterable[pd.Series], weights for model fitting
+
+    Returns
+    -------
+    results_list: list[pd.Series], shape[n_samples], List of sample weights for each input sample weighting. Intended for use in feature selection.
+    """
+    results_list = list()
+    if cv is None and is_classifier(estimator):
+        cv = partial(StratifiedKFold, shuffle=True, random_state=0)
+    elif cv is None and is_regressor(estimator):
+        cv = partial(KFold, shuffle=True, random_state=0)
+    if sample_weight is None:
+        sample_weight = [
+            pd.Series(
+                data=np.ones(shape=feature_df.shape[0], dtype=np.float32),
+                index=feature_df.index,
+            )
+        ]
+    elif len(sample_weight) == 1 or isinstance(
+        sample_weight, (pd.Series, pd.DataFrame)
+    ):
+        sample_weight = [sample_weight]
+    for weights in sample_weight:
+        results, idx_fold_list = cv_model_generalized(
+            estimator,
+            feature_df,
+            labels,
+            cv=cv,
+            preprocessor=preprocessor,
+            score_list=None,
+            sample_weight=weights,
+        )
+        results_list.append(results)
+    return [pd.concat(r[select_params["score_func"]]["test"]) for r in results_list]
+
+
 def score_randomized_classes(
     estimator,
     feature_df,
     labels,
     cv=StratifiedKFold,
-    scorer_tups=None,
-    label_seed=0,
+    preprocessor=None,
+    return_list=None,
+    label_seed=None,
     return_train=True,
+    sample_weight=None,
     **splitter_kws
 ):
-    random_labels = labels.copy()
+    """
+    Fits and scores original and randomized labelled data.
+    Parameters
+    ----------
+    estimator: BaseEstimator, Unfit estimator or pipeline
+    feature_df: pd.DataFrame, features
+    labels: pd.Series, labels for supervised training
+    cv: "Cross-Validator", default=StratifiedKFold
+    preprocessor: BaseEstimator or implements "fit" and "transform", passed to cross-validator function
+    return_train: bool, whether to also calculate and return results for training data
+    label_seed: int, seed for randomizing labels
+    score_list: Iterable[str], values must be methods from estimator (eg. "predict", "predict_proba", "decision_function")
+    sample_weight: pd.Series, passed to cross-validator
+    splitter_kws
+
+    Returns
+    -------
+    results: dict[str, dict[str, list(pd.Series)]], nested dictionary of {callable name: {"test" | "train: list[pd.Series]}}, where the list contain results from callable over all CV folds.
+    """
     scrambled_labels = pd.Series(
-        data=random_labels.sample(frac=1.0, random_state=label_seed).to_list(),
-        index=labels.index,
+        data=labels.copy().sample(frac=1.0, random_state=label_seed).to_list(),
+        index=labels.index.copy(name="INCHI_KEY"),
     )
-    results = cv_model_generalized(
-        estimator,
-        feature_df,
-        labels=scrambled_labels,
+    randomized_labels = pd.Series(
+        _check_y(scrambled_labels, estimator=estimator), index=scrambled_labels.index
+    )
+    print(
+        "Randomized Labels:\n{}".format(
+            pprint.pformat(randomized_labels.value_counts())
+        )
+    )
+    for val in labels.unique():
+        y_true = labels[labels == val]
+        y_pred = randomized_labels[y_true.index]
+
+    results, test_idx_list = cv_model_generalized(
+        estimator=estimator,
+        feature_df=feature_df,
+        labels=randomized_labels,
         cv=cv,
-        scorer_tups=scorer_tups,
+        preprocessor=preprocessor,
+        score_list=return_list,
         return_train=return_train,
+        sample_weight=sample_weight,
     )
     return results
 
@@ -140,44 +318,66 @@ def cv_model_generalized(
     labels,
     cv=StratifiedKFold,
     preprocessor=None,
-    scorer_tups=None,
+    score_list=None,
     return_train=False,
-    **splitter_kws
+    clone_model=True,
+    sample_weight=None,
+    **kwargs
 ):
     """
     Generalized, all-in-one wrapper for cross-validated models. Desired outputs are given as nested tuples of name, callable.
     Results are returned as a dictionary of dictionaries of lists.
-    Commonly used functions are given as
+    Schema: results = {fname: {split_set: [pd.Series] } }
+    Example: results = {"predict": {"test": [pd.Series, pd.Series, ...] } }
 
     Parameters
     ----------
 
     estimator: BaseEstimator, Unfit estimator or pipeline
-    feature_df: DataFrame, features
-    labels: Series, labels for supervised training
-    cv: Cross-Validator, default=StratifiedKFolds
+    feature_df: pd.DataFrame, features
+    labels: pd.Series, labels for supervised training
+    cv: "Cross-Validator", default=StratifiedKFold
     preprocessor: TransformerMixin or implements "fit" and "transform"
     return_train: bool, whether to also calculate and return results for training data
-    scorer_tups: Iterable[Iterable[str, callable]], nested iterables of function name and callable with signature (fitted estimator, X, y_train)
-    splitter_kws
+    score_list: Iterable[str], values must be methods from estimator (eg. "predict", "predict_proba", "decision_function")
 
     Returns
     -------
-
-    results: dict[str, dict[str, list()]], nested dictionary of callable name["test"[, "train"], list[Any]], where the list contain results from callable over all CV folds.
-
+    results: dict[str, dict[str, list(pd.Series)]], nested dictionary of {callable name: {"test" | "train: list[pd.Series]}}, where the list contain results from callable over all CV folds.
+    test_idx_list: list[pd.Index], list of indices in the order in which they appear during cross-validation
     """
-    # Fits, predicts, and scores a model using cross-validation.
+    from sklearn.utils.estimator_checks import is_regressor, is_classifier
+
     assert not feature_df.empty
+    sklearn.set_config(transform_output="pandas")
+    # Set up dictionaries and check estimator calls and keywords.
+    test_idx_list = list()
+    if score_list is None:
+        if is_classifier(estimator):
+            score_list = ("predict", "predict_proba")
+        elif is_regressor(estimator):
+            score_list = tuple(["predict"])
+    elif isinstance(score_list, str):
+        score_list = [score_list]
+    scorer_list = [
+        s for s in score_list if HasMethods(methods=s).is_satisfied_by(estimator)
+    ]
     if return_train:
         splits_dict = {"train": list(), "test": list()}
-        results = dict([(k[0], {"train": list(), "test": list()}) for k in scorer_tups])
+        results = dict([(k, {"train": list(), "test": list()}) for k in scorer_list])
     else:
-        results = dict([(k[0], {"test": list()}) for k in scorer_tups])
-    # results = dict([(k[0], splits_dictcopy()) for k in scorer_tups])
+        results = dict([(k, {"test": list()}) for k in scorer_list])
+    func_kwargs_dict = dict()
+    for func in scorer_list:
+        func_kwargs_dict[func] = [
+            k
+            for k in signature(getattr(estimator, func)).parameters.keys()
+            if k != "self" and k != "X"
+        ]
+    # results = dict([(k[0], splits_dictcopy()) for k in return_list])
     i = 0
     for train_X, train_y, test_X, test_y in cv_tools.split_df(
-        feature_df, labels, splitter=cv, **splitter_kws
+        feature_df, labels, splitter=cv, **kwargs
     ):
         split_X, split_y = {"train": train_X, "test": test_X}, {
             "train": train_y,
@@ -185,21 +385,67 @@ def cv_model_generalized(
         }
         if preprocessor is not None:
             preprocessor.fit(train_X)
-            split_X["train"] = preprocessor.transform(train_X)
-            split_X["test"] = preprocessor.transform(test_X)
+            split_X["train"] = preprocessor.transform(train_X).to_frame()
+            split_X["test"] = preprocessor.transform(test_X).to_frame()
         else:
             split_X["train"] = train_X
             split_X["test"] = test_X
+        test_idx_list.append(test_y.index)
         assert not split_X["train"].empty
-        fit_est = clone(estimator).fit(split_X["train"], split_y["train"])
-        for fname, func in scorer_tups:
-            for split_set, score_list in results[fname].items():
-                score_list.append(func(fit_est, split_X[split_set], split_y[split_set]))
+        if clone_model:
+            model_to_fit = clone(estimator)
+        else:
+            model_to_fit = copy.deepcopy(estimator)
+        if (
+            # HasMethods("sample_weight").is_satisfied_by(estimator) and
+            "sample_weight" in kwargs.keys()
+            or sample_weight is not None
+        ):
+            if "sample_weight" in kwargs.keys():
+                sample_weight = kwargs["sample_weight"]
+            if isinstance(sample_weight, pd.Series):
+                weights = sample_weight
+            # if isinstance(sample_weight, dict):
+            elif isinstance(sample_weight, pd.DataFrame):
+                weights = sample_weight[-1].squeeze()
+            else:
+                weights = pd.Series(sample_weight)
+            if split_y["train"].index.difference(weights.index).size > 0:
+                print(
+                    "\n\nWeights index differs from training index!!!\n\n{}".format(
+                        split_y["train"].index.difference(weights.index)
+                    )
+                )
+                print(weights.index)
+                weights.index = split_y["train"].index
+            fit_est = model_to_fit.fit(
+                split_X["train"],
+                split_y["train"],
+                sample_weight=weights[split_y["train"].index],
+            )
+        else:
+            print(
+                "Sample weight not used to fit model: {}.".format(
+                    estimator.__repr__(20)
+                )
+            )
+            print(**kwargs)
+            traceback.print_stack()
+            raise ValueError
+            fit_est = model_to_fit.fit(X=split_X["train"], y=split_y["train"].squeeze())
+        for fname in results.keys():
+            for split_set in results[fname].keys():
+                # print(getattr(fit_est, fname)(X=split_X[split_set]))
+                result_df = pd.DataFrame(
+                    getattr(fit_est, fname)(X=split_X[split_set]),
+                    index=split_X[split_set].index,
+                ).squeeze()
+                if isinstance(result_df, pd.Series):
+                    result_df.name = split_set
+                results[fname][split_set].append(result_df)
+
         i += 1
-    # print("Results for model: {}".format(estimator))
-    # print(pd.json_normalize(results).T.explode(column=[0]).T)
-    # [print(splits, fun, results[fun][splits]) for fun, splits in zip([f for f, fn in scorer_tups], splits_dict.keys())]
-    return results
+    return results, test_idx_list
 
     """    
         dev_score_df, eva_score_df = combine_scores(

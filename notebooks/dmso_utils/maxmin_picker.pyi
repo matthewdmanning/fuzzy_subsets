@@ -1,18 +1,13 @@
-import pickle
-import sys
-
-import pandas as pd
-
-import data_handling.data_tools
-from data.element_lists import DISALLOWED
+import dmso_utils.data_tools
 
 # from rdkit.ML.Cluster import Butina
 # from rdkit.DataManip.Metric import GetTanimotoDistMat, GetTanimotoSimMat
 # from dmso_model_dev.constants import DISALLOWED
 # from dmso_model_dev.data_handling.descriptor_preprocessing import ks_stats, kde_grouped
-from qsar_modeling.data_handling import padel_categorization
 
-project_dir = "C:/Users/mmanning/OneDrive - Environmental Protection Agency (EPA)/qsar-modeling-workflow/"
+raise NotImplementedError
+
+project_dir = os.environ.get("PROJECT_DIR")
 sys.path.insert(0, "{}data_handling".format(project_dir))
 sys.path.insert(0, project_dir)
 
@@ -63,8 +58,8 @@ COL_LABELS = padel_categorization.get_full_padel_names()
 DROP_STRINGS = DISALLOWED
 DROP_STRINGS.append("SH")
 DATA_KEYS = ["epa_sol", "epa_in", "en_sol", "en_in"]
-final_dir = "C:/Users/mmanning/OneDrive - Environmental Protection Agency (EPA)/dmso_zip/final_datasets/"
-cache_dir = "C:/Users/mmanning/OneDrive - Environmental Protection Agency (EPA)/dmso_zip/tmp_cache.pkl"
+final_dir = os.environ.get("FINAL_DIR")
+cache_dir = "{}}tmp_cache.pkl".format(final_dir)
 DATA_DIR = "{}filtered/PADEL_EPA_ENAMINE_5mM.pkl".format(final_dir)
 TRAIN_DIR = "{}filtered/MAXMIN_PADEL_TRAIN.pkl".format(final_dir)
 TEST_DIR = "{}filtered/MAXMIN_PADEL_TEST.pkl".format(final_dir)
@@ -248,7 +243,7 @@ with open(COMBO_DIR, "rb") as f:
 with open(dist_path, "rb") as f:
     dist_mat = pickle.load(f)
 assert total_meta_df.shape[0] > 0
-X, y, _ = data_handling.data_tools.load_training_data()
+X, y, _ = dmso_utils.data_tools.load_training_data()
 
 cweights = compute_class_weight(y.astype(int))
 sweights = compute_sample_weight(class_weight="balanced", y=y)

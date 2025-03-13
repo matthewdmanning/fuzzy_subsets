@@ -1,29 +1,8 @@
-import copy
-import itertools
 from inspect import signature
 
 import numpy as np
-import pandas as pd
-from numpy.random import get_bit_generator
-# from numpy.random._examples.numba.extending_distributions import bit_generator
 from sklearn.metrics import balanced_accuracy_score, matthews_corrcoef
 from sklearn.model_selection import StratifiedKFold
-
-
-def data_shuffling(x, method="pandas", stratified=False, **kwargs):
-    if method == "numpy":
-        raise NotImplementedError
-        shuffled = copy.deepcopy(x)
-        np.random.Generator(get_bit_generator()).shuffle(x)
-    elif method == "pandas":
-        if not stratified:
-            shuffled = x.sample(frac=1.0, **kwargs)
-        else:
-            if type(stratified) is pd.Series:
-                shuffled = x.groupby(by=stratified).sample(frac=1.0, **kwargs)
-            else:
-                shuffled = x.sample(frac=1.0, **kwargs)
-    return shuffled
 
 
 def get_split_ind(data, labels, n_splits=5, splitter=None, **splitter_kws):
@@ -31,7 +10,13 @@ def get_split_ind(data, labels, n_splits=5, splitter=None, **splitter_kws):
         splitter = StratifiedKFold
     indices_list = list()
     if splitter_kws is not None:
-        splitter_kws = dict([(k, v) for k, v in splitter_kws.items() if k in signature(splitter).parameters])
+        splitter_kws = dict(
+            [
+                (k, v)
+                for k, v in splitter_kws.items()
+                if k in signature(splitter).parameters
+            ]
+        )
     for train_ind, test_ind in splitter(n_splits=n_splits, **splitter_kws).split(
         X=data, y=labels.astype(int)
     ):
@@ -54,7 +39,11 @@ def split_df(
     if indices_list is None:
         if splitter_kws is not None:
             splitter_kws = dict(
-                [(k, v) for k, v in splitter_kws.items() if k in signature(splitter).parameters]
+                [
+                    (k, v)
+                    for k, v in splitter_kws.items()
+                    if k in signature(splitter).parameters
+                ]
             )
         indices_list = get_split_ind(
             data, labels, n_splits, splitter=splitter, **splitter_kws
@@ -71,11 +60,13 @@ def split_df(
 
 
 def package_output(train_y, test_y, model_tuple):
+    raise PendingDeprecationWarning
     true_predict_tuples = (train_y, model_tuple[1]), (test_y, model_tuple[2])
     return true_predict_tuples
 
 
 def score_cv_results(true_predict_tuples, scoring_list="balanced", scoring_dict=None):
+    raise PendingDeprecationWarning
     if scoring_dict is None:
         if scoring_list == "balanced":
             scoring_list = [matthews_corrcoef, balanced_accuracy_score]
@@ -96,6 +87,7 @@ def score_cv_results(true_predict_tuples, scoring_list="balanced", scoring_dict=
 
 
 def log_score_summary(scores_dict, level=10, score_file=None, score_logger=None):
+    raise PendingDeprecationWarning
     score_list = list()
     for scorer_name, split_scores_dict in scores_dict.items():
         for stat_name, stat in zip(
@@ -110,27 +102,3 @@ def log_score_summary(scores_dict, level=10, score_file=None, score_logger=None)
             if score_logger is not None:
                 score_logger.log(level=level, msg="\t".join(score_list))
     return score_list
-
-
-def quadratic_splits(grouped_sers, n_splits=5):
-    # Takes separate groups (each in separate Series), gets n_splits splits, and yields indices of test set.
-    test_list, train_list = list(), list()
-    indices = [s.copy().index.tolist() for s in grouped_sers]
-    [np.random.shuffle(idx) for idx in indices]
-    nested_splits = list()
-    for ind in indices:
-        spaces = np.linspace(0, len(ind) - 1, num=n_splits + 1, dtype=int)
-        nested_splits.append(
-            [ind[int(a) : int(b)] for a, b in itertools.pairwise(spaces)]
-        )
-    return nested_splits
-
-
-def get_quadratic_test_folds(grouped_sers, n_splits=5):
-    fold_list = list()
-    quad_splits = quadratic_splits(grouped_sers, n_splits)
-    # print(quad_splits)
-    for qx in quad_splits:
-        for fold_id, idxs in enumerate(qx):
-            fold_list.append(pd.Series(data=[fold_id for _ in idxs], index=idxs))
-    return pd.concat(fold_list)

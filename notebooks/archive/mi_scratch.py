@@ -16,8 +16,8 @@ import cv_tools
 import distributions
 import feature_name_lists
 import features
-from data_handling.data_tools import load_training_data
-from modeling.quick_models import balanced_forest, logistic_clf
+from dmso_utils.data_tools import load_training_data
+from dmso_utils.quick_models import balanced_forest, logistic_clf
 
 logger = logging.getLogger("dmso_solubility.mi_scratch")
 indices_list = list()

@@ -338,3 +338,32 @@ def get_conversions(compound_df, lookup_path=None):
     ]
     combo_labels.drop(index=nosmiles.index, inplace=True)
     return combo_labels, convert_df
+
+
+def data_check():
+    from dmso_utils.data_tools import (
+        load_all_descriptors,
+        load_combo_data,
+        load_training_data,
+    )
+
+    all_X = load_all_descriptors()
+    print("Shapes of all descriptor DFs")
+    print(all_X.shape)
+    train_X, train_y = load_training_data()
+    combo_data = load_combo_data()
+    all_idx_dict = dict([(k, df.index) for k, df in combo_data.items()])
+    # Verification
+    print("Shape from combo data dictionary: ")
+    print([(k, idx.size) for k, idx in all_idx_dict.items()])
+    all_y_dict = dict([(k, df["DMSO_SOLUBILITY"]) for k, df in combo_data.items()])
+    all_y = pd.concat(all_y_dict.values())
+    # all_y = pd.concat(all_y_dict.values())
+    # all_X = pd.concat(all_X_dict.values())
+    test_idx = all_X.index.difference(train_X.index)
+    test_y = all_y[test_idx]
+    test_X = all_X.loc[test_idx]
+    print("Test data sizes:")
+    print(test_idx.size)
+    for k, idx in all_idx_dict.items():
+        print(k, test_idx.intersection(idx).size, train_y.index.intersection(idx).size)

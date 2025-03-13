@@ -3,8 +3,8 @@ import sys
 import pandas as pd
 from sklearn.conftest import set_config
 
-sys.path.append('C:/Users/mmanning/PycharmProjects/CCMI/')
-set_config(**{'transform_output': pd.DataFrame, 'enable_cython_pairwise_dist': 1})
+sys.path.append("C:/Users/mmanning/PycharmProjects/CCMI/")
+set_config(**{"transform_output": pd.DataFrame, "enable_cython_pairwise_dist": 1})
 
 
 class MutualInformationStation:

@@ -8,12 +8,12 @@ import pandas as pd
 
 import cv_tools
 import samples
+from archive.univariate_filters import get_mi_features
 from data import feature_name_lists
-from data_handling.data_tools import get_interpretable_features
+from dmso_utils.data_tools import get_interpretable_features
+from dmso_utils.quick_models import balanced_forest, logistic_clf
 from feature_combination import combine_feature_groups
 from feature_selection.feature_combination import weight_by_feature
-from feature_selection.univariate_filters import get_mi_features
-from modeling.quick_models import balanced_forest, logistic_clf
 
 logger_opts = {
     "filename": "grove.log",

@@ -18,7 +18,7 @@ from sklearn.linear_model import (
 from sklearn.pipeline import clone as clone_model
 from sklearn.preprocessing import RobustScaler
 
-from feature_selection.importance import logger
+from _deprecated.importance import logger
 from utils.parallel_subsets import train_model_subsets
 
 

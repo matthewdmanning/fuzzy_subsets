@@ -5,8 +5,8 @@ from sklearn.decomposition import PCA
 
 import cv_tools
 import utils
-from data_handling.data_tools import load_training_data
 from data_handling.persistence import logger
+from dmso_utils.data_tools import load_training_data
 
 train_X, train_y, total_meta_df = load_training_data()
 assert not train_y.empty and not train_X.empty

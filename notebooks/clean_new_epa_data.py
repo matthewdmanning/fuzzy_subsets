@@ -14,12 +14,12 @@ from sklearn.metrics import accuracy_score, balanced_accuracy_score, make_scorer
 from sklearn.model_selection import cross_val_score
 from sklearn.svm import SVC
 
-import data_tools
 import descriptor_processing
 import padel_categorization
-from data_tools import get_epa_mapper, get_query_data, load_training_data
+from archive.epa_multiclass import get_conversions, safe_mapper, standardize_smiles
 from DescriptorRequestor import QsarStdizer
-from epa_multiclass import get_conversions, safe_mapper, standardize_smiles
+from dmso_utils import data_tools
+from dmso_utils.data_tools import get_epa_mapper, get_query_data, load_training_data
 
 
 def bulk_rand(subset_list, jaccard=False):

@@ -4,8 +4,10 @@ import os
 import pickle
 import pprint
 
+import multicollinear
 import numpy as np
 import pandas as pd
+import qsar_modeling.feature_selection.multicollinear
 from imblearn.under_sampling import RandomUnderSampler
 from sklearn._config import set_config as sk_config
 from sklearn.ensemble import ExtraTreesClassifier, RandomForestClassifier
@@ -14,11 +16,9 @@ from sklearn.linear_model import LogisticRegressionCV
 from sklearn.metrics import *
 from sklearn.utils import check_X_y
 
-import multicollinear
-import qsar_modeling.feature_selection.multicollinear
 from data import feature_name_lists
 from data_cleaning import stepwise_duplicate
-from qsar_modeling.data_handling.data_tools import (
+from dmso_utils.data_tools import (
     get_interpretable,
     load_metadata,
     load_training_data,
