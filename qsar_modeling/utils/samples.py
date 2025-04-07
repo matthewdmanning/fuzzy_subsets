@@ -102,7 +102,9 @@ def cv_model_prediction_distance(
 def weigh_single_proba(onehot_true, probs, prob_thresholds=None):
     if prob_thresholds is not None:
         probs.clip(lower=prob_thresholds[0], upper=prob_thresholds[1], inplace=True)
-    unweighted = probs.add(onehot_true, axis=0).abs()
+    unweighted = (
+        probs.add(onehot_true).abs().multiply(onehot_true).sum(axis=1).squeeze()
+    )
     return unweighted
 
 
@@ -131,21 +133,22 @@ def weight_by_proba(
 ):
     probs = copy.deepcopy(probs)
     y_true = y_true.copy()
-    if isinstance(y_true.squeeze(), pd.Series) and label_type == "binary":
-        onehot_labels = pd.concat([y_true, 1 - y_true], axis=1)
-    else:
-        onehot_labels = LabelBinarizer().fit_transform(y_true.to_frame())
-    assert onehot_labels.shape == (y_true.size, y_true.nunique())
-    if class_labels is not None:
-        onehot_labels.columns = class_labels
-    # onehot_labels.columns = ["Soluble", "Insoluble"]
-    # print("Onehot:\n{}".format(pprint.pformat(onehot_labels.shape)))
-    onehot_normed = onehot_labels.sub(np.ones_like(onehot_labels) / y_true.nunique())
-    onehot_normed.columns = onehot_labels.columns
-    if isinstance(probs, typing.Iterable) and len(probs) == 1:
+    onehot_labels, onehot_normed = one_hot_conversion(
+        y_true, label_type=label_type, class_labels=class_labels
+    )
+    if (
+        isinstance(probs, typing.Sized)
+        and isinstance(probs, typing.Sequence)
+        and len(probs) == 1
+    ):
         probs = probs[0]
     if isinstance(probs, pd.DataFrame):
-        sample_weights_raw = weigh_single_proba(onehot_true=onehot_normed, probs=probs)
+        # sample_weights_raw = weigh_single_proba(onehot_true=onehot_normed, probs=probs, prob_thresholds=prob_thresholds)
+        if prob_thresholds is not None:
+            probs.clip(lower=prob_thresholds[0], upper=prob_thresholds[1], inplace=True)
+        sample_weights_raw = (
+            probs.sub(onehot_normed).abs().multiply(onehot_labels).sum(axis=1).squeeze()
+        )
         # pd.DataFrame(data=np.zeros_like(probs.to_numpy()), index=y_true, columns=probs.columns)
         # [ (p - (1-T)/n_classes) ]
         # where: p = probs, T = one-hot encoded classes
@@ -158,9 +161,7 @@ def weight_by_proba(
                 p.columns = class_labels
         unweighted = pd.concat(
             [
-                p.multiply(onehot_labels)
-                .sum(axis=1)
-                .clip(lower=prob_thresholds[0], upper=prob_thresholds[1])
+                p.sub(onehot_normed).abs().multiply(onehot_labels).sum(axis=1).squeeze()
                 for p in probs
             ],
             axis=1,
@@ -170,8 +171,8 @@ def weight_by_proba(
         # unweighted_ins = pd.concat([p["Insoluble"] for p in unweighted], axis=1)
         # print("Unweighted Insolubles")
         # pprint.pp(unweighted_ins)
-        print("Unweighted:")
-        pprint.pp(unweighted)
+        # print("Unweighted:")
+        # pprint.pp(unweighted)
         # unweighted_min = unweighted.min(axis=1)
         # unweighted_avg = unweighted.mean(axis=1)
         # print("Unweighted Minimum")
@@ -180,7 +181,7 @@ def weight_by_proba(
         # pprint.pp(unweighted_avg)
         # unweighted = unweighted.max(axis=1)
         if combo_type == "sum":
-            sample_weights_raw = unweighted.sum(axis=1)
+            sample_weights_raw = unweighted.sum(axis=0)
             # TODO: Rethink / allow parameterization of sample_weight normalization
             sample_weights = (
                 sample_weights_raw - sample_weights_raw.min()
@@ -190,16 +191,47 @@ def weight_by_proba(
             sample_weights_raw = unweighted.max(axis=1)
         # if "sq" in activate:
         #     pd.Series.apply()
+        pprint.pp(sample_weights_raw)
     else:
         print("Unknown type for probabilities...")
         print(probs)
         raise ValueError
 
     sample_weights = sample_weights_raw**2
+
+    try:
+        sample_weights.reindex_like(other=probs)
+    except:
+        # print(probs)
+        sample_weights.set_index = probs.index
     print("Sample weights:")
+    pprint.pp(sample_weights)
     pprint.pprint(sample_weights.describe())
-    sample_weights.index = probs.index
     return sample_weights
+
+
+def one_hot_conversion(
+    y_true, threshold="auto", label_type="binary", class_labels=None
+):
+    if not isinstance(y_true.squeeze(), pd.Series) and label_type == "binary":
+        y_true = LabelBinarizer().fit_transform(y_true.to_frame())
+    onehot_labels = pd.concat([y_true, 1 - y_true], axis=1)
+    assert onehot_labels.shape == (y_true.shape[0], y_true.nunique())
+    if class_labels is not None:
+        onehot_labels.columns = class_labels
+    if threshold == "auto" or threshold is None:
+        threshold = pd.DataFrame(
+            data=1.0 / y_true.nunique(),
+            columns=onehot_labels.columns,
+            index=onehot_labels.index,
+        )
+    try:
+        onehot_normed = onehot_labels.sub(threshold)
+    except TypeError:
+        print(threshold)
+        onehot_normed = onehot_labels.sub(1.0 / y_true.nunique())
+    onehot_normed.columns = onehot_labels.columns
+    return onehot_labels, onehot_normed
 
 
 def compare_models_to_predictions(
