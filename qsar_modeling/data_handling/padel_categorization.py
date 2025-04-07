@@ -57,7 +57,6 @@ def get_short_padel_names(two_d=True):
     return short_padel
 
 
-@cache
 def get_full_padel_df():
     """
 
@@ -73,10 +72,13 @@ def get_full_padel_df():
 
 def get_padel_names(length, dimension=(1, 2), types=None, classes=None):
     full_padel = get_full_padel_df()
-    if "short" not in length and "all" not in length:
+    print(full_padel.columns)
+    if (
+        "long" not in length and "all" not in length
+    ) and "Description" in full_padel.columns:
+        full_padel.drop(columns="Description", inplace=True)
+    elif "short" not in length and "all" not in length:
         full_padel.drop(columns="Descriptor name", inplace=True)
-    if "long" not in length and "all" not in length:
-        full_padel.drop(columns="Description")
     for d in [1, 2, 3]:
         if d not in dimension:
             full_padel.drop(
@@ -84,8 +86,9 @@ def get_padel_names(length, dimension=(1, 2), types=None, classes=None):
             )
     if types is not None:
         full_padel = full_padel[full_padel["Type"].isin(types)]
-    if classes:
+    if classes is not None:
         full_padel = full_padel[full_padel["Extended class"].isin(classes)]
+    assert full_padel is not None
     return full_padel
 
 
@@ -112,7 +115,6 @@ def padel_convert_length(short_to_long=True, three_d=False):
     -------
     convert_df : pd.Series
     """
-    raise DeprecationWarning
     padel_df = get_full_padel_df()
     if not three_d:
         padel_df = padel_df[padel_df["Dimension"] < 3]
