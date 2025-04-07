@@ -59,14 +59,14 @@ def calculate_vif(
         for col, target in subset.items():
             predictor_list.append((feature_df.columns.drop(col).tolist(), col))
     if parallelize and len(predictor_list[0]) > 1:
-        with sklearn.config_context(enable_metadata_routing=True):
-            vif_models = train_model_subsets(
-                feature_df,
-                predictor_list=predictor_list,
-                model=model,
-                mem_dir=os.environ.get("JOBLIB_TMP"),
-                sample_weights=sample_wts,
-            )
+        # with sklearn.config_context(enable_metadata_routing=True):
+        vif_models = train_model_subsets(
+            feature_df,
+            predictor_list=predictor_list,
+            model=model,
+            mem_dir=os.environ.get("JOBLIB_TMP"),
+            sample_weights=sample_wts,
+        )
     elif not parallelize and len(predictor_list[0]) > 1:
         vif_models = [
             clone_model(model).fit(
