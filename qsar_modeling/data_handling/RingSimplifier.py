@@ -2,13 +2,13 @@ from functools import cache
 
 import numpy as np
 import pandas as pd
-from sklearn.base import TransformerMixin, BaseEstimator
+from sklearn.base import BaseEstimator, TransformerMixin
 
 import padel_categorization
 
 
 @cache
-def get_padel_rings(length="long"):
+def get_padel_rings(length="short"):
     padel_df = padel_categorization.get_full_padel_df()
     padel_rings = padel_df[padel_df["Type"] == "RingCountDescriptor"]
     if length == "short":
