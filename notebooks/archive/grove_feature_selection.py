@@ -487,68 +487,71 @@ def membership(feature_df, labels, grove_cols, search_dir):
     return member_dict
 
 
-def get_search_features(feature_df, short=True, included=None):
-    all_features = padel_categorization.get_two_dim_only()
+def padel_candidate_features(short=True, included=None):
+    all_features = padel_categorization.get_padel_names(
+        length="short", classes=included
+    )
+    feature_list = list()
+    classes = [
+        "Connectivity descriptors",
+        "BCUT descriptors",
+        "Connectivity descriptors",
+        "Kappa descriptors",
+        "Quantum chemical descriptors",
+    ]
+    types = [
+        "AcidicGroupCountDescriptor",
+        "ALOGPDescriptor",
+        "AMRDescriptor",
+        "ConstitutionalDescriptor",
+        "CrippenDescriptor",
+        "LargestChainDescriptor",
+        "LongestAliphaticChainDescriptor",
+        "LargestPiSystemDescriptor",
+        "RotatableBondsCountDescriptor",
+        "HBondAcceptorCountDescriptor",
+        "HBondDonorCountDescriptor",
+        "McGowanVolumeDescriptor",
+        "TPSADescriptor",
+        "WeightDescriptor",
+        "EccentricConnectivityIndexDescriptor",
+        "ExtendedTopochemicalAtomDescriptor",
+        "DetourMatrixDescriptor",
+        "TopologicalChargeDescriptor",
+        "TopologicalDescriptor",
+        "TopologicalDistanceMatrixDescriptor",
+        "WienerNumbersDescriptor",
+        "VABCDescriptor",
+        "WeightedPathDescriptor",
+    ]
     if included is None:
         included = [
-            "eta",
-            "shape",
-            "geary",
-            "chain",
-            "donor",
-            "acceptor",
-            "hydrogen bond",
+            "nHBint",
+            "SHBint",
+            "minHB",
+            "minwHB",
+            "maxHB",
+            "maxwHB",
+            "LipoaffinityIndex",
+            "DELS",
+            "MAXD",
         ]
     if short:
         padel_col = "Descriptor name"
     else:
         padel_col = "Description"
-    # RingCountDescriptor",
-    eta_feats = all_features[
-        all_features["Type"].isin(["ExtendedTopochemicalAtomDescriptor"])
-    ][padel_col].to_list()
-    typed_feats = all_features[
-        all_features["Type"].isin(
-            [
-                "ExtendedTopochemicalAtomDescriptor",
-                "BCUTDescriptor",
-                "BondCountDescriptor",
-                "Geary AutocorrelationDescriptor",
-                "AcidicGroupCountDescriptor",
-                "CarbonTypesDescriptor",
-                "ConstitutionalDescriptor",
-                "ElectrotopologicalStateAtomTypeDescriptor",
-                "HBondDonorCountDescriptor",
-                "Kappa descriptors",
-                "MLFERDescriptor",
-                "RotatableBondsCountDescriptor",
-                "TPSADescriptor",
-            ]
+    for c in classes:
+        feature_list.extend(
+            all_features[all_features["Extended class"] == c][padel_col].to_list()
         )
-    ][padel_col].to_list()
-    const_feats = all_features[
-        all_features["Extended class"] == "Constitutional descriptors"
-    ][padel_col].to_list()
-    topo_feats = all_features[
-        all_features["Extended class"] == "Topological descriptors"
-    ][padel_col].to_list()
-    if included is None:
-        included = ()
-    search_features = list(
-        set(
-            [
-                c
-                for c in feature_df
-                if (
-                    any([s in c.lower() for s in included])
-                    or any([c in g for g in [const_feats, eta_feats, topo_feats]])
-                )
-                and "reference alkane" not in c
-            ]
+    for t in types:
+        feature_list.extend(
+            all_features[all_features["Type"] == t][padel_col].to_list()
         )
-    )
-    typed_feats.extend(eta_feats)
-    return typed_feats
+    for dn in all_features["Descriptor name"].to_list():
+        if any([padel_name in dn for padel_name in included]):
+            feature_list.append(dn)
+    return feature_list
 
 
 def main():
@@ -561,7 +564,7 @@ def main():
     search_dir = "{}{}_all_samples_2/".format(os.environ.get("MODEL_DIR"), model_name)
     os.makedirs(search_dir, exist_ok=True)
     # members_dict = membership(feature_df, labels, grove_cols, search_dir)
-    search_features = get_search_features(feature_df)
+    search_features = padel_candidate_features()
     model_dict, score_dict, dropped_dict, best_features = grove_features_loop(
         feature_df[search_features],
         labels,
