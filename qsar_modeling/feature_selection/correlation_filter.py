@@ -5,6 +5,7 @@ from collections import OrderedDict
 
 import numpy as np
 import pandas as pd
+from sklearn.utils.validation import _check_sample_weight
 
 import utils.math_tools
 from utils import math_tools
@@ -227,27 +228,44 @@ def calculate_correlation(x1, x2=None, method="kendall"):
 
 
 def weighted_mean(values, weights, axis=1):
-    if len(values.squeeze().shape) > 1:
-        return np.sum(values * weights, axis=axis) / np.sum(weights)
+    if len(np.shape(np.squeeze(values))) > 1:
+        print(np.sum(values.T.mul(weights), axis=1).T / np.sum(weights))
+        return np.sum(values.T.mul(weights), axis=1).T / np.sum(weights)
     else:
-        return np.sum(values * weights) / np.sum(weights)
+        return np.sum(weights * values) / np.sum(weights)
 
 
 def weighted_covariance(x, y, weights):
     delta_x = x - weighted_mean(x, weights=weights)
-    delta_y = y - weighted_mean(y, weights=weights)
-    return np.sum(weights * delta_x * delta_y) / np.sum(weights)
+    print(delta_x)
+    if len(np.shape(np.squeeze(delta_x))) > 1:
+        delta_x = delta_x.T
+    if y is None:
+        delta_y = delta_x
+    else:
+        delta_y = y - weighted_mean(y, weights=weights)
+        print(delta_y)
+    assert not np.any(np.isnan(delta_x))
+    assert not np.any(np.isnan(delta_y))
+    if len(np.shape(np.squeeze(delta_x))) > 1:
+        return np.sum(delta_x * delta_y * weights, axis=1) / np.sum(weights)
+    else:
+        return np.sum(delta_x * delta_y * weights) / np.sum(weights)
 
 
 def single_weighted_pearson_correlation(x, y, weights):
-    return weighted_covariance(x, y, weights) / np.sqrt(
-        weighted_covariance(x, x, weights) * weighted_covariance(y, y, weights)
-    )
+    # Sort index is necessary to get broadcasting to work?
+    print(np.shape(weights), np.shape(x), np.shape(y))
+    cov_xy = weighted_covariance(x, y, weights)
+    cov_xx = weighted_covariance(x, y=None, weights=weights)
+    cov_yy = weighted_covariance(y, y=None, weights=weights)
+    print(cov_xy, cov_xx, cov_yy)
+    return cov_xy / np.sqrt(cov_xx * cov_yy)
 
 
 def weighted_correlation_matrix(feature_df, weights):
     """
-    Calculates the weighted Pearson correlation coefficient for a DataFrame.
+    Calculates pairwise weighted Pearson correlation coefficients for a DataFrame.
 
     Parameters
     ----------
@@ -263,13 +281,13 @@ def weighted_correlation_matrix(feature_df, weights):
     # print(weights.head())
     assert weights[weights > 0.000001].size > 0
     w_sums = weights.sum()
-    # print("w_sums: {}".format(w_sums))
+    print("w_sums: {}".format(w_sums))
     w_df = feature_df.multiply(weights, axis="index")
-    # print("weighted features: {}".format(w_df))
+    print("weighted features: {}".format(w_df))
     w_means = w_df.sum() / w_sums
-    # print("w_means: {}".format(w_means))
-    delta_df = feature_df.sub(w_means, axis=1)
-    # print("deltas: {}\n{}".format(delta_df.head(), delta_df.shape))
+    print("w_means: {}".format(w_means))
+    delta_df = feature_df.sub(w_means)  # , axis=1)
+    print("deltas: {}\n{}".format(delta_df.head(), delta_df.shape))
     assert delta_df.shape == feature_df.shape
     # pprint.pp(delta_df.apply(np.square, raw=True).multiply(weights, axis="index"))
     w_var = (
@@ -277,9 +295,9 @@ def weighted_correlation_matrix(feature_df, weights):
         .multiply(weights, axis="index")
         .sum(axis=0)
         .divide(w_sums)
-    )
+    ).to_numpy()
     # print("w_vars:\n{}\n{}".format(w_var, w_var.shape))
-    w_std = np.sqrt(w_var.to_numpy(dtype=np.float32))
+    w_std = np.sqrt(w_var)
     delta_arr = delta_df.to_numpy(dtype=np.float32)
     w_arr = weights.to_numpy(dtype=np.float32)
     # print("w_stds:\n{}\n{}".format(w_std, w_std.shape))
@@ -332,7 +350,9 @@ def bootstrapped_weighted_correlation(
     corr_mean: pd.DataFrame | pd.Series, Arithmetic mean of boostrapped correlations for each feature pair.
     """
     if sample_size is None:
-        sample_size = int(min(feature_df.shape[0], max(500, np.sqrt(feature_df.shape[0]))))
+        sample_size = int(
+            min(feature_df.shape[0], max(500, np.sqrt(feature_df.shape[0])))
+        )
     corr_list = list()
     for i in np.arange(n_bootstraps):
         sample = feature_df.sample(n=sample_size, axis="index", weights=weights)
@@ -350,9 +370,9 @@ def bootstrapped_weighted_correlation(
     print(corr_list[0])
     corr_df = pd.concat([pd.Series(c, index=feature_df.columns).T for c in corr_list])
     if len(corr_df.shape) < 2:
-        corr_df = pd.DataFrame(data=np.stack(
-            [np.array(c) for c in corr_list]
-        ), columns=feature_df.columns)
+        corr_df = pd.DataFrame(
+            data=np.stack([np.array(c) for c in corr_list]), columns=feature_df.columns
+        )
     print(corr_df)
     # print(corr_df.columns)
     corr_mean = corr_df.mean(axis="index")
@@ -366,3 +386,51 @@ def bootstrapped_weighted_correlation(
         )
     )
     return corr_mean
+
+
+def get_weighted_correlations(
+    feature_df, labels, select_params, subset_dir, weights=None
+):
+    weighted_xc_path = "{}weighted_cross_corr.csv".format(subset_dir)
+    weighted_corr_path = "{}weighted_label_corr.csv".format(subset_dir)
+    # Get sample-weighted pairwise correlation matrix
+    if weights is None:
+        weights = select_params["sample_weight"]
+    assert np.shape(weights)[0] == feature_df.shape[0]
+    weights = pd.Series(
+        _check_sample_weight(weights[feature_df.index], X=feature_df),
+        index=feature_df.index,
+    ).sort_index()
+    feature_df.sort_index(inplace=True)
+    labels.sort_index(inplace=True)
+    if os.path.isfile(weighted_xc_path):
+        cross_corr = pd.read_csv(weighted_xc_path, index_col=0, header=0)
+        for col in cross_corr.columns:
+            cross_corr.loc[col, col] = 1.0
+    else:
+        cross_corr = weighted_correlation_matrix(
+            feature_df=feature_df,
+            weights=weights,
+        )
+        for col in cross_corr.columns:
+            cross_corr.loc[col, col] = 1.0
+        cross_corr.to_csv(weighted_xc_path)
+    # Get sample-weighted label correlation.
+    if os.path.isfile(weighted_corr_path):
+        label_corr = pd.read_csv(weighted_corr_path, index_col=0).squeeze()
+        # label_corr.drop(columns=label_corr.columns[0])
+        # label_corr.index = feature_df.columns
+    else:
+
+        if "kendall" in select_params["corr_method"]:
+            label_corr = bootstrapped_weighted_correlation(
+                feature_df,
+                weights=weights,
+                labels=labels,
+            )
+        else:
+            label_corr = single_weighted_pearson_correlation(
+                x=feature_df, y=labels, weights=weights
+            )
+        label_corr.to_csv(weighted_corr_path)
+    return cross_corr, label_corr
