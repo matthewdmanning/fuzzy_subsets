@@ -22,6 +22,7 @@ from sklearn.model_selection import (
 from sklearn.multiclass import OneVsOneClassifier, OneVsRestClassifier
 
 import build_preprocessor
+import ForwardFuzzyCoclustering
 import padel_categorization
 import vapor_pressure_selection
 from data_cleaning import qsar_readiness
@@ -428,12 +429,15 @@ def train_multilabel_models(epa_df, epa_labels, epa_scorer, mc_path):
     )
     train_df = epa_df.loc[train_labels.index]
     test_df = epa_df.loc[test_labels.index]
-    search_features = vapor_pressure_selection.get_search_features(train_df)
+    search_features = vapor_pressure_selection.padel_candidate_features()
     print("{} features to select from.".format(len(search_features)))
     short_to_long = padel_categorization.padel_convert_length().to_dict()
     # test_padel_conversion(search_features, short_to_long)
-    best_corrs = train_df[search_features].corrwith(train_labels, method="kendall")
-    cross_corr = train_df[search_features].corr(method="kendall")
+    pd.DataFrame.corrwith()
+    best_corrs = train_df[search_features].corrwith(
+        train_labels, method=select_params["corr_method"]
+    )
+    cross_corr = train_df[search_features].corr(method=select_params["xc_method"])
     cv_dict = dict()
     for m, n in zip(model_list, name_list):
         selection_models = {
@@ -445,14 +449,13 @@ def train_multilabel_models(epa_df, epa_labels, epa_scorer, mc_path):
         model_dir = "{}feature_selection_metaestimator_trial/{}/".format(mc_path, n)
         os.makedirs(model_dir, exist_ok=True)
         model_dict, score_dict, dropped_dict, best_features = (
-            vapor_pressure_selection.select_feature_subset(
+            ForwardFuzzyCoclustering.select_feature_subset(
                 train_df[search_features],
                 train_labels,
                 target_corr=best_corrs,
                 cross_corr=cross_corr,
                 select_params=select_params,
                 selection_models=selection_models,
-                hidden_test=(test_df, test_labels),
                 save_dir=model_dir,
             )
         )
@@ -622,7 +625,7 @@ def standardize_smiles(feature_df, combo_labels, maxed_sol_labels, std_pkl=None)
     return smiles_df, sid_to_key
 
 
-def lookup_chem(comlist, batch_size=100, type="sid", prefix="DTXSID"):
+def lookup_chem(comlist, batch_size=100, id_type="sid", prefix="DTXSID"):
     # stdizer = DescriptorRequestor.QsarStdizer(input_type="dtxsid")
     api_url = "https://ccte-cced-cheminformatics.epa.gov/api/search/download/properties"
     response_list = list()
@@ -630,7 +633,7 @@ def lookup_chem(comlist, batch_size=100, type="sid", prefix="DTXSID"):
     with requests.session() as r:
         req = requests.Request(method="POST", url=api_url)
         for c_batch in itertools.batched(comlist, n=batch_size):
-            req_json = {"ids": [], "format": type}
+            req_json = {"ids": [], "format": id_type}
             if prefix is not None:
                 c_batch = [
                     c.removeprefix(prefix) for c in c_batch if prefix is not None
