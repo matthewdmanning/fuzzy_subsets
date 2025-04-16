@@ -588,15 +588,6 @@ for i in [0]:
     plt.savefig(fname="{}.svg".format(det_path), transparent=True)
     whole_stub = "{}learning_curve_not_rus".format(rus_dir)
     # whole_lcd, _, __ = scoringlearn_curve(best, 'Random Forest (All Data)', shuffle_X, shuffle_y, fname_stub='{}all_data_lc'.format(rus_dir))
-    fig, ax = plt.subplots(figsize=(5, 6), dpi=600)
-    rus_lcd, _, __ = scoring.learn_curve(
-        best,
-        "Random Forest (Undersampled)",
-        rus_X,
-        rus_y,
-        fname_stub="{}rus_lc".format(rus_dir),
-    )
-
     continue
     # cv_model_generalized(best, X=rus_X, y=rus_y, cv_inst=PredefinedSplit(group_folds), score_dir=rus_dir)
     std_scaler = StandardScaler().fit(rus_X)

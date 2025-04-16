@@ -1,13 +1,15 @@
 import copy
+import itertools
 import logging
 import os
 import pickle
 import pprint
-from copy import deepcopy
+import random
 
 import numpy as np
 import pandas as pd
 import scipy
+import stats
 from sklearn import clone, linear_model
 from sklearn.base import is_classifier, is_regressor
 from sklearn.ensemble import StackingClassifier
@@ -17,6 +19,7 @@ from sklearn.inspection import permutation_importance
 from sklearn.metrics import balanced_accuracy_score, make_scorer
 from sklearn.model_selection import RepeatedStratifiedKFold, train_test_split
 
+import math_tools
 import padel_categorization
 import sample_clusters
 import samples
@@ -24,6 +27,9 @@ import scoring
 from build_preprocessor import get_standard_preprocessor
 from correlation_filter import get_weighted_correlations
 from epa_enamine_visualizer import _plot_proba_pairs
+from FuzzyAnnealer import FuzzyAnnealer
+from math_tools import complexity_penalty, scaled_softmax
+from scoring import relative_brier_score
 from vif import calculate_vif, repeated_stochastic_vif
 
 
@@ -35,13 +41,6 @@ if __name__ == "__main__":
     main()
 
 
-def safe_mapper(x, map):
-    if x in map.keys():
-        return map[x]
-    else:
-        return x
-
-
 def select_subsets_from_model(
     feature_df,
     labels,
@@ -51,6 +50,7 @@ def select_subsets_from_model(
     cross_corr,
     exp_dir,
     select_params,
+    prior_probs,
 ):
     """
     Selects best scoring feature subsets from specified scikit-learn estimators.
@@ -84,175 +84,168 @@ def select_subsets_from_model(
     for n, m in name_model_dict.items():
         model_dir = "{}{}/".format(exp_dir, n)
         os.makedirs(model_dir, exist_ok=True)
-        remaining_features = deepcopy(
-            [
-                x
-                for x in search_features
-                if all(
-                    [
-                        x in a.index.tolist()
-                        for a in [feature_df.T, label_corr, cross_corr]
-                    ]
-                )
-            ]
-        )
+        remaining_features = list()
+        for x in search_features:
+            for a in [feature_df.T, label_corr, cross_corr]:
+                if all([x in a.index]):
+                    remaining_features.append(x)
+        print("Selecting from {} features.".format(len(remaining_features)))
         name_weights_dict[n] = list()
         model_subsets_dict[n] = list()
         model_scores_dict[n] = list()
         subset_predicts[n] = list()
         # Set default weighting values.
-        select_params["feature_appearances"] = pd.Series(
-            np.ones(shape=feature_df.columns.size), index=feature_df.columns
-        ).to_frame()
-        select_params["sample_weight"] = pd.Series(
-            np.ones_like(labels.to_numpy()),
-            dtype=np.float32,
-            index=labels.index,
-            name="sample_weight",
-        )
-
+        if (
+            select_params["sample_weight"] is None
+            or select_params["sample_weight"].sum() == 0
+        ):
+            select_params["sample_weight"] = pd.Series(
+                np.ones_like(labels.to_numpy()),
+                dtype=np.float32,
+                index=labels.index,
+                name="sample_weight",
+            )
         # Start subset selection loop
         for i in np.arange(n_subsets):
             # TODO: Compare i to len(blah_blah_dict[n]) to see if a fit is needed.
-
-            print("Selecting from {} features.".format(len(remaining_features)))
             subset_dir = "{}subset{}/".format(model_dir, i)
             os.makedirs(subset_dir, exist_ok=True)
             cv_predicts_path = "{}{}_{}_output.pkl".format(subset_dir, n, i)
             cv_predicts_csv_path_stub = "{}{}_{}".format(subset_dir, n, i)
-            weight_path = "{}{}_{}_weights.csv".format(subset_dir, n, i)
             best_features_path = "{}best_features_{}_{}.csv".format(subset_dir, n, i)
+            weighted_label_path = "{}weighted_label_corr.csv".format(subset_dir)
+            weighted_cross_path = "{}weighted_cross_corr.csv".format(subset_dir)
             # Retrieve previous modeling runs.
-            if os.path.isfile(best_features_path):
-                top_score = 0
-                # TODO: Add sample weighting from boosting algorithm for first round.
-                with open("{}feature_score_path.csv".format(subset_dir), "r") as f:
-                    for whole_line in f.readlines():
-                        line = whole_line.split()
-                        scores = [float(x) for x in line[:5]]
-                        feats = [str(x) for x in line[5:]]
-                        if np.mean(scores) - np.std(scores) > top_score:
-                            top_score = np.mean(scores) - np.std(scores)
-                            best_features = feats
-                            new_appearances = pd.Series(
-                                np.zeros_like(feature_df.columns.to_numpy()),
-                                index=feature_df.columns,
-                                name=i,
-                            )
-                            new_appearances = new_appearances[best_features].add(1)
-                            select_params["feature_appearances"].merge(
-                                new_appearances, left_index=True, right_index=True
-                            )
-                if i > 0:
-                    if os.path.isfile(weight_path):
-                        """
-                        with open(weight_path, "rb") as f:
-                            name_weights_dict[n].append(pickle.load(f))
-                        """
-                        name_weights_dict[n].append(pd.read_csv(weight_path))
-                    if os.path.isfile(cv_predicts_path):
-                        with open(cv_predicts_path, "rb") as f:
-                            subset_predicts[n].append(pickle.load(f))
+            score_name = "predict_proba"
+            r_name = "Original"
+            cv_predicts_pkl_path = "{}_{}_{}.pkl".format(
+                cv_predicts_csv_path_stub, score_name, r_name
+            )
+            if all(
+                [
+                    os.path.isfile(p)
+                    for p in [
+                        best_features_path,
+                        cv_predicts_path,
+                        cv_predicts_pkl_path,
+                    ]
+                ]
+            ):
+                # if i > 0:
+                cv_predicts_csv_path = "{}_{}_{}.csv".format(
+                    cv_predicts_csv_path_stub, score_name, r_name
+                )
 
-                    # Update sample weights based on prediction results.
-                    if len(subset_predicts[n]) == 1:
-                        test_scores = pd.concat(
-                            subset_predicts[n][0][select_params["score_func"]]["test"]
-                        )
-                    elif len(subset_predicts[n]) > 1:
-                        test_scores = [
-                            pd.concat(a[select_params["score_func"]]["test"])
-                            for a in subset_predicts[n]
-                        ]
-                    else:
-                        raise ValueError
-                    if is_classifier(m):
-                        new_weights = samples.weight_by_proba(
-                            y_true=labels,
-                            probs=test_scores,
-                        )
-                    elif is_regressor(m):
-                        new_weights = samples.weight_by_error(
-                            labels, test_scores, loss=select_params["loss_func"]
-                        )
-                    else:
-                        raise ValueError
-                    # else:
-                    name_weights_dict[n].append(new_weights)
-                    new_weights.to_csv(weight_path, index_label="INCHI_KEY")
-                # Correlation matrices are recalculated with new weights for accurate feature selection.
-                cross_corr, label_corr = get_weighted_correlations(
+                with open(cv_predicts_path, "rb") as f:
+                    cv_predicts = pickle.load(f)
+                # Update sample weights based on prediction results.
+                for k, v in cv_predicts.items():
+                    for w, z in v.items():
+                        if not isinstance(z, (pd.Series, pd.DataFrame)):
+                            k[v][w] = pd.DataFrame(z).squeeze()
+                subset_predicts[n].append(cv_predicts)
+                new_weights = weights_from_predicts(
+                    labels, subset_predicts[n], m, select_params
+                )
+                name_weights_dict[n].append(new_weights)
+                if is_classifier(m):
+                    prior_probs.append(pd.concat(cv_predicts["predict_proba"]["test"]))
+                elif is_classifier(m):
+                    prior_probs.append(
+                        pd.concat(cv_predicts["predict"]["test"])
+                    )  # Correlation matrices are recalculated with new weights for accurate feature selection.
+
+            else:
+                best_probs = get_best_probs(labels, prior_probs)
+                if best_probs.sum() == 0:
+                    print(best_probs.head())
+                    print("\n\n\nBest probs sums to zero!\n\n\n")
+                    best_probs = pd.Series(
+                        1 / (1 + labels.nunique()), index=labels.index
+                    )
+                label_corr, cross_corr = get_weighted_correlations(
                     feature_df,
                     labels,
                     select_params,
                     subset_dir,
+                    weights=1 / best_probs,
                 )
 
-                # OPTIMIZE: Pass this to train_multilabel_models instead of tacking onto label_corr?
-                if False:
-                    label_corr = label_corr.divide(
-                        select_params["feature_appearances"].sum(axis=1) ** 2
-                    )
-                print(label_corr)
-                print(label_corr.shape)
-                print(cross_corr.shape)
                 assert np.shape(label_corr)[0] == cross_corr.shape[1]
-
-            if not os.path.isfile(best_features_path):
+                label_corr.to_csv(weighted_label_path)
+                cross_corr.to_csv(weighted_cross_path)
                 # Run iteration of feature selection on model architecture.
-                cv_results, cv_predicts, best_features = train_multilabel_models(
+                if isinstance(prior_probs, list) and len(prior_probs) > 1:
+
+                    prob_list = list()
+                    one_hot, one_hot_normed = samples.one_hot_conversion(labels)
+                    if select_params["sample_weight"].shape[0] != one_hot.shape[0]:
+                        print("OneHot")
+                        print(one_hot)
+                        print("Sample weight")
+                        print(select_params["sample_weight"])
+                        raise ValueError
+                    for prob_out in prior_probs:
+                        if len(prob_out.shape) == 2:
+                            prob_list.append(
+                                select_params["sample_weight"].mul(one_hot).sum(axis=1)
+                            )
+                    for a, b in itertools.combinations(np.arange(len(prob_list)), r=2):
+                        sq_diff = (prob_list[a] - prob_list[b]) ** 2
+                cv_predicts, cv_scores, best_features = train_multilabel_models(
                     feature_df,
                     labels,
                     model=m,
-                    model_name=n,
+                    model_name="{}_{}".format(n, i),
                     best_corrs=label_corr,
                     cross_corr=cross_corr,
                     select_params=select_params,
                     save_dir=subset_dir,
+                    prior_probs=[best_probs],
                 )
-                new_appearances = pd.Series(
-                    np.zeros_like(feature_df.columns.to_numpy()),
-                    index=feature_df.columns,
-                    name=i,
-                )
-                new_appearances = new_appearances[best_features].add(1.0)
-                select_params["feature_appearances"].merge(
-                    new_appearances, left_index=True, right_index=True
-                )
-                subset_predicts[n].append(cv_predicts)
-                for k, v in cv_predicts.items():
-                    print(k)
-                    cv_predicts_csv_path = "{}_{}.csv".format(
-                        cv_predicts_csv_path_stub, k
-                    )
-                    cv_predicts_pkl_path = "{}_{}.pkl".format(
-                        cv_predicts_csv_path_stub, k
-                    )
-                    cvp = pd.DataFrame.from_records(v)
-                    cvp.to_csv(cv_predicts_csv_path)
-                    with open(cv_predicts_pkl_path, "wb") as f:
-                        pickle.dump(cvp, f)
-                """
-                pd.concat(cv_predicts["predict"]["test"]).to_csv(
-                    cv_predicts_path,
-                    index_label="INCHI_KEY",
-                )
-                """
-                model_scores_dict[n].append(cv_results)
-                # Use selected subsets to fit meta-estimator (ex. VotingClassifier)
-                """                
-                meta_estimator, meta_results, test_idx_list, select_params = (
-                    fit_predict_metaclassifier(feature_df=feature_df, labels=labels, model=m, subset_i=i,
-                                              model_subsets_dict=model_subsets_dict, model_name=n,
-                                              name_model_dict=name_model_dict, select_params=select_params))
-                """
-                model_subsets_dict[n].append(best_features)
-            # print(voter_results.items(), flush=True)
-            # print(voter_results["predict_proba"]["test"])
+                pd.Series(best_features).to_csv(best_features_path)
+                subset_predicts[n].append(cv_predicts["Original"])
 
-            # cv_scores = pd.DataFrame.from_records(model_scores_dict, orient="index", columns=np.arange(n_subsets))
-            # print(model_subsets_dict)
-            # Plot sample predictions (probabilities) for each pair of models.
+                df_list = list()
+                for r_name, r_dict in cv_predicts.items():
+                    for score_name, score_dict in r_dict.items():
+                        cv_predicts_csv_path = "{}_{}_{}.csv".format(
+                            cv_predicts_csv_path_stub, score_name, r_name
+                        )
+                        cv_predicts_pkl_path = "{}_{}_{}.pkl".format(
+                            cv_predicts_csv_path_stub, score_name, r_name
+                        )
+                        """
+                        id_list, score_list = list(), list()
+                        for a, b in score_dict.items():
+                            id_list.append(a)
+                            score_list.append(b)
+                        id_df = pd.DataFrame(id_list, columns=["CV_Fold", "Split", "Label"])
+                        score_ser = pd.Series(score_list)
+                        id_df.insert(loc=id_df.shape[1], column="score", value=score_ser)
+                        id_df.insert(loc=id_df.shape[1], column="Metric", value=score_name)
+                        df_list.append(id_df)
+                        """
+                        cvp = pd.concat(
+                            [pd.DataFrame.from_records(d) for d in score_dict]
+                        )
+                        # cvp = pd.DataFrame(cv_predicts)
+                        cvp.to_csv(cv_predicts_csv_path)
+                        with open(cv_predicts_pkl_path, "wb") as f:
+                            pickle.dump(cvp, f)
+                # print(pd.concat(df_list))
+
+                model_scores_dict[n].append(cv_scores)
+                # Use selected subsets to fit meta-estimator (ex. VotingClassifier)
+                model_subsets_dict[n].append(best_features)
+            if is_classifier(m):
+                prior_probs.append(
+                    pd.concat(cv_predicts["Original"]["predict_proba"]["test"])
+                )
+            elif is_classifier(m):
+                prior_probs.append(
+                    pd.concat(cv_predicts["Original"]["predict"]["test"])
+                )
         # name_distplot_dict = plot_proba_distances(feature_df, labels, model_subsets_dict, name_model_dict)
         pg = _plot_proba_pairs(labels, n, subset_predicts, select_params)
         pg.savefig("{}pair_trial.png".format(model_dir), dpi=300)
@@ -335,6 +328,48 @@ def select_subsets_from_model(
         name_distplot.savefig("{}{}_prob_dist_pairplot.png".format(exp_dir, n))
         """
     return model_scores_dict, model_subsets_dict, subset_predicts, name_weights_dict
+
+
+def weights_from_predicts(
+    y_true, y_predict, predict_model, select_params, method="max"
+):
+    if len(y_predict) == 1:
+        test_scores = pd.concat(y_predict[0][select_params["score_func"]]["test"])
+    elif len(y_predict) > 1:
+        test_scores = [
+            pd.concat(a[select_params["score_func"]]["test"]) for a in y_predict
+        ]
+    else:
+        raise ValueError
+    if is_classifier(predict_model):
+        new_weights = samples.weight_by_proba(
+            y_true=y_true,
+            probs=test_scores,
+            prob_thresholds=select_params["brier_clip"],
+        )
+    elif is_regressor(predict_model):
+        new_weights = samples.weight_by_error(
+            y_true, test_scores, loss=select_params["loss_func"]
+        )
+    else:
+        raise ValueError
+    return new_weights
+
+
+def get_best_probs(labels, cv_predict_list):
+    one_hot_label, _ = samples.one_hot_conversion(y_true=labels)
+    c_predicts = list()
+    for p in cv_predict_list:
+        if isinstance(p, dict) and "predict_proba" in p.keys():
+            if isinstance(p["predict_proba"]["test"], list):
+                c_predicts.append(pd.concat(p["predict_proba"]["test"]))
+            else:
+                c_predicts.append(p["predict_proba"]["test"])
+        elif isinstance(p, (pd.Series, pd.DataFrame)):
+            c_predicts.append(p)
+    correct_pred = [c.mul(one_hot_label).sum(axis=1) for c in c_predicts]
+    best_preds = pd.concat(correct_pred, axis=1).max(axis=1)
+    return best_preds
 
 
 def _update_sample_weights(
@@ -454,19 +489,21 @@ def fit_predict_metaclassifier(
         print(type(votes))
         print(votes)
         # print(voter_results[select_params["score_func"]]["test"])
-        select_params["sample_weight"] = samples.weight_by_proba(labels, votes)
+        # select_params["sample_weight"] = samples.weight_by_proba(labels, votes)
     elif len(model_subsets_dict[model_name]) == 1:
         voter = name_model_dict[model_name]
-        voter_results, test_idx_list = scoring.cv_model_generalized(
+        voter_results, melted_results, test_idx_list = scoring.cv_model_generalized(
             estimator=voter,
             feature_df=feature_df[model_subsets_dict[model_name][0]],
             labels=labels,
             cv=select_params["cv"],
             return_train=True,
         )
+        """
         select_params["sample_weight"] = samples.weight_by_proba(
             labels, voter_results["predict_proba"]["test"][0]
-        )
+        )"""
+
     else:
         voter = StackingClassifier(estimators=[name_model_dict[model_name]])
         voter_results = None
@@ -480,6 +517,13 @@ def fit_predict_metaclassifier(
     return FrozenEstimator(voter), voter_results, test_idx_list, select_params
 
 
+def _get_subset_scores(selection_state, subset):
+    feats = tuple(sorted(subset))
+    if feats not in selection_state["subset_scores"].keys():
+        score_subset()
+    return selection_state["subset_scores"][feats]
+
+
 def train_multilabel_models(
     feature_df,
     labels,
@@ -489,6 +533,7 @@ def train_multilabel_models(
     cross_corr,
     select_params,
     save_dir,
+    prior_probs,
     **kwargs,
 ):
     """
@@ -497,6 +542,7 @@ def train_multilabel_models(
 
     Parameters
     ----------
+    prior_probs
     feature_df: pd.DataFrame
     labels: pd.Series
     model: pd.BaseEstimator
@@ -508,11 +554,11 @@ def train_multilabel_models(
 
     Returns
     -------
-    score_dict : dict[dict[list[pd.Series]]]
-        Contains sample-wise scores for each CV fold
-        {score_name: {split_name: list[pd.Series] | pd.Series}}
-    cv_results : dict[dict[list[pd.Series]]]
-    best_features
+    results_dict : dict[str, dict[str, list[pd.Series]]]
+        Contains sample-wise results for each CV fold
+        {method_name: {split_name: list[pd.Series] | pd.Series}}
+    cv_scores : dict[str, dict[str, list[pd.Series]]]
+    best_features : list, Highest scoring set of features
     """
     # if "n_jobs" in model.get_params():
     #    model.set_params(**{"n_jobs": 1})
@@ -522,6 +568,26 @@ def train_multilabel_models(
         "importance": model,
         "vif": linear_model.LinearRegression(),
     }
+    fuzz = FuzzyAnnealer(
+        params=select_params,
+        models=selection_models,
+        save_dir=save_dir,
+    )
+
+    fuzz.fit(
+        feature_df=feature_df,
+        labels=labels,
+        cross_corr=cross_corr,
+        label_corr=best_corrs,
+        other_probs=prior_probs,
+    )
+    model = fuzz.best_model
+    if model is None:
+        model = selection_models["predict"]
+    subset_scores = fuzz.subset_scores
+    best_features = fuzz.best_subset
+    #    model, subset_scores, best_features = fuzz.delete_asap()
+    """
     model_dict, score_dict, dropped_dict, best_features = select_feature_subset(
         feature_df,
         labels,
@@ -530,7 +596,9 @@ def train_multilabel_models(
         select_params=select_params,
         selection_models=selection_models,
         save_dir=save_dir,
+        prior_best_probs=prior_probs,
     )
+    """
     print("Best features!")
     short_to_long = padel_categorization.padel_convert_length()
     best_features_long = short_to_long[
@@ -544,26 +612,46 @@ def train_multilabel_models(
     else:
         best_features_long = pd.Series(best_features, index=best_features)
     print("\n".join(best_features_long.tolist()))
-    pd.Series(best_features_long).to_csv(
-        "{}best_features_{}.csv".format(save_dir, model_name)
-    )
     eval_pred = list()
-    cv_results, test_idx_splits = scoring.cv_model_generalized(
+
+    # Score Feature Selection Model.
+    cv_results, long_form_results, test_idx_splits = scoring.cv_model_generalized(
         estimator=model,
-        feature_df=feature_df[best_features],
+        feature_df=feature_df[list(best_features)],
         labels=labels,
         cv=select_params["cv"],
         return_train=True,
         sample_weight=select_params["sample_weight"],
     )
-    print(cv_results)
+    # for k, long_df in long_form_results.items():
+    #    long_df.insert(loc=0, column="Subset", value=model_name)
+    s_name, s_func = select_params["score_name"], select_params["scoring"]
+    group_cols = ["CV_Fold", "Split", "Labels"]
+    predict_df = long_form_results["predict"]
+    predict_groups = predict_df.groupby(group_cols, as_index=False, group_keys=False)
+    # score_dict = dict([(k, v) for k, v in (s_name, s_func)])
+    # for score_name in score_dict.keys():
+    score_dict = dict()
+    score_name = s_name
+    score_dict[score_name] = dict()
+    score_dict[score_name] = list()
+    for g in predict_groups:
+        long_df = g[1].drop(columns=group_cols)
+        long_score = scoring.score_long_form(
+            s_func, x=long_df, true_col="True", remove_cols="INCHI_KEY"
+        )
+        score_tuple = g[1].iloc[0].tolist()
+        score_tuple.append(long_score)
+
+        score_dict[score_name].append(score_tuple)
+    score_df = pd.DataFrame.from_records(score_dict[score_name])
+    """
     score_dict = scoring.score_cv_results(
         results_dict=cv_results,
         score_func_dict={select_params["score_name"]: select_params["scoring"]},
         y_true=labels,
         sample_weight=select_params["sample_weight"],
     )
-    """
     for dev_df, dev_labels, eval_df, eval_labels in cv_tools.split_df(
         feature_df[best_features],
         labels,
@@ -580,12 +668,10 @@ def train_multilabel_models(
         fitted_est, dev_df[best_features], dev_labels
     )
     """
+    print("Score dictionary:")
+    # [print(k, "\n", d.values()) for k, d in score_dict.items()]
     # model.fit(train, cmd_train_labels)
-    print("These are return types!!!")
-    print(type(score_dict))
-    print(type(cv_results))
-    print(type(best_features))
-    return score_dict, cv_results, best_features
+    return cv_results, score_df, best_features
 
 
 mcc = make_scorer(balanced_accuracy_score)
@@ -730,7 +816,7 @@ def _vif_elimination(
 
 
 def current_score(state):
-    scores = state["subset_scores"][tuple(state["current_features"])]
+    scores = state["subset_scores"][tuple(sorted(state["current_features"]))]
     return np.mean(scores) - np.std(scores)
 
 
@@ -763,62 +849,28 @@ def select_feature_subset(
     -------
 
     """
-    if (
-        labels.nunique() == 2
-        and (labels[labels == 1].size < 10 or labels[labels == 0].size < 10)
-    ) or labels.nunique == 1:
-        raise ValueError
-    if select_params["cv"] is None:
-        select_params["cv"] = RepeatedStratifiedKFold(random_state=0, n_repeats=5)
-    if select_params["scoring"] is None:
-        select_params["scoring"] = balanced_accuracy_score
-    if select_params["scorer"] is None:
-        select_params["scorer"] = make_scorer(select_params["scoring"])
-    with open("{}selection_params.txt".format(save_dir), "w") as f:
-        for k, v in select_params.items():
-            try:
-                f.write("{}: {}\n".format(k, v))
-            except AttributeError:
-                pass
-    print(target_corr)
-    if initial_subset is None:
-        initial_subset = (
-            target_corr.index.to_series()
-            .sample(weights=target_corr.abs(), n=1)
-            .tolist()
-        )
-        print("\n\nInitial subset: {}".format(initial_subset))
-    if prior_best_probs is None:
-        prior_best_probs = pd.DataFrame(
-            data=0.5, columns=labels.unique(), index=labels.index
-        )
-    selection_state = {
-        "prior_best": prior_best_probs,
-        "current_features": initial_subset,
-        "subset_scores": dict(),
-        "best_subset": list(),
-        "rejected_features": dict(),
-        "best_score_adj": -999,
-        "previous_best_score": -999,
-        "fails": 0,
-        "attempts": 0,
-    }
-    selection_state, scores, improvement = score_subset(
-        feature_df=train_df,
-        labels=labels,
-        selection_models=selection_models,
-        selection_state=selection_state,
-        select_params=select_params,
-        save_dir=save_dir,
-        subset=initial_subset,
-        record_results=True,
+    clean_up, selection_state, sqcc_df = selection_setup(
+        train_df,
+        labels,
+        initial_subset,
+        target_corr,
+        cross_corr,
+        select_params,
+        selection_models,
+        prior_best_probs,
+        save_dir,
     )
-    sqcc_df = cross_corr * cross_corr
-    clean_up = False
-    print("Matrix shapes.")
-    print(train_df.shape, sqcc_df.shape, target_corr.shape)
     # Start feature loop
     for i in np.arange(select_params["max_trials"]):
+        print("\n\nSelection step {} out of {}.".format(i, select_params["max_trials"]))
+        if i > 0:
+            selection_state["temp"] = math_tools.acf_temp(
+                [
+                    selection_state["subset_scores"][tuple(sorted(s))]
+                    for s in selection_state["chosen_subsets"]
+                ]
+            )
+        print("New temperature: {}".format(selection_state["temp"]))
         # print("Feature_df shape: {}".format(train_df.shape))
         # print(len(selection_state["current_features"]))
         # TODO: Does this check need to be here? Especially with the new weighting for reused features
@@ -830,7 +882,7 @@ def select_feature_subset(
             len(selection_state["current_features"])
             >= select_params["features_min_sfs"]
         )
-        if maxed_out or (above_min and clean_up):
+        if False and (maxed_out or (above_min and clean_up)):
             # or train_df.shape[1]
             # - len([selection_state["rejected_features"].keys()])
             # - len(selection_state["current_features"])
@@ -840,7 +892,7 @@ def select_feature_subset(
             while _over_sfs_thresh(select_params, selection_state):
                 print(current_score(selection_state), selection_state["best_score_adj"])
                 original_size = len(selection_state["current_features"])
-                selection_state, subset_scores = sequential_elimination(
+                selection_state, subset_scores, score_improve = sequential_elimination(
                     train_df=train_df,
                     labels=labels,
                     select_params=select_params,
@@ -896,27 +948,35 @@ def select_feature_subset(
             subset_metric = score_improve
         else:
             subset_metric = subset_scores
-        print(score_improve, subset_scores, selection_state["current_features"])
         # Check if score has dropped too much.
         exceeded, selection_state = score_drop_exceeded(
             subset_metric,
             selection_params=select_params,
             selection_state=selection_state,
+            set_size=len(selection_state["current_features"]),
+            replace_current=False,
         )
-        if exceeded:
-            while (
-                np.mean(subset_metric) + np.std(subset_metric)
-                < selection_state["best_score_adj"]
-            ):
-                if (
-                    len(selection_state["current_features"])
-                    <= select_params["features_min_sfs"]
+        if (
+            exceeded
+            and len(selection_state["current_features"])
+            > select_params["features_min_sfs"]
+        ):
+            while exceeded:
+                if len(selection_state["current_features"]) <= select_params[
+                    "features_min_sfs"
+                ] or random.random() > math_tools.zwangzig(
+                    selection_state["subset_scores"],
+                    current_score(selection_state["current_features"]),
+                    select_params["lang_lambda"],
+                    math_tools.size_factor(
+                        len(selection_state["current_features"]), select_params
+                    ),
                 ):
                     selection_state["current_features"] = copy.deepcopy(
                         selection_state["best_subset"]
                     )
                     break
-                selection_state, subset_scores = sequential_elimination(
+                selection_state, subset_scores, score_improve = sequential_elimination(
                     train_df,
                     labels,
                     select_params,
@@ -925,9 +985,15 @@ def select_feature_subset(
                     clean_up=False,
                     save_dir=save_dir,
                 )
+                exceeded, selection_state = score_drop_exceeded(
+                    score_improve,
+                    selection_params=select_params,
+                    selection_state=selection_state,
+                    set_size=len(selection_state["current_features"]) - 1,
+                )
             continue
         # Variance Inflation Factor: VIF check implemented in "new feature" selection function.
-        if False and (
+        if True and (
             len(selection_state["current_features"])
             >= select_params["features_min_vif"]
         ):
@@ -939,9 +1005,7 @@ def select_feature_subset(
                 selection_state=selection_state,
             )
         # Feature Importance Elimination
-        if _get_fails(selection_state) >= select_params[
-            "fails_min_perm"
-        ] and select_params["features_min_perm"] < len(
+        if False and select_params["features_min_perm"] < len(
             selection_state["current_features"]
         ):
             if select_params["importance"] == "permutate":
@@ -1015,6 +1079,7 @@ def select_feature_subset(
                 new_scores=score_improve,
                 selection_params=select_params,
                 selection_state=selection_state,
+                set_size=len(selection_state["current_features"]),
             )
             if too_much or n_features_in == len(selection_state["current_features"]):
                 clean_up = False
@@ -1029,7 +1094,7 @@ def select_feature_subset(
     if len(selection_state["best_subset"]) > 0:
         best_fit_model = FrozenEstimator(
             selection_models["predict"].fit(
-                X=train_df[selection_state["best_subset"]], y=labels
+                X=train_df[list(selection_state["best_subset"])], y=labels
             )
         )
         with open("{}best_model.pkl".format(save_dir), "wb") as f:
@@ -1051,6 +1116,84 @@ def select_feature_subset(
     )
 
 
+def selection_setup(
+    train_df,
+    labels,
+    initial_subset,
+    target_corr,
+    cross_corr,
+    select_params,
+    selection_models,
+    prior_best_probs,
+    save_dir,
+):
+    if (
+        labels.nunique() == 2
+        and (labels[labels == 1].size < 10 or labels[labels == 0].size < 10)
+    ) or labels.nunique == 1:
+        raise ValueError
+    if select_params["cv"] is None:
+        select_params["cv"] = RepeatedStratifiedKFold(random_state=0, n_repeats=5)
+    if select_params["scoring"] is None:
+        select_params["scoring"] = balanced_accuracy_score
+    if select_params["scorer"] is None:
+        select_params["scorer"] = make_scorer(select_params["scoring"])
+    with open("{}selection_params.txt".format(save_dir), "w") as f:
+        for k, v in select_params.items():
+            try:
+                f.write("{}: {}\n".format(k, v))
+            except AttributeError:
+                pass
+    sqcc_df = cross_corr * cross_corr
+    selection_state = {
+        "prior_best": prior_best_probs,
+        "current_features": initial_subset,
+        "temp": 1,
+        "chosen_subsets": list(),
+        "subset_scores": dict(),
+        "best_subset": list(),
+        "rejected_features": dict(),
+        "best_score_adj": -999,
+        "previous_best_score": -999,
+        "fails": 0,
+        "attempts": 0,
+    }
+    if initial_subset is None:
+        selection_state["current_features"] = (
+            target_corr.index.to_series()
+            .sample(weights=target_corr.abs(), n=1)
+            .tolist()
+        )
+        for i in np.arange(3):
+            new_feat, selection_state = choose_next_feature(
+                train_df,
+                feature_list=selection_state["current_features"],
+                target_corr=target_corr,
+                sq_xcorr=sqcc_df,
+                selection_models=selection_models,
+                selection_state=selection_state,
+                select_params=select_params,
+            )
+    selection_state["chosen_subsets"].append(
+        tuple(sorted(selection_state["current_features"]))
+    )
+    print("\n\nInitial subset: {}".format(selection_state["current_features"]))
+    selection_state, scores, improvement = score_subset(
+        feature_df=train_df,
+        labels=labels,
+        selection_models=selection_models,
+        selection_state=selection_state,
+        select_params=select_params,
+        save_dir=save_dir,
+        subset=initial_subset,
+        record_results=True,
+    )
+    clean_up = False
+    print("Matrix shapes.")
+    print(train_df.shape, sqcc_df.shape, target_corr.shape)
+    return clean_up, selection_state, sqcc_df
+
+
 def _over_sfs_thresh(
     select_params, selection_state, scores="current", set_size=None, factor="sfs"
 ):
@@ -1063,12 +1206,17 @@ def _over_sfs_thresh(
     elif "cleanup" in factor:
         factor = select_params["thresh_sfs_cleanup"]
     reference = selection_state["best_score_adj"]
+
     if isinstance(scores, str) and "current" in scores:
         scores = current_score(selection_state)
-        set_size = len(selection_state["current_features"])
-    overmax = select_params["max_features_out"] / set_size
-    adjust = 1 - factor * np.log(overmax)
-    print(len(selection_state["current_features"]), adjust)
+        if set_size is None:
+            set_size = len(selection_state["current_features"])
+    elif set_size is None:
+        raise UserWarning
+        print("Feature set size needed if not using current feature set.")
+        set_size = select_params["max_features_out"]
+    adjust = complexity_penalty(math_tools.size_factor(set_size, select_params), factor)
+    # print(len(selection_state["current_features"]), adjust)
     return scores >= reference * adjust
 
 
@@ -1087,15 +1235,48 @@ def sequential_elimination(
     selection_models,
     clean_up,
     save_dir,
-    randomize=False,
+    randomize=True,
     depth=1,
 ):
+    """
+
+    Parameters
+    ----------
+    train_df : pd.DataFrame
+    labels : pd.Series
+    select_params : dict
+    selection_state : dict
+    selection_models : dict
+    clean_up : bool
+    save_dir : str
+    randomize : bool, whether to use probabalistic method for elimination selection and accept-reject decision
+    depth : int, (Not Implemented) number of features to eliminate
+
+    Returns
+    -------
+    selection_state : dict
+    subset_scores: list, scores for feature set after any elimination
+    brier_list: list, brier improvement scores for feature set after any elimination
+    """
     if clean_up:
         clean = "thresh_sfs_cleanup"
     else:
         clean = "thresh_sfs"
     # TODO: Implement configurable predict function for boosting.
     sfs_score_dict = dict().fromkeys(selection_state["current_features"], list())
+    if tuple(sorted(selection_state["current_features"])) not in list(
+        selection_state["subset_scores"].keys()
+    ):
+        selection_state, scores, score_improve = score_subset(
+            train_df,
+            labels,
+            selection_models=selection_models,
+            selection_state=selection_state,
+            select_params=select_params,
+            save_dir=save_dir,
+            subset=selection_state["current_features"],
+            record_results=True,
+        )
     current_score_adj = copy.deepcopy(current_score(selection_state))
     for left_out, score_list in sfs_score_dict.items():
         new_subset = copy.deepcopy(selection_state["current_features"])
@@ -1107,7 +1288,7 @@ def sequential_elimination(
             selection_state=selection_state,
             select_params=select_params,
             save_dir=save_dir,
-            subset=new_subset,
+            subset=sorted(new_subset),
             record_results=True,
         )
         if score_improve is not None:
@@ -1120,12 +1301,57 @@ def sequential_elimination(
         subset_scores = selection_state["subset_scores"][
             tuple(selection_state["current_features"])
         ]
+    feats = list(sfs_score_dict.keys())
+    if randomize and len(sfs_score_dict.items()) > 0:
+        geoms = dict(
+            (k, stats.geometric_mean(v))
+            for k, v in sfs_score_dict.items()
+            if len(v) > 0
+        )
+        soft_scores = scaled_softmax(geoms.values(), center=selection_state["temp"])
+        scores_ser = pd.Series(np.max(soft_scores) - soft_scores, index=geoms.keys())
+        if scores_ser.sum() == 0.0:
+            raise ValueError
+        chosen_feat = (
+            pd.Series(data=geoms.keys(), index=geoms.keys())
+            .sample(n=1, weights=scores_ser.squeeze())
+            .iloc[0]
+        )
+        new_subset = copy.deepcopy(selection_state["current_features"])
+        new_subset.remove(chosen_feat)
+        selection_state, scores, brier_list = score_subset(
+            train_df,
+            labels,
+            selection_models=selection_models,
+            selection_state=selection_state,
+            select_params=select_params,
+            save_dir=save_dir,
+            subset=new_subset,
+            record_results=True,
+        )
+        langevin_metric = math_tools.zwangzig(
+            selection_state["subset_scores"],
+            scores,
+            lamb=select_params["lang_lambda"],
+            temp=selection_state["temp"],
+            k=math_tools.size_factor(len(new_subset), select_params),
+        )
+        if random.random() > langevin_metric:
+            subset_scores = sfs_score_dict[chosen_feat]
+            selection_state["current_features"].remove(chosen_feat)
+        else:
+            subset_scores = selection_state["subset_scores"][
+                tuple(selection_state["current_features"])
+            ]
     else:
         worst_feature_tup = sorted(
             list(sfs_score_dict.items()), key=lambda x: (np.mean(x[1] - np.std(x[1])))
         )[0]
         drop_scores = np.mean(worst_feature_tup[1]) - np.std(worst_feature_tup[1])
-        if _over_sfs_thresh(select_params, selection_state, drop_scores, factor=clean):
+        set_size = len(selection_state["current_features"]) - 1
+        if _over_sfs_thresh(
+            select_params, selection_state, drop_scores, set_size=set_size, factor=clean
+        ):
             subset_scores = worst_feature_tup[1]
             selection_state["current_features"].remove(worst_feature_tup[0])
         else:
@@ -1166,39 +1392,51 @@ def sequential_elimination(
     return selection_state, subset_scores, score_improve
 
 
-def relative_brier_score(
+def subset_relative_brier_score(
     y_true,
     y_proba,
+    subset_probs,
     pos_label=None,
     clips=(0, 1.0),
-    y_prior=None,
     sample_weight=None,
     class_weight="balanced",
     decision_thresholds=None,
 ):
-    onehot_labels, onehot_normed = samples.one_hot_conversion(
-        y_true, threshold=decision_thresholds
-    )
-    y_proba.clip(lower=clips[0], upper=clips[1], inplace=True)
-    y_proba_brier = (
-        y_proba.sub(onehot_normed).abs().multiply(onehot_labels).sum(axis=1).squeeze()
-    )
-    if y_prior is not None:
-        y_prior_brier = (
-            y_prior.sub(onehot_normed)
-            .abs()
-            .multiply(onehot_labels)
-            .sum(axis=1)
-            .squeeze()
+    """
+    Calculates Brier Improvement for each previous submodel
+    Parameters
+    ----------
+    y_true : pd.Series, ground truth
+    y_proba : pd.Series, By-class probabilities for feature set in question
+    subset_probs :
+    pos_label
+    clips
+    sample_weight
+    class_weight
+    decision_thresholds
+
+    Returns
+    -------
+
+    """
+    score_list, rel_probs_list = list(), list()
+    if subset_probs is None:
+        subset_probs = [None]
+    for prob_set in subset_probs:
+        rel_score, rel_probs = relative_brier_score(
+            y_true,
+            y_proba,
+            prob_set,
+            pos_label,
+            clips,
+            sample_weight,
+            class_weight,
+            decision_thresholds,
         )
-        y_proba_brier = y_proba_brier - y_prior_brier
-    y_proba_brier.clip(lower=0)
-    brier_sq = y_proba_brier**2
-    if sample_weight is None:
-        rel_brier_score = brier_sq.sum() / brier_sq.shape[0]
-    else:
-        rel_brier_score = (sample_weight * brier_sq).sum() / sample_weight.sum()
-    return rel_brier_score, y_proba_brier
+        score_list.append(rel_score)
+        rel_probs_list.append(rel_probs)
+        most_similar_ix = np.argmin(score_list)
+        return score_list[most_similar_ix], rel_probs_list[most_similar_ix]
 
 
 def score_subset(
@@ -1213,6 +1451,28 @@ def score_subset(
     sample_weight=None,
     class_weight="balanced",
 ):
+    """
+    Cross-validated scoring using a subset of features.
+
+    Parameters
+    ----------
+    feature_df
+    labels
+    selection_models
+    selection_state
+    select_params
+    save_dir
+    subset
+    record_results
+    sample_weight
+    class_weight
+
+    Returns
+    -------
+    selection_state : dict
+    scores : list
+    brier_list : list
+    """
     if subset is None or len(subset) == 0:
         subset = tuple(sorted(selection_state["current_features"]))
     elif len(selection_state["current_features"]) == 0:
@@ -1221,29 +1481,31 @@ def score_subset(
         raise ValueError
     if isinstance(subset, str):
         # raise KeyError
-        current_features = [copy.deepcopy(subset)]
+        subset_feats = [copy.deepcopy(subset)]
     else:
-        current_features = tuple(sorted(copy.deepcopy(subset)))
-    assert len(current_features) > 0
+        subset_feats = tuple(sorted(copy.deepcopy(subset)))
+    assert len(subset_feats) > 0
     score_tuple = [(select_params["score_name"], select_params["scoring"])]
     scores = None
-    rel_brier_score = None
+    brier_list = list()
     for prior_set in selection_state["subset_scores"].keys():
-        if len(set(current_features).symmetric_difference(prior_set)) == 0:
-            scores = selection_state["subset_scores"][current_features]
-            # print("Duplicate scoring found:\n{}\n".format(current_features, prior_set))
+        if len(set(subset_feats).symmetric_difference(prior_set)) == 0:
+            scores = selection_state["subset_scores"][prior_set]
+            if is_classifier(selection_models["predict"]):
+                brier_list = scores
+            # print("Duplicate scoring found:\n{}\n".format(subset_feats, prior_set))
             break
     if scores is None:
-        selection_state["subset_scores"][current_features] = list()
+        selection_state["subset_scores"][tuple(sorted(subset_feats))] = list()
         # best_corrs, cross_corr = get_correlations(train_df, train_labels, path_dict["corr_path"], path_dict["xc_path"], select_params["corr_method"], select_params["xc_method"])
         if "sample_weight" in select_params.keys() or sample_weight is not None:
             if sample_weight is not None:
                 weights = sample_weight
             else:
                 weights = select_params["sample_weight"]
-            results, test_idx_list = scoring.cv_model_generalized(
+            results, long_form_dict, test_idx_list = scoring.cv_model_generalized(
                 estimator=selection_models["predict"],
-                feature_df=feature_df[list(current_features)],
+                feature_df=feature_df[list(subset_feats)],
                 labels=labels,
                 cv=select_params["cv"],
                 sample_weight=weights,
@@ -1255,9 +1517,9 @@ def score_subset(
                 score_kwargs={"sample_weight": weights},
             )["Score"].tolist()
         else:
-            results, test_idx_list = scoring.cv_model_generalized(
+            results, long_form_dict, test_idx_list = scoring.cv_model_generalized(
                 estimator=selection_models["predict"],
-                feature_df=feature_df[list(current_features)],
+                feature_df=feature_df[list(subset_feats)],
                 labels=labels,
                 cv=select_params["cv"],
             )
@@ -1265,29 +1527,26 @@ def score_subset(
                 results, dict(score_tuple), y_true=labels, **select_params
             )["Score"].tolist()
         if is_classifier(selection_models["predict"]):
-            rel_brier_score, rel_brier = relative_brier_score(
-                labels,
-                pd.concat(results["predict_proba"]["test"]),
-                pos_label=0,
-                # clips=(0.2, 0.8),
-                y_prior=selection_state["prior_best"],
-            )
-            print("Relative Brier Score: {}".format(rel_brier_score))
-            selection_state["subset_scores"][
-                tuple(sorted(current_features))
-            ] = rel_brier_score
-            _compare_to_best(rel_brier_score, selection_state)
-        else:
-            selection_state["subset_scores"][tuple(sorted(current_features))] = scores
-            _compare_to_best(scores, selection_state)
+            # TODO: Add functionality for multiple predict_proba results from previous submodels.
+            for proba in results["predict_proba"]["test"]:
+                if isinstance(selection_state["prior_best"], (pd.Series, pd.DataFrame)):
+                    prior = selection_state["prior_best"].loc[proba.index]
+                else:
+                    prior = None
+                rel_brier_score, rel_brier = subset_relative_brier_score(
+                    labels[proba.index],
+                    proba,
+                    subset_probs=prior,
+                    pos_label=select_params["pos_label"],
+                )
+                brier_list.append(rel_brier_score)
+            scores = brier_list
+        selection_state["subset_scores"][tuple(sorted(subset_feats))] = scores
+        _compare_to_best(scores, selection_state, features=subset_feats)
         if record_results:
-            record_score(
-                selection_state=selection_state,
-                scores=scores,
-                save_dir=save_dir,
-            )
+            record_score(features=subset_feats, scores=scores, save_dir=save_dir)
     # print(np.mean(scores))
-    return selection_state, scores, rel_brier_score
+    return selection_state, scores, brier_list
 
 
 def choose_next_feature(
@@ -1328,7 +1587,7 @@ def choose_next_feature(
             columns=feature_list,
         )
         sum_sqcc = (
-            ones.subtract(sq_xcorr[feature_list].loc[feat_corrs.index])
+            ones.subtract(sq_xcorr[list(feature_list)].loc[feat_corrs.index])
             .sum(axis=1)
             .squeeze()
         )
@@ -1405,6 +1664,7 @@ def choose_next_feature(
         # DEBUG
         print("Current features list contains tuple.")
         raise TypeError
+    selection_state["chosen_subsets"].append(tuple(selection_state["current_features"]))
     return vif_selected, selection_state
 
 
@@ -1436,31 +1696,34 @@ def process_selection_data(
     return train_df, labels, best_corrs, cross_corr, scaler
 
 
-def record_score(selection_state, scores, save_dir, test_score=None):
+def record_score(features, scores, save_dir, test_score=None):
+    score_str = "{}\t{}\n".format(
+        "\t".join(["{:.5f}".format(sc) for sc in scores]),
+        "\t".join(features),
+    )
     with open("{}feature_score_path.csv".format(save_dir), "a", encoding="utf-8") as f:
-        f.write(
-            "{}\t{}\n".format(
-                "\t".join(["{:.5f}".format(sc) for sc in scores]),
-                "\t".join(selection_state["current_features"]),
-            )
-        )
+        f.write(score_str)
+    # print(score_str)
     if test_score is not None:
         with open("{}test_scores.csv".format(save_dir), "a", encoding="utf-8") as f:
             f.write(
                 "{:.5f}\t{}\n".format(
                     test_score,
-                    "\t".join(selection_state["current_features"]),
+                    "\t".join(features),
                 )
             )
+
     return
 
 
-# TODO: Add complexity penalty here?
-def _compare_to_best(scores, selection_state):
+# Complexity penalty should already be added during intial scoring.
+def _compare_to_best(scores, selection_state, features=None):
+    if features is None:
+        features = selection_state["current_features"]
     if np.mean(scores) - np.std(scores) > selection_state["best_score_adj"]:
         print(
             "New top results for {} feature model: Mean: {:.4f}, Std {:.4f}".format(
-                len(selection_state["current_features"]),
+                len(features),
                 np.mean(scores),
                 np.std(scores),
             )
@@ -1469,28 +1732,36 @@ def _compare_to_best(scores, selection_state):
             selection_state["best_score_adj"]
         )
         selection_state["best_score_adj"] = np.mean(scores) - np.std(scores)
-        selection_state["best_subset"] = copy.deepcopy(
-            selection_state["current_features"]
-        )
+        selection_state["best_subset"] = copy.deepcopy(features)
         best_yet = True
     else:
         best_yet = False
     return selection_state, best_yet
 
 
-def score_drop_exceeded(new_scores, selection_params, selection_state):
+def score_drop_exceeded(
+    new_scores, selection_params, selection_state, set_size=None, replace_current=True
+):
     new_score = np.mean(new_scores) - np.std(new_scores)
-    if _over_sfs_thresh(
-        selection_params, selection_state, scores=new_score, factor="reset"
+    if (
+        _over_sfs_thresh(
+            selection_params,
+            selection_state,
+            scores=new_score,
+            set_size=set_size,
+            factor="reset",
+        )
+        and set_size >= selection_params["features_min_sfs"]
     ):
         print(
             "Score (adjusted) drop exceeded: {:.4f} {:.4f}".format(
                 selection_state["best_score_adj"], new_score
             )
         )
-        selection_state["current_features"] = copy.deepcopy(
-            selection_state["best_subset"]
-        )
+        if replace_current:
+            selection_state["current_features"] = copy.deepcopy(
+                selection_state["best_subset"]
+            )
         return True, selection_state
     else:
         return False, selection_state

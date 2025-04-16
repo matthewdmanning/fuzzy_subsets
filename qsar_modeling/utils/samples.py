@@ -1,7 +1,6 @@
 import copy
 import itertools
 import pprint
-import typing
 
 import numpy as np
 import pandas as pd
@@ -23,7 +22,8 @@ def model_prediction_distance(
 ):
     n_predicts = len(predicts_list)
     distances = np.zeros(shape=(n_predicts, n_predicts), dtype=np.float32)
-    for i, j in itertools.combinations(np.arange(n_predicts)):
+    for i, j in itertools.combinations(np.arange(n_predicts), r=2):
+        print(predicts_list[i], predicts_list[j])
         distances[i, j] = distances[j, i] = metric(
             predicts_list[i], predicts_list[j], sample_weight=sample_weight
         )
@@ -126,7 +126,7 @@ def weight_by_error(y_true, predicts, loss=mean_squared_error):
 def weight_by_proba(
     y_true,
     probs,
-    prob_thresholds=(0, 0.75),
+    prob_thresholds=(0, 1.0),
     label_type="binary",
     combo_type="max",
     class_labels=None,
@@ -136,19 +136,13 @@ def weight_by_proba(
     onehot_labels, onehot_normed = one_hot_conversion(
         y_true, label_type=label_type, class_labels=class_labels
     )
-    if (
-        isinstance(probs, typing.Sized)
-        and isinstance(probs, typing.Sequence)
-        and len(probs) == 1
-    ):
+    if isinstance(probs, list) and len(probs) == 0 and isinstance(probs, pd.DataFrame):
         probs = probs[0]
     if isinstance(probs, pd.DataFrame):
         # sample_weights_raw = weigh_single_proba(onehot_true=onehot_normed, probs=probs, prob_thresholds=prob_thresholds)
         if prob_thresholds is not None:
             probs.clip(lower=prob_thresholds[0], upper=prob_thresholds[1], inplace=True)
-        sample_weights_raw = (
-            probs.sub(onehot_normed).abs().multiply(onehot_labels).sum(axis=1).squeeze()
-        )
+        sample_weights = probs.multiply(onehot_labels).sum(axis=1).squeeze()
         # pd.DataFrame(data=np.zeros_like(probs.to_numpy()), index=y_true, columns=probs.columns)
         # [ (p - (1-T)/n_classes) ]
         # where: p = probs, T = one-hot encoded classes
@@ -160,10 +154,7 @@ def weight_by_proba(
             for p in probs:
                 p.columns = class_labels
         unweighted = pd.concat(
-            [
-                p.sub(onehot_normed).abs().multiply(onehot_labels).sum(axis=1).squeeze()
-                for p in probs
-            ],
+            [p.multiply(onehot_labels).sum(axis=1).squeeze() for p in probs],
             axis=1,
         )
         # print("Unweighted len: {}\n".format(len(unweighted)))
@@ -180,32 +171,23 @@ def weight_by_proba(
         # print("Unweighted Average")
         # pprint.pp(unweighted_avg)
         # unweighted = unweighted.max(axis=1)
-        if combo_type == "sum":
-            sample_weights_raw = unweighted.sum(axis=0)
-            # TODO: Rethink / allow parameterization of sample_weight normalization
-            sample_weights = (
-                sample_weights_raw - sample_weights_raw.min()
-            ) / sample_weights_raw.max()
+        if combo_type == "mean":
+            sample_weights = unweighted.mean(axis=0)
         # elif combo_type == "max":
         else:
-            sample_weights_raw = unweighted.max(axis=1)
+            sample_weights = unweighted.max(axis=1)
         # if "sq" in activate:
         #     pd.Series.apply()
-        pprint.pp(sample_weights_raw)
     else:
-        print("Unknown type for probabilities...")
+        print("Unknown type for probabilities processing...")
         print(probs)
         raise ValueError
-
-    sample_weights = sample_weights_raw**2
-
     try:
         sample_weights.reindex_like(other=probs)
     except:
         # print(probs)
         sample_weights.set_index = probs.index
-    print("Sample weights:")
-    pprint.pp(sample_weights)
+    print("\nSample weights:")
     pprint.pprint(sample_weights.describe())
     return sample_weights
 
@@ -349,3 +331,10 @@ def get_confusion_samples(true_predict_tuple, labels=(1, 0)):
         tp = truth.intersection(pos)
         tn = truth.intersection(neg)
     return tn, fp, fn, tp
+
+
+def safe_mapper(x, map):
+    if x in map.keys():
+        return map[x]
+    else:
+        return x

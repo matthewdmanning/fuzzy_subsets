@@ -1,6 +1,5 @@
 import copy
 import numbers
-import pickle
 from collections import defaultdict
 from functools import partial
 from inspect import signature
@@ -8,7 +7,6 @@ from inspect import signature
 import numpy as np
 import pandas as pd
 import sklearn.pipeline
-from matplotlib import pyplot as plt
 from scipy.stats import gmean
 from sklearn import clone, metrics
 from sklearn.base import BaseEstimator, is_classifier, is_regressor
@@ -25,9 +23,11 @@ from sklearn.metrics import (
     recall_score,
 )
 from sklearn.model_selection import KFold, LearningCurveDisplay, StratifiedKFold
+from sklearn.utils import compute_sample_weight
 from sklearn.utils._param_validation import HasMethods
 from sklearn.utils.validation import _check_y
 
+import samples
 from qsar_modeling.utils import cv_tools
 
 # TODO: Implement sample weight. Will probably need to be a separate function for cv_model_generalized that selects after the split.
@@ -83,7 +83,7 @@ def get_score_bounds():
     return bounds
 
 
-def get_prob_scores_dict(pos_label=0):
+def get_prob_sc_dict(pos_label=0):
     # Returns classification scores that require probability or non-prediction based outputs.
     prob_scores = dict(
         [
@@ -130,7 +130,7 @@ def score_cv_results(
 
     Returns
     -------
-    score_dict: Same structure as results_dict, but contains output from score_funcs
+    score_dict: dict[dict[list[pd.Series]]], Same structure as results_dict, but contains output from score_funcs
     {score_name: {split_name: list[pd.Series] | pd.Series}}
     """
     score_dict = dict.fromkeys(score_func_dict.keys(), dict())
@@ -169,8 +169,6 @@ def score_cv_results(
                     if y_true is not None:
                         if output_name == "predict":
                             # print(r.value_counts())
-                            if y_true[r.index].value_counts().size < 2:
-                                print(y_true[r.index].value_counts())
                             score.append(
                                 score_func(y_true=y_true[r.index], y_pred=r, **new_kws)
                             )
@@ -274,55 +272,15 @@ def calculate_proba_from_model(
     return [pd.concat(r[select_params["score_func"]]["test"]) for r in results_list]
 
 
-def score_randomized_classes(
-    estimator,
-    feature_df,
-    labels,
-    cv=StratifiedKFold,
-    preprocessor=None,
-    method_list=None,
-    label_seed=None,
-    return_train=True,
-    sample_weight=None,
-    **splitter_kws,
-):
-    """
-    Fits and scores original and randomized labelled data.
-    Parameters
-    ----------
-    estimator: BaseEstimator, Unfit estimator or pipeline
-    feature_df: pd.DataFrame, features
-    labels: pd.Series, labels for supervised training
-    cv: "Cross-Validator", default=StratifiedKFold
-    preprocessor: BaseEstimator or implements "fit" and "transform", passed to cross-validator function
-    return_train: bool, whether to also calculate and return results for training data
-    label_seed: int, seed for randomizing labels
-    score_list: Iterable[str], values must be methods from estimator (eg. "predict", "predict_proba", "decision_function")
-    sample_weight: pd.Series, passed to cross-validator
-    splitter_kws
-
-    Returns
-    -------
-    results: dict[str, dict[str, list(pd.Series)]], nested dictionary of {callable name: {"test" | "train: list[pd.Series]}}, where the list contain results from callable over all CV folds.
-    """
+def scramble_classes(labels, random_state=None):
     scrambled_labels = pd.Series(
-        data=labels.copy().sample(frac=1.0, random_state=label_seed).to_list(),
+        data=labels.copy().sample(frac=1.0, random_state=random_state).to_list(),
         index=labels.index.copy(name="INCHI_KEY"),
     )
     randomized_labels = pd.Series(
-        _check_y(scrambled_labels, estimator=estimator), index=scrambled_labels.index
+        _check_y(scrambled_labels), index=scrambled_labels.index
     )
-    results, test_idx_list = cv_model_generalized(
-        estimator=estimator,
-        feature_df=feature_df,
-        labels=randomized_labels,
-        cv=cv,
-        preprocessor=preprocessor,
-        score_list=method_list,
-        return_train=return_train,
-        sample_weight=sample_weight,
-    )
-    return results
+    return randomized_labels
 
 
 # noinspection PyUnresolvedReferences
@@ -336,72 +294,117 @@ def cv_model_generalized(
     return_train=False,
     clone_model=True,
     sample_weight=None,
-    warn_no_weights=False,
+    random_state=None,
+    pos_label=0,
+    randomize_classes="both",
     **kwargs,
 ):
     """
     Generalized, all-in-one wrapper for cross-validated models. Desired outputs are given as nested tuples of name, callable.
     Results are returned as a dictionary of dictionaries of lists.
-    Schema: results = {fname: {split_set: [pd.Series] } }
-    Example: results = {"predict": {"test": [pd.Series, pd.Series, ...] } }
+    Schema: results = {randomized: {method_name: {split_set: [pd.Series] } } }
+    Example: results = {"Randomized": {"predict": {"test": [pd.Series, pd.Series, ...] } } }
 
     Parameters
     ----------
 
     estimator: BaseEstimator, Unfit estimator or pipeline
-    feature_df: pd.DataFrame, features
-    labels: pd.Series, labels for supervised training
-    cv: "Cross-Validator", default=StratifiedKFold
-    preprocessor: TransformerMixin or implements "fit" and "transform"
-    return_train: bool, whether to also calculate and return results for training data
-    methods: Iterable[str], values must be methods from estimator (eg. "predict", "predict_proba", "decision_function")
+    feature_df : pd.DataFrame, features
+    labels : pd.Series, labels for supervised training
+    cv : "Cross-Validator", default=StratifiedKFold
+    preprocessor : TransformerMixin or implements "fit" and "transform"
+    return_train : bool, whether to also calculate and return results for training data, adds "train" to results keys
+    methods : [str], values must be methods from estimator ("predict", "predict_proba", "decision_function")
+    clone_model : bool, Clone model or use fitted model
+    sample_weight : pd.Series
+    random_state : int | None, Seed for scrambling classes, ignored if randomized_classes is False
+    pos_label : int, Label for positive class, only used if "pos_label" is in a scoring function's signature.
+    randomize_classes : {"both" | True | False}, whether to return true and randomized label results ("both"), only randomized (True), or only true (False)
+    results["Randomized" | "Original"]
 
     Returns
     -------
-    results: dict[str, dict[str, list(pd.Series)]], nested dictionary of {callable name: {"test" | "train: list[pd.Series]}}, where the list contain results from callable over all CV folds.
-    test_idx_list: list[pd.Index], list of indices in the order in which they appear during cross-validation
+    results_dict : dict[str, dict[str, dict[str, list[pd.Series | pd.DataFrame]]]], nested dictionary of {randomization: {callable name: {"test" | "train: list[pd.Series]}}}, where the list contain results from callable over all CV folds.
+    melted_dict : dict[str, pd.DataFrame], Dictionary of long-form DataFrames. Same content as results. keys=methods.
+    Columns: ["CV_Fold", "Split", "Label", "INCHI_KEY", RESULTS]
+    test_idx_list: tuple[pd.Index], tuple of indices in the order in which they appear during cross-validation
+
+    Example Usage: Scoring
+    ----------------------
+        group_cols = ["CV_Fold", "Split", "Labels"]
+        predict_df = melted_dict["predict"]
+        predict_groups = predict_df.groupby(group_cols, as_index=False, group_keys=False)
+        [print(g[1]) for g in predict_groups]
+        print(
+            [
+                score_long_form(
+                    balanced_accuracy_score,
+                    g[1].drop(columns=["CV_Fold", "Split", "Labels"]),
+                    true_col="True",
+                    remove_cols="INCHI_KEY",
+                )
+                for g in predict_groups
+            ]
+        )
     """
+    # score_dict: dict[dict[list(pd.Series)], Contains output from score_funcs
+    # {score_name: {split_name: list[pd.Series]}}
+    # TODO: Add functionality for fitted estimators.
     from sklearn.utils.estimator_checks import is_regressor, is_classifier
 
-    assert isinstance(feature_df, pd.DataFrame) and not feature_df.empty
     sklearn.set_config(transform_output="pandas")
-    # Set up dictionaries and check estimator calls and keywords.
+
+    sc_dict, results_dict, long_forms = dict(), dict(), dict()
     test_idx_list = list()
     if methods is None:
         if is_classifier(estimator):
             methods = ("predict", "predict_proba")
-        elif is_regressor(estimator):
+        # elif is_regressor(estimator):
+        else:
             methods = tuple(
                 "predict",
             )
     elif isinstance(methods, str):
         methods = [methods]
-    scorer_list = [
+    elif not all([isinstance(m, str) for m in methods]):
+        print("Methods for model evaluation returned: \n{}".format(methods))
+        raise UserWarning
+    long_lists = dict([(k, list()) for k in methods])
+    methods_list = [
         s for s in methods if HasMethods(methods=s).is_satisfied_by(estimator)
     ]
-    if return_train:
-        splits_dict = {"train": list(), "test": list()}
-        results = dict([(k, {"train": list(), "test": list()}) for k in scorer_list])
+    if randomize_classes == "both":
+        label_orders, order_names = [True, False], ["Randomized", "Original"]
+    elif randomize_classes:
+        label_orders, order_names = [False], ["Randomized"]
     else:
-        results = dict([(k, {"test": list()}) for k in scorer_list])
+        label_orders, order_names = [True], ["Original"]
+    if return_train:
+        results = dict([(k, {"train": list(), "test": list()}) for k in methods_list])
+    else:
+        results = dict([(k, {"test": list()}) for k in methods_list])
     func_kwargs_dict = dict()
-    for func in scorer_list:
+    for func in methods_list:
         func_kwargs_dict[func] = [
             k
             for k in signature(getattr(estimator, func)).parameters.keys()
             if k != "self" and k != "X"
         ]
     # results = dict([(k[0], splits_dictcopy()) for k in return_list])
-    i = 0
     assert isinstance(feature_df, pd.DataFrame)
-
-    for train_X, train_y, test_X, test_y in cv_tools.split_df(
+    for o_name in order_names:
+        sc_dict[o_name] = list()
+        if return_train:
+            results_dict[o_name] = dict(
+                [(k, {"train": list(), "test": list()}) for k in methods_list]
+            )
+        else:
+            results_dict[o_name] = dict([(k, {"test": list()}) for k in methods_list])
+    split_X, split_y = dict(), dict()
+    i = 0
+    for train_X, train_y_orig, test_X, test_y_orig in cv_tools.split_df(
         feature_df, labels, splitter=cv, **kwargs
     ):
-        split_X, split_y = {"train": train_X, "test": test_X}, {
-            "train": train_y,
-            "test": test_y,
-        }
         if preprocessor is not None:
             preprocessor.fit(train_X)
             split_X["train"] = preprocessor.transform(train_X).to_frame()
@@ -409,80 +412,132 @@ def cv_model_generalized(
         else:
             split_X["train"] = train_X
             split_X["test"] = test_X
-        test_idx_list.append(test_y.index)
         assert not split_X["train"].empty
         assert isinstance(split_X["train"], pd.DataFrame)
-        if clone_model:
-            model_to_fit = clone(estimator)
-        else:
-            model_to_fit = copy.deepcopy(estimator)
-        if (
-            # HasMethods("sample_weight").is_satisfied_by(estimator) and
-            "sample_weight" in kwargs.keys()
-            and sample_weight is not None
-        ):
-            if "sample_weight" in kwargs.keys():
-                sample_weight = kwargs["sample_weight"]
-            if isinstance(sample_weight, pd.Series):
-                weights = sample_weight
-            # if isinstance(sample_weight, dict):
-            elif isinstance(sample_weight, pd.DataFrame):
-                weights = sample_weight[-1].squeeze()
+        test_idx_list.append(test_y_orig.index)
+        for ran, r_name in zip(label_orders, order_names):
+            if ran:
+                train_y = scramble_classes(
+                    copy.deepcopy(train_y_orig), random_state=random_state
+                )
+                test_y = scramble_classes(
+                    copy.deepcopy(test_y_orig), random_state=random_state
+                )
             else:
-                weights = pd.Series(sample_weight)
-            if split_y["train"].index.difference(weights.index).size > 0:
-                print(
-                    "\n\nWeights index differs from training index!!!\n\n{}".format(
-                        split_y["train"].index.difference(weights.index)
+                train_y = copy.deepcopy(train_y_orig)
+                test_y = copy.deepcopy(test_y_orig)
+            train_y.name = "True"
+            test_y.name = "True"
+            split_y = {"train": train_y.squeeze(), "test": test_y.squeeze()}
+            if clone_model:
+                model_to_fit = clone(estimator)
+            else:
+                model_to_fit = copy.deepcopy(estimator)
+            if "sample_weight" in kwargs.keys() and sample_weight is not None:
+                if "sample_weight" in kwargs.keys():
+                    sample_weight = kwargs["sample_weight"]
+                if isinstance(sample_weight, pd.Series):
+                    weights = sample_weight
+                # if isinstance(sample_weight, dict):
+                elif isinstance(sample_weight, pd.DataFrame):
+                    weights = sample_weight[-1].squeeze()
+                else:
+                    weights = pd.Series(sample_weight)
+                if split_y["train"].index.difference(weights.index).size > 0:
+                    print(
+                        "\n\nWeights index differs from training index!!!\n\n{}".format(
+                            split_y["train"].index.difference(weights.index)
+                        )
                     )
+                    print(weights.index)
+                    weights.index = split_y["train"].index
+                fit_est = model_to_fit.fit(
+                    split_X["train"],
+                    split_y["train"],
+                    sample_weight=weights[split_y["train"].index],
                 )
-                print(weights.index)
-                weights.index = split_y["train"].index
-            fit_est = model_to_fit.fit(
-                split_X["train"],
-                split_y["train"],
-                sample_weight=weights[split_y["train"].index],
-            )
-        else:
-            if warn_no_weights:
-                print(
-                    "Sample weight not used to fit model: {}.".format(
-                        estimator.__repr__(20)
+            else:
+                fit_est = model_to_fit.fit(X=split_X["train"], y=split_y["train"])
+            for fname in results.keys():
+                for split_set in results[fname].keys():
+                    # print(getattr(fit_est, fname)(X=split_X[split_set]))
+                    result_df = pd.DataFrame(
+                        getattr(fit_est, fname)(X=split_X[split_set]),
+                        index=split_X[split_set].index,
+                    ).squeeze()
+                    if isinstance(result_df, pd.Series):
+                        total_df = result_df.copy().to_frame()
+                        total_df.columns = [str(fname)]
+                        result_df.name = split_set
+                    else:
+                        total_df = result_df.copy()
+                        total_df.columns = [
+                            "{}_{}".format(fname, i)
+                            for i in np.arange(total_df.shape[1])
+                        ]
+                    results[fname][split_set].append(result_df)
+                    results_dict[r_name][fname][split_set].append(result_df)
+                    total_df = total_df.merge(
+                        split_y[split_set], right_index=True, left_index=True
                     )
-                )
-                print(**kwargs)
-                # traceback.print_stack()
-                # raise ValueError
-
-            fit_est = model_to_fit.fit(X=split_X["train"], y=split_y["train"].squeeze())
-        for fname in results.keys():
-            for split_set in results[fname].keys():
-                # print(getattr(fit_est, fname)(X=split_X[split_set]))
-                result_df = pd.DataFrame(
-                    getattr(fit_est, fname)(X=split_X[split_set]),
-                    index=split_X[split_set].index,
-                ).squeeze()
-                if isinstance(result_df, pd.Series):
-                    result_df.name = split_set
-                results[fname][split_set].append(result_df)
-
+                    total_df.insert(loc=0, column="CV_Fold", value=i)
+                    total_df.insert(loc=0, column="Split", value=split_set)
+                    # total_df.insert(loc=0, column="Method", value=fname)
+                    total_df.insert(loc=0, column="Labels", value=r_name)
+                    total_df.reset_index(names="INCHI_KEY", inplace=True)
+                    # print(total_df)
+                    long_lists[fname].append(total_df)
         i += 1
-    return results, test_idx_list
+    melted_dict = dict()
+    for k, v in long_lists.items():
+        melted_dict[k] = pd.concat(v)
+    if False:
+        # Example usage.
+        group_cols = ["CV_Fold", "Split", "Labels"]
+        binary_ex = melted_dict["predict"]
+        prob_ex = melted_dict["predict_proba"]
+        predict_groups = binary_ex.groupby(group_cols, as_index=False, group_keys=False)
+        [print(g[1]) for g in predict_groups]
+        print(
+            [
+                score_long_form(
+                    balanced_accuracy_score,
+                    g[1].drop(columns=["CV_Fold", "Split", "Labels"]),
+                    true_col="True",
+                    remove_cols="INCHI_KEY",
+                )
+                for g in predict_groups
+            ]
+        )
+        prob_groups = prob_ex.groupby(["CV_Fold", "Split", "Labels"], as_index=False)
+    return results_dict, melted_dict, tuple(test_idx_list)
 
-    """    
-        dev_score_df, eva_score_df = combine_scores(
-        cv_dev_score_dict,
-        cv_eval_score_dict,
-        dev_score_summary,
-        eva_score_summary,
-        score_name_list,
-    )
-    if score_dir is not None:
-        dev_score_path = "{}dev_score_summary.csv".format(score_dir)
-        eva_score_path = "{}eval_score_summary.csv".format(score_dir)
-        dev_score_df.to_csv(dev_score_path)
-        eva_score_df.to_csv(eva_score_path)
+
+def score_long_form(func, x, true_col, data_cols=None, remove_cols=None, **kwargs):
     """
+
+    Parameters
+    ----------
+    func : callable, scoring function
+    x : pd.DataFrame, lambda variable containing data
+    true_col : str, y_true
+    data_cols : pd.Series | pd.DataFrame | None, predicted/calculated per-sample values
+    kwargs : dict, kwargs for scoring function
+
+    Returns
+    -------
+
+    """
+    if remove_cols is not None:
+        x = x.copy().drop(columns=remove_cols)
+    true_df = x[true_col]
+    if data_cols is None:
+        pred_df = x.drop(columns=true_col)
+    else:
+        pred_df = x[data_cols]
+    print(true_df, "\n", pred_df)
+    score = func(true_df, pred_df, **kwargs)
+    return score
 
 
 def combine_scores(
@@ -616,27 +671,63 @@ def summarize_scores(score_dict_list, check_scores=True):
     return score_df
 
 
-def learn_curve(estimator, name, feature_df, labels, fname_stub=None):
-    # Calculates and plots the learning curve (Training set size  vs. model performance).
-    fig, ax = plt.subplots(figsize=(5, 6), dpi=600)
-    common_params = {
-        "train_sizes": np.linspace(0.1, 1.0, 5),
-        "scoring": make_scorer(matthews_corrcoef),
-        #  "cv":                StratifiedKFold(),
-        "score_type": "both",
-        "n_jobs": -1,
-        "line_kw": {"marker": "o"},
-        "std_display_style": "fill_between",
-        "score_name": "Matthews Correlation Coeff",
-    }
-    lcd = LearningCurveDisplay.from_estimator(
-        estimator, X=feature_df, y=labels, **common_params, ax=ax
+def relative_brier_score(
+    y_true,
+    y_proba,
+    y_prior=None,
+    pos_label=None,
+    clips=(0, 1.0),
+    sample_weight=None,
+    class_weight="balanced",
+    normalize="improved",
+    decision_thresholds=None,
+    power=4,
+):
+    onehot_labels, onehot_normed = samples.one_hot_conversion(
+        y_true, threshold=decision_thresholds
     )
-    print(lcd.train_scores, lcd.test_scores)
-    ax.legend(["Training Score", "Test Score"])
-    ax.set_title("Learning Curve for {}".format(name))
-    ax.set_ylim(bottom=0.0, top=1.0)
-    plt.savefig(fname="{}.svg".format(fname_stub), transparent=True)
-    with open("{}.pkl".format(fname_stub), "wb") as f:
-        pickle.dump(lcd, f)
-    return lcd, fig, ax
+    y_proba_brier = y_proba.mul(onehot_labels).sum(axis=1).squeeze()
+    if y_prior is not None:
+        if y_prior.shape == onehot_labels.shape:
+            y_prior_brier = (
+                y_prior.multiply(onehot_labels)  # .sub(onehot_normed).abs()
+                .sum(axis=1)
+                .squeeze()
+            )
+            y_proba_brier = y_proba_brier.sub(y_prior_brier).squeeze()
+            y_proba_brier.clip(lower=clips[0], upper=clips[1], inplace=True)
+            y_proba_brier = y_proba_brier**power
+    # print(y_proba_brier.sort_values().head())
+    assert y_proba_brier.nunique() > 1
+    if class_weight == "balanced":
+        class_wts = pd.Series(
+            compute_sample_weight(class_weight="balanced", y=y_true), index=y_true.index
+        )
+        y_proba_brier = y_proba_brier.copy() * class_wts
+    if normalize == "correct":
+        brier_obs = y_proba_brier[y_proba_brier > 0.0]
+    else:
+        brier_obs = y_proba_brier
+    d = brier_obs.shape[0]
+    if sample_weight is None:
+        rel_brier_score = brier_obs.sum()
+    else:
+        rel_brier_score = (
+            sample_weight.loc[brier_obs.index] * brier_obs
+        ).sum() / sample_weight.loc[brier_obs.index].sum()
+    return rel_brier_score, y_proba_brier
+
+
+def _format_cv_generalized_score(results_correct, i, hue_category=None):
+    # results_dict_df = [pd.DataFrame.from_records(r) for r, v in results_correct.items()]
+    # print(results_dict_df)
+    # print(results_dict_df.explode().reset_index())
+    # print([ser.explode().reset_index() for col, ser in results_dict_df.items()])
+    # exploded_list = results_dict_df.melt()
+    exploded = results_correct.melt(
+        id_vars=["Metric", "Split", "CV Fold"], value_name="score"
+    )
+    exploded.insert(loc=0, column="Subset", value=i)
+    if hue_category is not None:
+        exploded.insert(loc=0, column="Labels", value=hue_category)
+    return exploded

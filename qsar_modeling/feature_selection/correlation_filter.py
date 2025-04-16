@@ -433,4 +433,4 @@ def get_weighted_correlations(
                 x=feature_df, y=labels, weights=weights
             )
         label_corr.to_csv(weighted_corr_path)
-    return cross_corr, label_corr
+    return label_corr, cross_corr
